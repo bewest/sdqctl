@@ -6,6 +6,87 @@ GitHub Copilot CLI has an incredibly rich interactive mode, but lacks a streamli
 
 **Vision:** `copilot do` should work as a cross between Dockerfile, `git rebase`/`git bisect`, and `pandoc`—enabling declarative, reproducible, and scriptable AI-assisted development workflows.
 
+## Real-World Evidence: The Problem Today
+
+### Manual AI Session Orchestration in Production
+
+Analysis of the [Nightscout cgm-remote-monitor](https://github.com/nightscout/cgm-remote-monitor) development workflow reveals a clear pattern: **developers are manually orchestrating AI agents through iterative cycles**, committing after each phase because no automation exists.
+
+**Git History Evidence** (from recent development sessions):
+
+```
+Session dd62849e-ed2a:
+  20:11:29 - "Transitioned from Plan to Build mode"
+             ↓ (manual intervention required)
+  20:25:36 - "Introduce warning timeouts..." (intermediate checkpoint)
+             ↓ (manual intervention required)
+  20:26:32 - "Saved progress at the end of the loop"
+
+Session a10b5171-2266:
+  20:39:16 - "Transitioned from Plan to Build mode"
+             ↓ (manual intervention required)
+  20:51:09 - "Add test instrumentation..." (intermediate checkpoint)
+             ↓ (manual intervention required)
+  20:51:41 - "Saved progress at the end of the loop"
+
+...and this pattern repeats across 6+ sessions spanning multiple days
+```
+
+**The Manual Process:**
+1. Start AI agent session (Replit Agent)
+2. Provide initial prompt
+3. **Wait** for agent to complete analysis/planning phase
+4. **Manually** trigger transition to build/execution mode
+5. **Wait** for agent to implement changes
+6. **Manually** commit with "Saved progress at the end of the loop"
+7. **If more work needed**, start over at step 1 (losing context)
+
+**Pain Points Identified:**
+- **20+ manual commits** saying "Saved progress at the end of the loop"
+- **6+ separate sessions** required because no automated iteration exists
+- **Manual mode transitions** required between analysis and execution phases
+- **Context lost** between session restarts
+- **Not reproducible** - can't re-run the same workflow
+- **Not scriptable** - can't integrate into CI/CD or automation
+
+### How `copilot do` Would Solve This
+
+**Instead of manual orchestration:**
+```bash
+# Single command, automated iteration
+copilot do "Fix flaky WebSocket tests by adding instrumentation" \
+  --max-cycles 3 \
+  --mode tests-only
+```
+
+**Or with version-controlled ConversationFiles:**
+```bash
+copilot do ./workflows/fix-flaky-tests.copilot
+```
+
+```dockerfile
+# workflows/fix-flaky-tests.copilot
+MODEL claude-sonnet-4.5
+MODE tests-only
+MAX-CYCLES 3  # Automatically iterate up to 3 times
+
+PROMPT Analyze websocket test file for flaky patterns and timing issues
+
+PROMPT Create reusable test helper functions for timing instrumentation
+
+PROMPT Update documentation with new testing patterns and anti-patterns
+```
+
+**Benefits:**
+- ✅ **Zero manual checkpoints** - tool manages iteration automatically
+- ✅ **Single session** maintains full context across cycles
+- ✅ **Reproducible** - same command produces consistent results
+- ✅ **Scriptable** - can run in CI/CD, Makefiles, or automation
+- ✅ **Version-controlled** - workflow becomes part of the codebase
+- ✅ **Team-wide** - anyone can run the same workflow
+
+**Impact:** What took 6 manual sessions over multiple days becomes a single command that can run unattended.
+
 ## Motivation
 
 ### Current Limitations
