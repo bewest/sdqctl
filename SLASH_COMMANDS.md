@@ -76,6 +76,31 @@ View or configure the terminal theme.
 ### `/terminal-setup`
 Configure your terminal for multiline input support (Shift+Enter and Ctrl+Enter).
 
+## File Access Control
+
+### `/deny-file <file>`
+Temporarily deny access to a specific file during the current conversation session. Useful for protecting critical files during exploratory or automated operations.
+
+**Usage:**
+```
+/deny-file package.json
+/deny-file .env
+/deny-file .env.production
+```
+
+### `/deny-path <pattern>`
+Temporarily deny access to files matching a glob pattern during the current conversation session.
+
+**Usage:**
+```
+/deny-path "*.key"
+/deny-path "secrets/*"
+/deny-path ".github/workflows/*"
+/deny-path "config/production/*"
+```
+
+**Note:** File denials take precedence over allows, following the same model as `--deny-tool` and `--deny-url`. These settings persist only for the current session.
+
 ## Authentication
 
 ### `/login`
