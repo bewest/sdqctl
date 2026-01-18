@@ -1,0 +1,232 @@
+# Documentation Synchronization Verification
+# Based on: GIT-HISTORY-ANALYSIS.md Use Case 5
+# Purpose: Verify docs are in sync with code changes
+
+MODEL claude-sonnet-4.5
+MODE read-only
+MAX-CYCLES 1
+
+CWD ./
+
+PROMPT Analyze code changes and corresponding documentation updates to identify sync gaps.
+
+PROMPT Review recent commits (last 60 days) for:
+1. API endpoint changes
+2. Configuration option changes
+3. Database schema changes
+4. Public interface modifications
+5. Breaking changes
+
+PROMPT For each significant code change, verify:
+- Is there a corresponding documentation update?
+- Are examples in docs still accurate?
+- Is the changelog updated?
+- Are migration guides provided (if breaking)?
+
+CONTEXT @lib/api/**/*.js
+CONTEXT @lib/server/**/*.js
+CONTEXT @docs/**/*.md
+CONTEXT @README.md
+CONTEXT @CHANGELOG.md
+
+PROMPT Generate documentation sync report:
+
+```markdown
+# Documentation Synchronization Report
+Generated: $(date -Iseconds)
+Analysis Period: Last 60 days
+
+## Summary
+
+- Code changes requiring docs: [count]
+- Documentation updated: [count]
+- **Sync gaps found: [count]**
+- Coverage: [percentage]%
+
+## Sync Gaps (Action Required)
+
+### Gap 1: [Feature/Change Name]
+
+**Code Change:**
+- Commit: abc123
+- Date: 2024-11-15
+- File: lib/api/v3/entries.js
+- Change: Added required `device` field to POST /api/v3/entries
+- Breaking: Yes
+
+**Documentation Status:**
+- ❌ API docs not updated (docs/api-v3.md)
+- ❌ Changelog missing entry
+- ❌ Migration guide needed
+- ⚠️  Example code outdated
+
+**Recommendation:**
+```
+Documentation-Update-Needed: Yes
+Doc-Files: docs/api-v3.md, CHANGELOG.md, docs/migration/15.0-to-15.1.md
+Priority: High (Breaking change)
+Example-Code: docs/examples/upload-entry.js needs device field
+```
+
+### Gap 2: [Another change]
+...
+
+## Well-Documented Changes ✅
+
+### [Feature Name]
+**Code Change:**
+- Commit: def456
+- Date: 2024-11-10
+- File: lib/plugins/notification.js
+
+**Documentation:**
+- ✅ Updated: docs/plugins/notification.md (commit: ghi789)
+- ✅ Changelog entry present
+- ✅ Examples accurate
+- ✅ Same PR included both code and docs
+
+**Good Practice Example**
+
+## API Signature Verification
+
+### Endpoints Documented vs. Implemented
+
+| Endpoint | Documented | Implemented | Match | Notes |
+|----------|------------|-------------|-------|-------|
+| GET /api/v3/entries | ✅ | ✅ | ✅ | |
+| POST /api/v3/entries | ✅ | ✅ | ❌ | Docs missing `device` param |
+| DELETE /api/v3/entries/:id | ✅ | ✅ | ⚠️ | Auth requirements differ |
+
+## Configuration Options
+
+### Options in Code vs. Docs
+
+**In Code (lib/config.js):**
+- `ENABLE_NOTIFICATIONS` (added in abc123, not documented)
+- `MAX_RETRY_ATTEMPTS` (documented)
+- `API_TIMEOUT_MS` (documented but value differs)
+
+**Documentation Gaps:**
+- ENABLE_NOTIFICATIONS: No docs found
+- API_TIMEOUT_MS: Docs say "5000" but code default is "10000"
+
+## Examples Validation
+
+### Code Examples That May Be Outdated
+
+**docs/examples/upload-entry.js:**
+```javascript
+// Current example (may be outdated)
+fetch('/api/v3/entries', {
+  method: 'POST',
+  body: JSON.stringify({ type: 'sgv', sgv: 120 })
+})
+```
+
+**Issue**: Missing required `device` field (added in abc123)
+
+**Suggested Fix:**
+```javascript
+fetch('/api/v3/entries', {
+  method: 'POST',
+  body: JSON.stringify({ 
+    type: 'sgv', 
+    sgv: 120,
+    device: 'MyDevice'  // Required as of v15.1
+  })
+})
+```
+
+## Changelog Analysis
+
+### Commits Not in CHANGELOG
+
+- abc123 - "Add device field requirement" (Breaking, High priority)
+- def456 - "Fix timezone handling" (Bug fix, Medium priority)
+- ghi789 - "Update dependencies" (Maintenance, Low priority)
+
+### Recommendation
+Update CHANGELOG.md with missing entries before next release.
+
+## Migration Guides
+
+### Breaking Changes Needing Migration Docs
+
+1. **Device field requirement** (v15.0 → v15.1)
+   - Status: ❌ No migration guide
+   - Affected: All API clients using POST /api/v3/entries
+   - Should document: How to update client code, backward compat options
+
+2. **Auth token format change** (v14.5 → v15.0)
+   - Status: ✅ Documented in docs/migration/14-to-15.md
+   - Good practice example
+
+## Recommended Actions
+
+### Immediate (Before Next Release)
+1. Create/update docs/api-v3.md with device field requirement
+2. Add CHANGELOG.md entries for abc123, def456
+3. Create migration guide: docs/migration/15.0-to-15.1.md
+4. Fix example code in docs/examples/upload-entry.js
+
+### Short-term (Process Improvement)
+1. Add PR template checklist: "Documentation updated?"
+2. Add automated check: tools/check_doc_sync.py
+3. Add to CI: Fail if API changes detected without doc updates
+4. Update CONTRIBUTING.md with doc sync requirements
+
+### Long-term (Automation)
+1. Generate API docs from code (OpenAPI/Swagger)
+2. Automated example code validation (run examples as tests)
+3. Link commits to docs in git metadata
+
+## Commit Message Enhancement
+
+### Recommended Trailers for Docs Sync
+
+When making code changes that require docs:
+```
+Documentation-Updated: Yes
+Doc-Commits: abc123, def456
+Doc-Files: docs/api-v3.md, CHANGELOG.md
+API-Changes: Yes
+Breaking-Change: Yes
+Migration-Guide: docs/migration/15.0-to-15.1.md
+```
+
+Example:
+```
+commit abc123
+Add device field requirement to entries API
+
+- POST /api/v3/entries now requires device field
+- Returns 400 if device not provided
+- Backward compat mode available via config
+
+Documentation-Updated: Yes
+Doc-Commits: def456
+Doc-Files: docs/api-v3.md, docs/migration/15.0-to-15.1.md
+API-Changes: Yes
+Breaking-Change: Yes
+```
+
+---
+**Verification Command:**
+```bash
+# Run this workflow regularly
+copilot do workflows/documentation/sync-verification.copilot \
+  --format markdown \
+  --output docs/sync-reports/$(date +%Y-%m-%d).md
+```
+
+**Integration with CI:**
+```bash
+# Add to .github/workflows/pr-checks.yml
+copilot do workflows/documentation/sync-verification.copilot \
+  --format json \
+  --output sync-check.json
+
+# Fail if gaps found
+jq -e '.sync_gaps == 0' sync-check.json || exit 1
+```
+```

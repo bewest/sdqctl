@@ -1,0 +1,70 @@
+# Clinical Algorithm Validation Documentation
+# Based on: GIT-HISTORY-ANALYSIS.md Use Case 1 (Regulatory Audit Trail)
+# Purpose: Document clinical impact and validation requirements for algorithm changes
+
+MODEL claude-sonnet-4.5
+MODE audit
+MAX-CYCLES 1
+
+CWD ./lib/plugins
+
+PROMPT Analyze all changes to insulin calculation and glucose prediction algorithms.
+
+CONTEXT @iob.js
+CONTEXT @cob.js
+CONTEXT @bwp.js
+CONTEXT @openaps.js
+
+PROMPT For each algorithm file, identify:
+1. Mathematical formulas and calculations
+2. Constants and thresholds used
+3. Clinical assumptions made
+4. Edge cases and boundary conditions
+5. Recent changes (reference git log)
+
+PROMPT Cross-reference with test coverage:
+CONTEXT @../../tests/iob.test.js
+CONTEXT @../../tests/cob.test.js
+CONTEXT @../../tests/bwp.test.js
+
+PROMPT Generate validation documentation with:
+
+```markdown
+# Clinical Algorithm Validation Report
+Generated: $(date -Iseconds)
+
+## Insulin On Board (IOB) Calculation
+
+### Algorithm Description
+[Document the calculation method]
+
+### Clinical Parameters
+- DIA (Duration of Insulin Action): X hours
+- Activity curve: [describe]
+- Boundary conditions: [list]
+
+### Test Coverage
+- Unit tests: [count] tests covering [scenarios]
+- Integration tests: [count]
+- Edge cases validated: [list]
+
+### Clinical Impact Assessment
+- Impact Level: [Low/Medium/High/Critical]
+- Risk Category: Algorithm-Change
+- Validation Status: [Pending/Complete]
+- Test Evidence: tests/iob.test.js
+
+### Regulatory Considerations
+- FDA classification: [If applicable]
+- Clinical validation required: [Yes/No]
+- Required approvals: [List]
+
+### Change History
+[Recent algorithm changes from git history]
+
+### Recommendations
+[Any gaps in testing, documentation, or validation]
+```
+
+PROMPT Include specific git commit references for traceability.
+PROMPT Highlight any algorithm changes without corresponding test updates.

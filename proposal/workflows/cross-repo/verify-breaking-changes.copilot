@@ -1,0 +1,51 @@
+# Cross-Repository Breaking Change Analysis
+# Based on: GIT-HISTORY-ANALYSIS.md Use Case 4
+# Purpose: Analyze API changes and verify impact across dependent repositories
+
+MODEL claude-sonnet-4.5
+MODE read-only
+MAX-CYCLES 1
+
+CWD ./
+
+PROLOGUE This analysis is part of a pre-release verification workflow.
+PROLOGUE Current version: $(git describe --tags)
+PROLOGUE Target repositories: nightscout-connect, nightscout-roles-gateway
+
+PROMPT Analyze recent API changes in the following files:
+CONTEXT @lib/api/*.js
+CONTEXT @lib/server/*.js
+CONTEXT @CHANGELOG.md
+
+PROMPT For each API change, document:
+1. What changed (endpoint, method signature, response format)
+2. Whether it's breaking or backward-compatible
+3. Version introduced
+4. Migration guide reference (if breaking)
+
+PROMPT Compare current API with previous release:
+CONTEXT @docs/api-v3.md
+
+PROMPT Generate a structured report with:
+- Breaking-Change: Yes/No for each API
+- Dependency-Impact: Which downstream repos/clients are affected
+- Migration-Guide: Link to docs (or "NEEDED" if missing)
+- Severity: Low/Medium/High/Critical
+
+PROMPT Output format:
+```markdown
+## API Change Impact Report
+
+### Breaking Changes
+- Endpoint: /api/v3/entries
+  - Change: Added required field `device`
+  - Impact: All API clients
+  - Migration: docs/api-v3-migration.md#entries-device
+  - Severity: High
+  
+### Backward-Compatible Changes
+...
+
+### Recommendations
+...
+```

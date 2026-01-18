@@ -1,0 +1,1094 @@
+# copilot do - A Proposal for Orchestrated AI-Assisted Development
+
+## Overview
+
+GitHub Copilot CLI has an incredibly rich interactive mode, but lacks a streamlined way to orchestrate the coding agent from the command line for automation, scripting, and CI/CD integration. This proposal introduces a `do` subcommand that bridges the gap between interactive AI assistance and traditional CLI automation workflows.
+
+**Vision:** `copilot do` should work as a cross between Dockerfile, `git rebase`/`git bisect`, and `pandoc`—enabling declarative, reproducible, and scriptable AI-assisted development workflows.
+
+## Motivation
+
+### Current Limitations
+- No way to automate Copilot interactions in scripts or CI/CD pipelines
+- Cannot orchestrate multiple related tasks across different components
+- Difficult to version control and share conversation patterns
+- No support for iterative batch processing across codebases
+
+### Desired Capabilities
+- Run Copilot conversations from the command line non-interactively
+- Define reusable conversation patterns in version-controlled files
+- Orchestrate AI-assisted tasks across multiple directories/components
+- Integrate Copilot into build systems, testing workflows, and automation scripts
+- Create reproducible development workflows that can be shared across teams
+
+## Proposal
+
+This proposal introduces two complementary features:
+
+### 1. ConversationFile Format
+A declarative file format (similar to Dockerfile) that encodes Copilot conversations using slash commands as keywords. These files enable:
+- Version-controlled conversation patterns
+- Reusable workflows across projects
+- Team-wide standardization of AI-assisted tasks
+- Composition and orchestration of complex workflows
+
+### 2. Non-Interactive Command Suite
+Extended CLI commands for single-shot and batch execution, similar to how `pandoc` works for document transformation.
+
+## Proposed Commands
+
+### `copilot do [options] <prompt|conversationfile>`
+Execute a single conversational cycle or ConversationFile non-interactively.
+
+**Options:**
+- `--max-cycles <n>` - Maximum conversation cycles to run (default: 1, use -1 for unlimited)
+- `--interactive` - Drop into interactive mode after execution
+- `--format <format>` - Input/output format: text, json, jsonl, markdown (default: text)
+- `--output <file|->` - Write output to file or stdout (default: stdout)
+- `--input <file|->` - Read additional input from file or stdin
+- `--prologue <file|->` - Prepend additional context from file or stdin to prompt
+- `--epilogue <file|->` - Append additional context from file or stdin to prompt
+- `--header <file|->` - Prepend content to output (e.g., metadata, timestamp, disclaimer)
+- `--footer <file|->` - Append content to output (e.g., citations, signature, links)
+- `--continue-on-error` - Continue execution even if errors occur
+- `--dry-run` - Show what would be done without executing
+- `--mode <mode>` - Execution mode: full, read-only, docs-only, tests-only, audit (default: full)
+- `--allow-path <pattern>` - Allow modifications only to files matching pattern (can be used multiple times)
+- `--deny-path <pattern>` - Deny access to files matching pattern (can be used multiple times)
+- `--deny-file <file>` - Deny access to specific file (can be used multiple times)
+
+**Note:** Default of `--max-cycles=1` ensures predictable, bounded execution suitable for scripting and automation. Use higher values when iterative refinement is needed.
+
+**Examples:**
+```bash
+# Execute a simple prompt (single cycle)
+copilot do "Add error handling to all API endpoints"
+
+# Execute a ConversationFile
+copilot do ./conversations/audit-component.copilot
+
+# Prologue and epilogue add context to the prompt
+make verify-docs | copilot do ./conversations/update-docs.copilot \
+  --prologue "Current date: $(date)" \
+  --epilogue -
+
+# Read-only audit mode - analyze code but make no changes
+copilot do "Document all known bugs and quirks in the authentication module" \
+  --mode read-only \
+  --format markdown \
+  --output docs/known-issues.md
+
+# Documentation-only mode - can only modify docs
+copilot do "Update documentation to reflect recent API changes" \
+  --mode docs-only \
+  --yolo
+
+# Tests-only mode - can only modify test files
+copilot do "Add missing test cases for edge conditions" \
+  --mode tests-only \
+  --yolo
+
+# Audit mode - read code and generate reports, no modifications
+copilot do "Audit security vulnerabilities and document findings" \
+  --mode audit \
+  --output security-audit-$(date +%Y%m%d).md
+
+# Fine-grained allow patterns - only specific directories
+copilot do "Refactor utility functions" \
+  --allow-path "src/utils/**" \
+  --allow-path "tests/utils/**" \
+  --yolo
+
+# Header and footer add content to the output
+copilot do "Generate API documentation" \
+  --format markdown \
+  --output api-docs.md \
+  --header <(echo "# API Documentation\n_Generated on $(date)_\n") \
+  --footer <(echo "\n---\n_This documentation was generated by GitHub Copilot CLI_")
+
+# Add metadata header to JSON output
+copilot do "Audit security vulnerabilities" \
+  --format json \
+  --output security-report.json \
+  --header <(jq -n --arg date "$(date -Iseconds)" '{generatedAt: $date, version: "1.0"}')
+
+# JSON input/output for programmatic use
+echo '{"prompt": "Fix the bug", "context": ["main.js"]}' | \
+  copilot do --format json --input - --output results.json
+
+# Dry run to preview what would happen
+copilot do ./conversations/refactor.copilot --dry-run
+
+# Allow iterative refinement for complex tasks
+copilot do "Refactor auth module" --max-cycles=5
+
+# Protect critical files during automated refactoring
+copilot do "Refactor database layer" \
+  --deny-file package.json \
+  --deny-file .env \
+  --deny-path "*.key" \
+  --yolo
+
+# Drop into interactive mode after execution
+copilot do ./MyConversation --interactive
+```
+
+### `copilot plan <conversationfile|prompt>`
+Analyze a ConversationFile or prompt and output an execution plan without making any changes. Similar to `--dry-run` but focused on strategic planning rather than tactical step preview.
+
+**Purpose:**
+- Preview what the conversation would accomplish
+- Understand the scope before execution
+- Review proposed changes and approach
+- Generate implementation plans for complex tasks
+
+**Options:**
+- `--format <format>` - Output format: text, json, markdown (default: text)
+- `--output <file|->` - Write plan to file or stdout
+- `--header <file|->` - Prepend content to output
+- `--footer <file|->` - Append content to output
+- `--interactive` - Drop into interactive mode to refine the plan
+
+**Difference from `--dry-run`:**
+- `copilot plan` - High-level strategic plan: "What will be accomplished?"
+- `copilot do --dry-run` - Low-level tactical preview: "What specific actions will be taken?"
+
+**Examples:**
+```bash
+# Preview what a conversation would accomplish
+copilot plan ./conversations/refactor-auth.copilot
+
+# Output as JSON for further processing
+copilot plan ./conversations/update-tests.copilot --format json
+
+# Plan from a prompt
+copilot plan "Add authentication to the API"
+
+# Generate markdown plan for review
+copilot plan "Migrate to TypeScript" --format markdown --output migration-plan.md
+
+# Add metadata to plan output
+copilot plan "Modernize codebase" \
+  --format markdown \
+  --output modernization-plan.md \
+  --header <(cat << EOF
+---
+title: Modernization Plan
+author: GitHub Copilot
+date: $(date +%Y-%m-%d)
+status: draft
+---
+
+EOF
+) \
+  --footer <(echo -e "\n## Next Steps\n- Review this plan\n- Get team approval\n- Execute with \`copilot do\`")
+
+# Refine the plan interactively before execution
+copilot plan ./conversations/big-refactor.copilot --interactive
+```
+
+### `copilot loop [options] <conversationfiles...>`
+Execute multiple ConversationFiles in sequence or parallel, with support for batching.
+
+**Options:**
+- `--parallel <n>` - Run up to n conversations in parallel
+- `--max-cycles <n>` - Maximum cycles per conversation (default: 1)
+- `--format <format>` - Output format: json, jsonl (default: jsonl)
+- `--output <file|->` - Write results to file or stdout
+- `--header <file|->` - Prepend content to output (applied once, before all results)
+- `--footer <file|->` - Append content to output (applied once, after all results)
+- `--stop-on-error` - Stop execution on first error
+
+**Note:** When running multiple conversations (especially in parallel), `--max-cycles=1` is the default to ensure predictable resource usage, cost control, and prevent runaway conversations. Individual ConversationFiles can override this with the `MAX-CYCLES` keyword.
+
+**Examples:**
+```bash
+# Process all conversation files sequentially (1 cycle each by default)
+copilot loop conversations/*.copilot
+
+# Run in parallel with JSONL output
+copilot loop --parallel 4 --format jsonl plans/* | tee results.jsonl
+
+# Allow more cycles for complex batch operations
+copilot loop --max-cycles=3 --parallel 2 refactoring/*.copilot
+
+# Verify results programmatically
+copilot loop --format json plans/* --output results.json
+jq '.[] | select(.status == "failed")' results.json
+
+# Add summary header/footer to batch results
+copilot loop --parallel 4 --format jsonl refactor/*.copilot \
+  --output refactor-results.jsonl \
+  --header <(echo "# Refactoring Batch - Started $(date)") \
+  --footer <(echo "# Refactoring Batch - Completed $(date)")
+```
+
+## ConversationFile Format
+
+ConversationFiles use slash commands as declarative keywords, similar to Dockerfile syntax.
+
+**Default filename:** `.copilot` or `*.copilot`
+
+**Example:** `audit-component.copilot`
+```dockerfile
+# Set the model for this conversation
+MODEL claude-sonnet-4.5
+MODE read-only  # Cannot modify any files, only read and analyze
+
+# Change to component directory
+CWD ./lib/components/auth
+
+# Add relevant directories
+ADD-DIR ./tests
+ADD-DIR ./docs
+
+# Set up the conversation context
+PROMPT Let's evaluate tests and test specs for this component.
+
+# Reference specific files
+CONTEXT @tests/auth.test.js
+CONTEXT @README.md
+
+# Execute the main task
+PROMPT Ensure all edge cases are covered and suggest improvements.
+
+# Plan before executing
+PLAN Review test coverage and identify gaps
+
+# Final verification
+PROMPT Document all findings and recommendations without making changes.
+```
+
+**Example:** `document-bugs.copilot`
+```dockerfile
+# Bug documentation workflow - read-only mode
+MODEL claude-sonnet-4.5
+MODE read-only
+MAX-CYCLES 1
+
+CWD ./src
+
+PROMPT Analyze the codebase and document all known bugs, quirks, and edge cases.
+
+PROMPT For each issue found, include:
+1. File and line number
+2. Description of the bug/quirk
+3. Impact and severity
+4. Potential workarounds
+5. Suggested fix (but do not implement)
+
+PROMPT Focus on authentication, error handling, and data validation modules.
+```
+
+**Example:** `update-docs.copilot`
+```dockerfile
+# Documentation update workflow - can only modify docs
+MODEL claude-sonnet-4.5
+MODE docs-only
+
+# Can read code but only write to docs
+ADD-DIR ./src
+ADD-DIR ./docs
+
+PROLOGUE Recent changes have been made to the API. The code is the source of truth.
+
+CONTEXT @src/api/**/*.js
+CONTEXT @docs/*.md
+
+PROMPT Update documentation to match current implementation.
+
+PROMPT Ensure all examples are accurate and API signatures are correct.
+```
+
+**Example:** `test-improvements.copilot`
+```dockerfile
+# Test-only workflow - can only modify test files
+MODEL claude-opus-4.5
+MODE tests-only
+MAX-CYCLES 3
+
+ADD-DIR ./src
+ADD-DIR ./tests
+
+PROMPT Review code coverage and add missing tests for edge cases.
+
+PROMPT Focus on:
+- Error handling paths
+- Boundary conditions
+- Integration scenarios
+- Performance edge cases
+
+PROMPT Ensure test coverage reaches 85% or higher.
+```
+
+**Example:** `security-audit.copilot`
+```dockerfile
+# Security audit - no code changes, only documentation
+MODEL claude-opus-4.5
+MODE audit
+
+ADD-DIR ./src
+ADD-DIR ./lib
+ADD-DIR ./config
+
+PROMPT Perform a comprehensive security audit of the codebase.
+
+PROMPT Check for:
+- SQL injection vulnerabilities
+- XSS vulnerabilities
+- Authentication/authorization issues
+- Secrets in code
+- Insecure dependencies
+- CSRF vulnerabilities
+
+PROMPT Generate a detailed report with severity ratings and remediation recommendations.
+```
+
+**Example:** `refactor-utilities.copilot`
+```dockerfile
+# Scoped refactoring - only specific directories
+MODEL claude-sonnet-4.5
+MODE full
+
+# Only allow changes to utility functions and their tests
+ALLOW-PATH "src/utils/**"
+ALLOW-PATH "tests/utils/**"
+
+# Protect everything else
+DENY-PATH "src/api/**"
+DENY-PATH "src/core/**"
+
+MAX-CYCLES 5
+
+PROMPT Refactor utility functions to:
+1. Use modern JavaScript features
+2. Improve error handling
+3. Add comprehensive JSDoc comments
+4. Ensure all functions have tests
+
+PROMPT Do not modify API or core business logic.
+```
+```dockerfile
+# Component audit workflow
+MODEL claude-opus-4.5
+MAX-CYCLES 1
+SESSION checkpoints 10
+
+PROMPT For each component, ensure:
+1. Complete test coverage
+2. Up-to-date documentation
+3. Security best practices
+4. Performance considerations
+
+PLAN Create implementation plan for improvements
+```
+
+**Example:** `generate-docs.copilot`
+```dockerfile
+# Documentation generation workflow
+MODEL claude-sonnet-4.5
+CWD ./src
+
+# Build context from existing docs
+PROLOGUE Current project structure:
+CONTEXT @README.md
+CONTEXT @ARCHITECTURE.md
+
+# Main documentation task
+PROMPT Generate comprehensive API documentation for all exported functions.
+
+# Additional requirements
+EPILOGUE Ensure all examples are tested and working.
+EPILOGUE Follow our documentation style guide at @.github/DOCS_STYLE.md
+```
+
+**Usage with header/footer:**
+```bash
+copilot do ./conversations/generate-docs.copilot \
+  --format markdown \
+  --output docs/api.md \
+  --header <(cat << 'EOF'
+---
+title: API Reference
+version: 2.0
+updated: $(date +%Y-%m-%d)
+---
+
+# API Reference
+
+This documentation is automatically generated.
+
+EOF
+) \
+  --footer <(echo -e "\n---\n\n*Last updated: $(date)*\n*Generated by: GitHub Copilot CLI*")
+```
+```dockerfile
+# Complex refactoring that may need multiple iterations
+MODEL claude-sonnet-4.5
+MAX-CYCLES 5  # Allow up to 5 cycles for iterative refinement
+
+PROMPT Refactor the authentication module to use modern async/await patterns.
+
+PROMPT Ensure all tests pass after each change.
+
+PROMPT Verify backward compatibility is maintained.
+```
+
+### ConversationFile Keywords
+
+Based on existing slash commands, ConversationFiles support:
+
+- `MODEL <model-name>` - Set AI model
+- `MAX-CYCLES <n>` - Override default max cycles for this conversation (default: 1)
+- `MODE <mode>` - Set execution mode: full, read-only, docs-only, tests-only, audit
+- `CWD <directory>` - Change working directory
+- `ADD-DIR <directory>` - Add allowed directory
+- `ALLOW-PATH <pattern>` - Allow modifications only to files matching pattern
+- `DENY-FILE <file>` - Deny access to specific file
+- `DENY-PATH <pattern>` - Deny access to files matching glob pattern
+- `CONTEXT <file-pattern>` - Include files in context (like `@file`)
+- `PROLOGUE <text|file>` - Add content before main prompts
+- `EPILOGUE <text|file>` - Add content after main prompts
+- `PROMPT <text>` - Add a prompt/message
+- `PLAN <description>` - Create implementation plan
+- `COMPACT` - Summarize conversation history
+- `DELEGATE <prompt>` - Delegate to remote PR
+- `SESSION <subcommand> [args]` - Session management
+- `AGENT <agent-name>` - Select custom agent
+- `SKILLS <subcommand> [args]` - Manage skills
+- `MCP <subcommand> [args]` - Configure MCP servers
+
+**Note:** `HEADER` and `FOOTER` are output-only and controlled via CLI flags, not ConversationFile keywords.
+
+## Use Cases & Workflows
+
+### 1. Component Auditing
+```bash
+# Audit all components systematically (read-only mode)
+for component in ./lib/components/*; do
+  copilot do ./conversations/audit-component.copilot \
+    --cwd "$component" \
+    --mode read-only \
+    --format json \
+    >> audit-results.json
+done
+```
+
+### 2. Documentation Synchronization
+```bash
+# Ensure documentation matches implementation (docs-only mode)
+for component in ./lib/components/*; do
+  component_name=$(basename "$component")
+  copilot do "Ensure there is accurate documentation for $component_name in @docs/" \
+    --cwd "$component" \
+    --mode docs-only \
+    --yolo
+done
+```
+
+### 3. Bug Documentation Workflow
+```bash
+# Document bugs and quirks without fixing them (read-only mode)
+copilot do ./conversations/document-bugs.copilot \
+  --format markdown \
+  --output docs/known-issues-$(date +%Y%m%d).md \
+  --header <(cat << EOF
+# Known Issues and Quirks
+Generated: $(date)
+Branch: $(git branch --show-current)
+
+This document catalogs known bugs and quirks in the codebase.
+**Note:** This is a documentation-only audit; no code changes were made.
+
+---
+
+EOF
+)
+```
+
+### 3. Test Coverage Enforcement
+```bash
+# Verify and improve test coverage (tests-only mode)
+copilot loop --parallel 4 --format jsonl test-plans/*.copilot | \
+  jq -r 'select(.coverage < 80) | .component' | \
+  while read component; do
+    echo "Low coverage in $component, generating tests..."
+    copilot do "Improve test coverage to 80%" \
+      --cwd "$component" \
+      --mode tests-only \
+      --yolo
+  done
+```
+
+### 5. Pipeline with Plan/Execute Workflow
+```bash
+# First, generate plans for all components
+for component in ./lib/components/*; do
+  copilot plan "Audit security and performance" \
+    --cwd "$component" \
+    --format json \
+    --output "plans/$(basename $component).json"
+done
+
+# Review plans, then execute approved ones
+for plan in plans/*.json; do
+  component=$(basename "$plan" .json)
+  # Execute the conversation based on the plan
+  copilot do --format json --input "$plan" \
+    --cwd "./lib/components/$component" \
+    --output "results/$component.json"
+done
+```
+
+### 6. CI/CD Integration
+```bash
+# In .github/workflows/ai-code-review.yml
+- name: AI Code Review
+  run: |
+    copilot do ./conversations/pr-review.copilot \
+      --mode read-only \
+      --format json \
+      --output review-results.json \
+      --share-gist
+    
+    # Parse results and fail if issues found
+    jq -e '.status == "success"' review-results.json
+```
+
+### 7. Iterative Refactoring
+```bash
+# Refactor with verification at each step, protecting critical files
+copilot loop conversations/refactor-*.copilot \
+  --deny-file Dockerfile \
+  --deny-file docker-compose.yml \
+  --deny-path ".github/workflows/*" \
+  --format jsonl \
+  --output refactor-results.jsonl \
+  --stop-on-error
+
+# Check all succeeded before running tests
+if jq -e 'all(.status == "success")' refactor-results.jsonl; then
+  npm test && \
+    copilot do "Verify all refactoring goals achieved" \
+      --epilogue <(git diff) \
+      --format markdown \
+      --output refactor-summary.md
+fi
+```
+
+### 8. Documentation Generation Pipeline
+```bash
+# Generate and verify documentation with proper formatting
+make verify-docs | \
+  copilot do "Review build output and update docs accordingly" \
+    --prologue "Build started: $(date)" \
+    --epilogue - \
+    --deny-path "config/production/*" \
+    --deny-file .env.production \
+    --format markdown \
+    --output ./docs/ai-review-$(date +%Y%m%d).md \
+    --header <(cat << EOF
+# AI Documentation Review
+Generated: $(date)
+Project: $(git remote get-url origin)
+Branch: $(git branch --show-current)
+
+---
+
+EOF
+) \
+    --footer <(cat << EOF
+
+---
+
+## Review Checklist
+- [ ] All links are valid
+- [ ] Code examples are tested
+- [ ] Formatting is consistent
+
+*Automated review by GitHub Copilot CLI*
+EOF
+)
+```
+
+### 9. Safe Automated Code Updates
+```bash
+# Update dependencies and code, but protect critical infrastructure
+copilot do "Update all imports to use ES modules" \
+  --deny-file package.json \
+  --deny-file package-lock.json \
+  --deny-file yarn.lock \
+  --deny-file pnpm-lock.yaml \
+  --deny-path ".github/*" \
+  --deny-path "infrastructure/*" \
+  --format json \
+  --output migration-results.json \
+  --yolo
+
+# Analyze results
+jq '.filesChanged, .summary' migration-results.json
+```
+
+### 10. Tool Chaining with JSON
+```bash
+# Chain multiple Copilot operations using JSON
+copilot plan "Modernize codebase" --format json | \
+  jq '.tasks[] | select(.priority == "high")' | \
+  copilot do --format json --input - --output - | \
+  jq '{completed: .filesChanged, remaining: .tasks | length}' | \
+  tee progress.json
+```
+
+### 11. Automated Report Generation
+```bash
+# Generate weekly code quality report
+copilot loop --parallel 3 --format json reports/*.copilot \
+  --output weekly-report.json \
+  --header <(cat << EOF
+{
+  "reportType": "weekly-quality",
+  "generatedAt": "$(date -Iseconds)",
+  "period": "$(date -d '7 days ago' +%Y-%m-%d) to $(date +%Y-%m-%d)",
+  "results": [
+EOF
+) \
+  --footer <(cat << EOF
+  ],
+  "summary": {
+    "totalChecks": $(ls reports/*.copilot | wc -l),
+    "generatedBy": "copilot-cli"
+  }
+}
+EOF
+)
+
+# Convert to human-readable format
+jq -r '.summary' weekly-report.json
+```
+
+## Benefits
+
+### For Individual Developers
+- **Reproducibility:** Save and reuse successful conversation patterns
+- **Efficiency:** Automate repetitive AI-assisted tasks
+- **Integration:** Combine Copilot with existing CLI workflows
+- **Iteration:** Batch process multiple similar tasks
+- **Safety:** Protect critical files during automated operations
+
+### For Teams
+- **Standardization:** Share conversation patterns across the team
+- **Onboarding:** Provide new team members with proven workflows
+- **Best Practices:** Encode organizational standards in ConversationFiles
+- **Collaboration:** Version control AI-assisted development patterns
+- **Guardrails:** Establish file protection policies in shared ConversationFiles
+
+### For Organizations
+- **CI/CD Integration:** Automate code quality checks and improvements
+- **Consistency:** Ensure uniform application of coding standards
+- **Scalability:** Process large codebases systematically
+- **Auditability:** Track and review AI-assisted changes
+
+## Implementation Considerations
+
+### Backward Compatibility
+- All existing `copilot` commands continue to work unchanged
+- `--prompt` and `--interactive` flags remain the primary single-shot interfaces
+- ConversationFiles are opt-in; traditional usage unaffected
+- File denial follows same precedence model as existing `--deny-tool` and `--deny-url`
+
+### Execution Model
+- **Default cycles:** `--max-cycles=1` for predictable, atomic operations
+  - Prevents runaway conversations in batch/parallel scenarios
+  - Controls API usage and costs
+  - Makes execution time predictable for CI/CD
+  - Can be overridden per-command or per-ConversationFile
+- **Streaming:** Supports both streaming and non-streaming modes
+- **Permissions:** Respects all existing permission flags (`--allow-all`, `--yolo`, etc.)
+- **Interactive transition:** Can drop into interactive mode with `--interactive` flag
+
+**When to increase max-cycles:**
+- Complex refactoring requiring iterative refinement (`--max-cycles=5`)
+- Debug-fix-verify loops (`--max-cycles=3`)
+- Exploratory analysis with follow-up questions (`--max-cycles=-1` for unlimited)
+- Single-task `copilot do` invocations where iteration is expected
+
+### Output Formats
+- **text:** Human-readable output (default for `copilot do`)
+- **json:** Structured output for programmatic consumption (single object)
+- **jsonl:** Line-delimited JSON for streaming/batch processing (default for `copilot loop`)
+- **markdown:** Formatted for documentation/sharing
+
+**JSON Output Schema Example:**
+```json
+{
+  "status": "success|failed|partial",
+  "conversationId": "abc123",
+  "cycles": 3,
+  "filesChanged": ["src/auth.js", "tests/auth.test.js"],
+  "summary": "Added error handling to authentication endpoints",
+  "plan": {
+    "tasks": [...],
+    "estimatedComplexity": "medium"
+  },
+  "errors": [],
+  "warnings": ["Coverage below 80% in auth.js"]
+}
+```
+
+**JSONL Output Example (from `copilot loop`):**
+```jsonl
+{"file": "conv1.copilot", "status": "success", "filesChanged": 2, "duration": 12.3}
+{"file": "conv2.copilot", "status": "failed", "error": "Permission denied", "duration": 3.1}
+{"file": "conv3.copilot", "status": "success", "filesChanged": 5, "duration": 18.7}
+```
+
+### Error Handling
+- Exit codes indicate success/failure for scripting
+- `--continue-on-error` for batch processing
+- `--dry-run` for safe preview
+- Detailed error messages with context
+- File access denials reported clearly with specific path/pattern that blocked access
+
+## Related Work & Inspiration
+
+- **Dockerfile:** Declarative, layered build instructions
+- **git bisect/rebase:** Iterative, automated processing
+- **pandoc:** Format conversion with extensible options
+- **GitHub Actions:** YAML-based workflow automation
+- **Make/Task runners:** Dependency-based execution
+
+## Future Enhancements
+
+- **Variables & Templating:** Parameterize ConversationFiles with `${VAR}` syntax
+- **Conditionals:** Branch based on results (`IF`, `ELSE`, `ENDIF` keywords)
+- **Composition:** Include/extend other ConversationFiles (`INCLUDE`, `EXTEND`)
+- **Caching:** Reuse results from previous executions (content-addressed cache)
+- **Parallel Execution:** Built-in parallelization primitives in ConversationFiles
+- **Hooks:** Pre/post execution hooks for integration (`PRE-HOOK`, `POST-HOOK`)
+- **File Allow Lists:** Complement deny patterns with explicit allow lists
+- **Path Wildcarding:** Advanced glob patterns for fine-grained control
+- **Interactive Deny:** Prompt for confirmation when accessing sensitive files
+- **JSON Schema Validation:** Validate JSON input/output against schemas
+- **Format Conversion:** `copilot convert` to transform between formats (like pandoc)
+- **Watch Mode:** `copilot watch` to re-run conversations on file changes
+- **Result Diffing:** Compare results across conversation runs
+
+## Next Steps
+
+1. **Community Feedback:** Gather input on proposed syntax and use cases
+2. **Prototype:** Implement basic `copilot do` with ConversationFile support
+3. **Documentation:** Create comprehensive guides and examples
+4. **Integration:** Add CI/CD examples and templates
+5. **Iteration:** Refine based on real-world usage
+
+## Appendix
+
+### Current `copilot --help` Output
+
+For reference, the existing CLI interface:
+
+```
+Usage: copilot [options] [command]
+
+GitHub Copilot CLI - An AI-powered coding assistant
+
+Options:
+  --add-dir <directory>               Add a directory to the allowed list for
+                                      file access (can be used multiple times)
+  --add-github-mcp-tool <tool>        Add a tool to enable for the GitHub MCP
+                                      server instead of the default CLI subset
+                                      (can be used multiple times). Use "*" for
+                                      all tools.
+  --add-github-mcp-toolset <toolset>  Add a toolset to enable for the GitHub MCP
+                                      server instead of the default CLI subset
+                                      (can be used multiple times). Use "all"
+                                      for all toolsets.
+  --additional-mcp-config <json>      Additional MCP servers configuration as
+                                      JSON string or file path (prefix with @)
+                                      (can be used multiple times; augments
+                                      config from ~/.copilot/mcp-config.json for
+                                      this session)
+  --agent <agent>                     Specify a custom agent to use
+  --allow-all                         Enable all permissions (equivalent to
+                                      --allow-all-tools --allow-all-paths
+                                      --allow-all-urls)
+  --allow-all-paths                   Disable file path verification and allow
+                                      access to any path
+  --allow-all-tools                   Allow all tools to run automatically
+                                      without confirmation; required for
+                                      non-interactive mode (env:
+                                      COPILOT_ALLOW_ALL)
+  --allow-all-urls                    Allow access to all URLs without
+                                      confirmation
+  --allow-tool [tools...]             Tools the CLI has permission to use; will
+                                      not prompt for permission
+  --allow-url [urls...]               Allow access to specific URLs or domains
+  --available-tools [tools...]        Only these tools will be available to the
+                                      model
+  --banner                            Show the startup banner
+  --config-dir <directory>            Set the configuration directory (default:
+                                      ~/.copilot)
+  --continue                          Resume the most recent session
+  --deny-tool [tools...]              Tools the CLI does not have permission to
+                                      use; will not prompt for permission
+  --deny-url [urls...]                Deny access to specific URLs or domains,
+                                      takes precedence over --allow-url
+  --disable-builtin-mcps              Disable all built-in MCP servers
+                                      (currently: github-mcp-server)
+  --disable-mcp-server <server-name>  Disable a specific MCP server (can be used
+                                      multiple times)
+  --disable-parallel-tools-execution  Disable parallel execution of tools (LLM
+                                      can still make parallel tool calls, but
+                                      they will be executed sequentially)
+  --disallow-temp-dir                 Prevent automatic access to the system
+                                      temporary directory
+  --enable-all-github-mcp-tools       Enable all GitHub MCP server tools instead
+                                      of the default CLI subset. Overrides
+                                      --add-github-mcp-toolset and
+                                      --add-github-mcp-tool options.
+  --excluded-tools [tools...]         These tools will not be available to the
+                                      model
+  -h, --help                          display help for command
+  -i, --interactive <prompt>          Start interactive mode and automatically
+                                      execute this prompt
+  --log-dir <directory>               Set log file directory (default:
+                                      ~/.copilot/logs/)
+  --log-level <level>                 Set the log level (choices: "none",
+                                      "error", "warning", "info", "debug",
+                                      "all", "default")
+  --model <model>                     Set the AI model to use (choices:
+                                      "claude-sonnet-4.5", "claude-haiku-4.5",
+                                      "claude-opus-4.5", "claude-sonnet-4",
+                                      "gpt-5.2-codex", "gpt-5.1-codex-max",
+                                      "gpt-5.1-codex", "gpt-5.2", "gpt-5.1",
+                                      "gpt-5", "gpt-5.1-codex-mini",
+                                      "gpt-5-mini", "gpt-4.1",
+                                      "gemini-3-pro-preview")
+  --no-auto-update                    Disable downloading CLI update
+                                      automatically
+  --no-color                          Disable all color output
+  --no-custom-instructions            Disable loading of custom instructions
+                                      from AGENTS.md and related files
+  -p, --prompt <text>                 Execute a prompt in non-interactive mode
+                                      (exits after completion)
+  --plain-diff                        Disable rich diff rendering (syntax
+                                      highlighting via diff tool specified by
+                                      git config)
+  --resume [sessionId]                Resume from a previous session (optionally
+                                      specify session ID)
+  -s, --silent                        Output only the agent response (no stats),
+                                      useful for scripting with -p
+  --screen-reader                     Enable screen reader optimizations
+  --share [path]                      Share session to markdown file after
+                                      completion in non-interactive mode
+                                      (default: ./copilot-session-<id>.md)
+  --share-gist                        Share session to a secret GitHub gist
+                                      after completion in non-interactive mode
+  --stream <mode>                     Enable or disable streaming mode (choices:
+                                      "on", "off")
+  -v, --version                       show version information
+  --yolo                              Enable all permissions (equivalent to
+                                      --allow-all-tools --allow-all-paths
+                                      --allow-all-urls)
+
+Commands:
+  help [topic]                        Display help information
+
+Help Topics:
+  config       Configuration Settings
+  commands     Interactive Mode Commands
+  environment  Environment Variables
+  logging      Logging
+  permissions  Permissions
+
+Examples:
+  # Start interactive mode
+  $ copilot
+
+  # Start interactive mode and automatically execute a prompt
+  $ copilot -i "Fix the bug in main.js"
+
+  # Execute a prompt in non-interactive mode (exits after completion)
+  $ copilot -p "Fix the bug in main.js" --allow-all-tools
+
+  # Enable all permissions with a single flag
+  $ copilot -p "Fix the bug in main.js" --allow-all
+  $ copilot -p "Fix the bug in main.js" --yolo
+
+  # Start with a specific model
+  $ copilot --model gpt-5
+
+  # Resume the most recent session
+  $ copilot --continue
+
+  # Resume a previous session using session picker
+  $ copilot --resume
+
+  # Resume with auto-approval
+  $ copilot --allow-all-tools --resume
+
+  # Allow access to additional directory
+  $ copilot --add-dir /home/user/projects
+
+  # Allow multiple directories
+  $ copilot --add-dir ~/workspace --add-dir /tmp
+
+  # Disable path verification (allow access to any path)
+  $ copilot --allow-all-paths
+
+  # Allow all git commands except git push
+  $ copilot --allow-tool 'shell(git:*)' --deny-tool 'shell(git push)'
+
+  # Allow all file editing
+  $ copilot --allow-tool 'write'
+
+  # Allow all but one specific tool from MCP server with name "MyMCP"
+  $ copilot --deny-tool 'MyMCP(denied_tool)' --allow-tool 'MyMCP'
+
+  # Allow GitHub API access (defaults to HTTPS)
+  $ copilot --allow-url github.com
+
+  # Deny access to specific domain over HTTPS
+  $ copilot --deny-url https://malicious-site.com
+  $ copilot --deny-url malicious-site.com
+
+  # Allow all URLs without confirmation
+  $ copilot --allow-all-urls
+
+```
+
+## Execution Modes
+
+The `--mode` flag enables lifecycle-specific workflows that align with different team roles and development phases:
+
+### Mode: `full` (default)
+- **Permissions:** Full read/write access (subject to allow/deny patterns)
+- **Use cases:** General development, refactoring, feature implementation
+- **Best for:** Individual developers working on features
+
+### Mode: `read-only`
+- **Permissions:** Can read all files, cannot modify anything
+- **Tool restrictions:** `edit`, `create`, and file modification tools disabled
+- **Use cases:** 
+  - Code audits and security reviews
+  - Bug and quirk documentation
+  - Architecture analysis
+  - Knowledge extraction
+- **Best for:** Analysis phases, compliance reviews, onboarding documentation
+
+### Mode: `docs-only`
+- **Permissions:** Can only modify files in `docs/`, `*.md`, `README.*`
+- **Read access:** Full codebase (to understand implementation)
+- **Use cases:**
+  - Documentation synchronization
+  - API documentation generation
+  - User guide updates
+  - Keeping docs in sync with code
+- **Best for:** Documentation specialists, technical writers
+
+### Mode: `tests-only`
+- **Permissions:** Can only modify files matching test patterns (`**/*.test.*`, `**/*.spec.*`, `tests/**`, `__tests__/**`)
+- **Read access:** Full codebase (to understand what to test)
+- **Use cases:**
+  - Test coverage improvement
+  - Test-driven development workflows
+  - Adding edge case tests
+  - Integration test creation
+- **Best for:** QA engineers, test-driven development
+
+### Mode: `audit`
+- **Permissions:** Read-only with structured output requirements
+- **Output:** Must produce structured reports (JSON/Markdown)
+- **Use cases:**
+  - Security audits
+  - Performance analysis
+  - Compliance checks
+  - Code quality assessments
+- **Best for:** Automated CI/CD checks, compliance teams
+
+### Permission Precedence
+
+When multiple permission mechanisms are combined:
+
+1. **Mode** sets the base permissions
+2. **--deny-path** and **--deny-file** further restrict access
+3. **--allow-path** creates exceptions (only in `full` mode)
+
+**Examples:**
+```bash
+# Read-only mode: deny patterns have no effect (already can't write)
+copilot do --mode read-only --deny-file package.json  # deny is redundant
+
+# Docs-only mode: can be further restricted
+copilot do --mode docs-only --deny-path "docs/internal/*"  # OK
+
+# Full mode: allow patterns create safe zones
+copilot do --mode full --allow-path "src/utils/**" --yolo  # Only utils can change
+```
+
+## Team Workflow Patterns
+
+### Separation of Concerns
+
+Different team members can work on different aspects simultaneously:
+
+```bash
+# Developer: Feature implementation
+copilot do "Add OAuth2 support" --mode full --allow-path "src/auth/**"
+
+# QA Engineer: Test coverage
+copilot do "Add OAuth2 tests" --mode tests-only
+
+# Tech Writer: Documentation
+copilot do "Document OAuth2 setup" --mode docs-only
+
+# Security: Audit (no changes)
+copilot do "Audit OAuth2 security" --mode audit --output security-report.md
+```
+
+### Phase-Based Workflows
+
+Move through development phases with appropriate constraints:
+
+```bash
+# Phase 1: Analysis (read-only)
+copilot do "Analyze authentication system" \
+  --mode read-only \
+  --output analysis.md
+
+# Phase 2: Documentation (docs-only)
+copilot do "Document current auth behavior" \
+  --mode docs-only
+
+# Phase 3: Implementation (scoped full access)
+copilot do "Modernize auth system" \
+  --mode full \
+  --allow-path "src/auth/**" \
+  --allow-path "tests/auth/**"
+
+# Phase 4: Verification (tests-only)
+copilot do "Add comprehensive auth tests" \
+  --mode tests-only
+
+# Phase 5: Final audit (read-only)
+copilot do "Verify auth implementation" \
+  --mode audit \
+  --output final-audit.json
+```
+
+### Compliance and Governance
+
+Enforce organizational policies through modes:
+
+```bash
+# Junior developers: Can only work on tests and docs
+copilot do --mode tests-only ...
+copilot do --mode docs-only ...
+
+# Code reviews: Read-only with structured output
+copilot do --mode audit --output review.json ...
+
+# Production analysis: Absolutely no modifications
+copilot do --mode read-only --format json ...
+```
+

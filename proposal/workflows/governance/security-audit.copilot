@@ -1,0 +1,138 @@
+# Security Audit and Vulnerability Assessment
+# Based on: GIT-HISTORY-ANALYSIS.md Use Case 2 (Security Incident Response)
+# Purpose: Audit security-sensitive code and track all auth-related changes
+
+MODEL claude-sonnet-4.5
+MODE audit
+MAX-CYCLES 1
+
+CWD ./lib
+
+PROMPT Perform comprehensive security audit focusing on authentication, authorization, and data sanitization.
+
+CONTEXT @server/auth*.js
+CONTEXT @server/endpoints/*.js
+CONTEXT @plugins/*.js
+
+PROMPT Analyze for common vulnerabilities:
+1. SQL injection vectors
+2. Cross-site scripting (XSS) opportunities
+3. Authentication bypass possibilities
+4. Authorization gaps
+5. Input validation weaknesses
+6. Secrets in code
+7. Insecure dependencies
+
+PROMPT Review recent security-related changes:
+PROMPT Use git history to identify:
+- All commits touching auth*.js in the last 6 months
+- Changes to authentication logic
+- New endpoints added
+- Modified input validation
+
+PROMPT Cross-reference with known CVEs:
+CONTEXT @package.json
+PROMPT Check for vulnerable dependencies
+
+PROMPT Generate security audit report:
+
+```markdown
+# Security Audit Report
+Generated: $(date -Iseconds)
+Auditor: GitHub Copilot Claude Sonnet 4.5
+
+## Executive Summary
+- Critical vulnerabilities: [count]
+- High-risk issues: [count]
+- Medium-risk issues: [count]
+- Low-risk findings: [count]
+
+## Critical Findings
+
+### [Finding ID]: [Title]
+- **Location**: file.js:line
+- **Vulnerability Type**: SQL Injection / XSS / etc.
+- **Severity**: Critical
+- **Description**: [Detail]
+- **Attack Vector**: [How it could be exploited]
+- **Affected Versions**: [Range]
+- **CVE-Related**: CVE-XXXX-XXXXX (if applicable)
+- **Recommended Fix**: [Specific guidance]
+- **Test Evidence**: [Reference to tests, or note if missing]
+
+## Authentication System Review
+
+### Current Implementation
+[Document how auth works]
+
+### Recent Changes
+[List commits with security impact]
+- commit abc123 - "Updated JWT validation" (2024-11-15)
+  - Security-Impact: Medium
+  - Reviewed-By: [If known from trailers]
+
+### Authorization Matrix
+| Endpoint | Auth Required | Role Check | Data Filtering |
+|----------|---------------|------------|----------------|
+| /api/v3/entries | Yes | User | Own data only |
+| ... | ... | ... | ... |
+
+### Gaps and Recommendations
+1. [Issue]
+   - Risk: [Level]
+   - Recommendation: [Action]
+   - Priority: [High/Medium/Low]
+
+## Input Validation Assessment
+
+### Sanitization Functions Used
+- `html_escape`: [locations]
+- `sql_escape`: [locations]
+- Custom validators: [list]
+
+### Unsanitized Inputs (Potential XSS)
+[List any findings]
+
+## Dependency Vulnerabilities
+
+### Known CVEs in Dependencies
+[From npm audit or similar]
+
+### Outdated Security-Sensitive Packages
+[List packages needing updates]
+
+## Secrets Management
+
+### Findings
+- Hardcoded credentials: [None found / List]
+- API keys in code: [None found / List]
+- Environment variable usage: [Assessment]
+
+## Remediation Plan
+
+### Immediate Actions (Critical)
+1. [Action] - Owner: TBD - Due: ASAP
+
+### Short-term (High/Medium)
+1. [Action] - Owner: TBD - Due: Sprint N
+
+### Long-term (Low/Enhancement)
+1. [Action] - Owner: TBD - Due: Backlog
+
+## Compliance Notes
+
+### HIPAA/Healthcare Considerations
+[If applicable to Nightscout medical context]
+
+### Data Protection
+- PHI/PII handling: [Assessment]
+- Encryption: [Assessment]
+- Access controls: [Assessment]
+
+---
+**Next Review**: [Recommendation for frequency]
+**Security Contact**: security@nightscout.info
+```
+
+PROMPT Include git commit SHAs for all security-relevant changes found.
+PROMPT Prioritize findings by exploitability and impact.
