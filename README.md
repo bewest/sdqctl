@@ -8,9 +8,19 @@ GitHub Copilot CLI has an incredibly rich interactive mode, but lacks a streamli
 
 ## Real-World Evidence: The Problem Today
 
-### Manual AI Session Orchestration in Production
+### Manual Orchestration Across Multiple Focused Contexts
 
-Analysis of the [Nightscout cgm-remote-monitor](https://github.com/nightscout/cgm-remote-monitor) development workflow reveals a clear pattern: **developers are manually orchestrating AI agents through iterative cycles**, committing after each phase because no automation exists.
+Analysis of the [Nightscout cgm-remote-monitor](https://github.com/nightscout/cgm-remote-monitor) development workflow reveals a sophisticated pattern: **developers purposefully use multiple focused AI sessions for different components**, but must manually orchestrate transitions, checkpoints, and aggregation.
+
+**Why Multiple Contexts Are Necessary:**
+
+For a project with 6 major components requiring testing/auditing:
+- **6 focused contexts** - One deep-dive session per component (bounded scope, better accuracy)
+- **3 passes per component** - Work → Accuracy check → Tool-assisted verification
+- **18 total work sessions** - Managing cognitive load across large domains
+- **1+ summary sessions** - Aggregate findings from all 18 sessions
+
+**Total: ~19+ purposeful, bounded contexts** that need orchestration.
 
 **Git History Evidence** (from recent development sessions):
 
@@ -29,63 +39,141 @@ Session a10b5171-2266:
              ↓ (manual intervention required)
   20:51:41 - "Saved progress at the end of the loop"
 
-...and this pattern repeats across 6+ sessions spanning multiple days
+...this pattern repeats across 6+ sessions spanning multiple days
 ```
 
-**The Manual Process:**
-1. Start AI agent session (Replit Agent)
-2. Provide initial prompt
-3. **Wait** for agent to complete analysis/planning phase
-4. **Manually** trigger transition to build/execution mode
-5. **Wait** for agent to implement changes
-6. **Manually** commit with "Saved progress at the end of the loop"
-7. **If more work needed**, start over at step 1 (losing context)
+**The Manual Orchestration Process:**
+1. **Manually** start session 1 for Component A (audit pass)
+2. **Manually** transition through Plan → Build modes
+3. **Manually** commit checkpoint "Saved progress at end of loop"
+4. **Manually** start session 2 for Component A (accuracy pass)
+5. **Manually** transition and checkpoint again
+6. **Manually** start session 3 for Component A (verification pass)
+7. **Repeat steps 1-6 for Components B, C, D, E, F** (18 total sessions)
+8. **Manually** start session 19 to aggregate all findings
+9. **Manually** copy/paste context between sessions
 
 **Pain Points Identified:**
 - **20+ manual commits** saying "Saved progress at the end of the loop"
-- **6+ separate sessions** required because no automated iteration exists
-- **Manual mode transitions** required between analysis and execution phases
-- **Context lost** between session restarts
-- **Not reproducible** - can't re-run the same workflow
+- **Manual sequencing** across 18+ purposeful contexts
+- **Manual mode transitions** within each session (Plan → Build)
+- **Manual context aggregation** - no way to collect results automatically
+- **Not reproducible** - can't re-run the same 19-session workflow
+- **Not parallelizable** - must sequence sessions manually even when independent
 - **Not scriptable** - can't integrate into CI/CD or automation
 
-### How `copilot do` Would Solve This
+### How `copilot do` and `copilot loop` Would Solve This
 
-**Instead of manual orchestration:**
-```bash
-# Single command, automated iteration
-copilot do "Fix flaky WebSocket tests by adding instrumentation" \
-  --max-cycles 3 \
-  --mode tests-only
-```
+**The key insight:** Multiple contexts are CORRECT for managing cognitive load, but orchestration should be AUTOMATED.
 
-**Or with version-controlled ConversationFiles:**
+#### Example 1: Single-Component Multi-Pass Workflow
+
 ```bash
-copilot do ./workflows/fix-flaky-tests.copilot
+# Automated 3-pass workflow for one component
+copilot do ./workflows/audit-websocket-component.copilot
 ```
 
 ```dockerfile
-# workflows/fix-flaky-tests.copilot
+# workflows/audit-websocket-component.copilot
 MODEL claude-sonnet-4.5
-MODE tests-only
-MAX-CYCLES 3  # Automatically iterate up to 3 times
+MODE audit
+MAX-CYCLES 2
 
-PROMPT Analyze websocket test file for flaky patterns and timing issues
+# Pass 1: Deep analysis
+PROMPT Audit the WebSocket component for security, performance, and correctness issues
+CONTEXT @lib/websocket/
+CONTEXT @tests/websocket*.test.js
 
-PROMPT Create reusable test helper functions for timing instrumentation
-
-PROMPT Update documentation with new testing patterns and anti-patterns
+# Pass 2: Tool-assisted verification
+RUN npm test -- websocket
+PROMPT Analyze test results and identify gaps or failures
 ```
 
-**Benefits:**
-- ✅ **Zero manual checkpoints** - tool manages iteration automatically
-- ✅ **Single session** maintains full context across cycles
-- ✅ **Reproducible** - same command produces consistent results
-- ✅ **Scriptable** - can run in CI/CD, Makefiles, or automation
-- ✅ **Version-controlled** - workflow becomes part of the codebase
-- ✅ **Team-wide** - anyone can run the same workflow
+#### Example 2: Multi-Component Orchestration with Aggregation
 
-**Impact:** What took 6 manual sessions over multiple days becomes a single command that can run unattended.
+```bash
+# Orchestrate 18 focused sessions + 1 summary automatically
+copilot loop \
+  --parallel 3 \
+  --format jsonl \
+  workflows/audit-*.copilot \
+  --output audit-results.jsonl
+
+# Then aggregate findings
+copilot do "Summarize all audit findings" \
+  --mode read-only \
+  --input audit-results.jsonl \
+  --output AUDIT-SUMMARY.md
+```
+
+```bash
+# Directory structure
+workflows/
+├── audit-websocket.copilot      # Component 1 (3 passes internally)
+├── audit-api-v3.copilot          # Component 2 (3 passes internally)
+├── audit-authentication.copilot  # Component 3 (3 passes internally)
+├── audit-data-pipeline.copilot   # Component 4 (3 passes internally)
+├── audit-notifications.copilot   # Component 5 (3 passes internally)
+└── audit-plugins.copilot         # Component 6 (3 passes internally)
+```
+
+Each `.copilot` file encodes the 3-pass pattern:
+```dockerfile
+# workflows/audit-websocket.copilot
+MODEL claude-sonnet-4.5
+MODE audit
+MAX-CYCLES 2
+
+# Pass 1: Work (audit the component)
+CWD ./lib/websocket
+ADD-DIR ./lib/websocket
+ADD-DIR ./tests
+PROMPT Audit WebSocket implementation for security and correctness
+
+# Pass 2: Accuracy (verify findings with code review)
+PROMPT Cross-reference findings with test coverage and documentation
+
+# Pass 3: Tool-assisted verification (run tests)
+RUN npm test -- websocket
+PROMPT Document test gaps and quirks in structured format (JSON)
+```
+
+#### Example 3: Parallelized Multi-Component Testing
+
+```bash
+# Run 6 component test suites in parallel (each with 3 internal passes)
+# Automatically aggregate results
+copilot loop \
+  --parallel 6 \
+  workflows/test-*.copilot \
+  --output test-results.jsonl
+
+# Then summarize findings from all sessions
+copilot do "Summarize test findings and identify patterns" \
+  --mode read-only \
+  --input test-results.jsonl \
+  --output TEST-SUMMARY.md
+
+# Equivalent to running 18+ sessions, but automated
+```
+
+**Benefits of This Approach:**
+- ✅ **Purposeful context boundaries** - Each component gets focused session (cognitive load management)
+- ✅ **Automated orchestration** - No manual session starting/sequencing
+- ✅ **Automated checkpointing** - Tool manages transitions, not developer
+- ✅ **Automated aggregation** - Results collected automatically across sessions
+- ✅ **Parallelization** - Independent components run simultaneously
+- ✅ **Reproducible** - Same workflow runs identically every time
+- ✅ **Scriptable** - Can run in CI/CD, Makefiles, or automation
+- ✅ **Version-controlled** - All 19 workflows tracked in git
+- ✅ **Team-wide** - Anyone can run the same multi-session workflow
+
+**Impact:** What required manually orchestrating 19+ sessions over multiple days becomes:
+```bash
+make audit  # One command, 18 parallel sessions + 1 summary
+```
+
+The multiple contexts remain (that's GOOD), but the orchestration becomes automated and reproducible.
 
 ## Motivation
 
