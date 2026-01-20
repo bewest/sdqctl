@@ -1,0 +1,50 @@
+# TypeScript Migration Workflow
+# Run: sdqctl cycle examples/workflows/typescript-migration.conv --max-cycles 5
+
+MODEL gpt-4
+ADAPTER copilot
+MODE full
+MAX-CYCLES 5
+
+# Context - adjust for your project
+# CONTEXT @lib/plugins/*.js
+# CONTEXT @tsconfig.json
+
+CONTEXT-LIMIT 75%
+ON-CONTEXT-LIMIT compact
+
+# Preserve progress across compaction
+COMPACT-PRESERVE converted_files, pending_files, type_issues
+COMPACT-SUMMARY Summarize TypeScript migration progress and any type errors encountered.
+
+# Create checkpoints between cycles
+CHECKPOINT-AFTER each-cycle
+CHECKPOINT-NAME ts-migration
+
+PROMPT You are converting a JavaScript codebase to TypeScript.
+
+PROMPT For each JavaScript file:
+  1. Rename .js to .ts
+  2. Add explicit type annotations for function parameters and return types
+  3. Convert CommonJS (require/module.exports) to ES modules (import/export)
+  4. Add interface definitions for object shapes
+  5. Handle nullable types properly with proper null checks
+  6. Add JSDoc comments where appropriate
+
+PROMPT Start with the simplest files first (utilities, helpers).
+PROMPT After each conversion, verify the types compile correctly.
+PROMPT Track progress: converted files, pending files, and any type issues found.
+
+ON-CONTEXT-LIMIT-PROMPT Continue TypeScript migration.
+  Previously converted: {preserved.converted_files}
+  Remaining: {preserved.pending_files}
+  Known type issues to address: {preserved.type_issues}
+
+PROMPT At the end of each cycle, summarize:
+  - Files converted in this cycle
+  - Files remaining
+  - Type errors encountered
+  - Recommendations for next cycle
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE typescript-migration-progress.md

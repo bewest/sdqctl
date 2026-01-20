@@ -1,0 +1,40 @@
+# Human-in-the-Loop Review Workflow
+# Demonstrates PAUSE directive for operator handoff
+#
+# Run: sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
+
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 1
+
+# Context - adjust for your project
+# CONTEXT @lib/**/*.js
+
+CONTEXT-LIMIT 80%
+ON-CONTEXT-LIMIT compact
+
+# Phase 1: Analysis
+PROMPT Analyze the codebase and identify potential issues.
+  Focus on:
+  - Code quality concerns
+  - Security vulnerabilities
+  - Performance bottlenecks
+  - Documentation gaps
+
+PROMPT Generate a summary of findings with severity ratings.
+
+# PAUSE here - human reviews findings before proceeding
+PAUSE "Review findings above before generating remediation plan"
+
+# Phase 2: Remediation (runs after human resumes)
+PROMPT Based on the findings, generate a detailed remediation plan.
+  For each issue:
+  - Describe the fix
+  - Estimate effort (hours)
+  - Suggest priority order
+
+PROMPT Create actionable tickets/tasks for the remediation work.
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE review-and-remediation.md

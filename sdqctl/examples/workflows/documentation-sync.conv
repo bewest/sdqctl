@@ -1,0 +1,54 @@
+# Documentation Sync Verification
+# Run: sdqctl run examples/workflows/documentation-sync.conv
+
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 1
+
+# Context - adjust for your project
+# CONTEXT @docs/**/*.md
+# CONTEXT @lib/**/*.js
+# CONTEXT @README.md
+
+CONTEXT-LIMIT 80%
+ON-CONTEXT-LIMIT compact
+
+PROMPT Verify that documentation is in sync with the codebase.
+
+PROMPT Check for these documentation issues:
+  
+  1. **Outdated API documentation**
+     - Function signatures that don't match the code
+     - Missing new parameters or options
+     - Deprecated features still documented as current
+  
+  2. **Missing documentation**
+     - Public APIs without documentation
+     - Configuration options not explained
+     - New features without user guides
+  
+  3. **Broken code examples**
+     - Examples that won't run with current API
+     - Incorrect import paths
+     - Missing dependencies
+  
+  4. **Inconsistent terminology**
+     - Different names for the same concepts
+     - Outdated naming conventions
+     - Inconsistent capitalization
+
+PROMPT For each issue found, provide:
+  - Location (file:line or section)
+  - Current documentation text
+  - What the code actually does
+  - Suggested fix
+
+PROMPT Generate a documentation sync report with severity ratings:
+  - Critical: Completely wrong information
+  - High: Outdated after breaking changes
+  - Medium: Minor inconsistencies
+  - Low: Style or formatting issues
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE documentation-sync-report.md

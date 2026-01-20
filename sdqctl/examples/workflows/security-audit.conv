@@ -1,0 +1,42 @@
+# Security Audit Workflow
+# Run: sdqctl run examples/workflows/security-audit.conv
+
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 1
+
+# Context - uncomment and adjust paths for your project
+# CONTEXT @lib/auth/*.js
+# CONTEXT @lib/api/*.js
+# CONTEXT @tests/security/*.test.js
+
+CONTEXT-LIMIT 80%
+ON-CONTEXT-LIMIT compact
+
+PROMPT Perform a comprehensive security audit of the authentication and API layers.
+
+PROMPT Focus on these vulnerability categories:
+  - JWT handling and token validation
+  - Password hashing and storage
+  - Session management
+  - Input sanitization and validation
+  - SQL/NoSQL injection vectors
+  - XSS vulnerabilities
+  - CSRF protection
+  - Rate limiting
+  - Authentication bypass
+  - Authorization issues
+
+PROMPT For each finding, provide:
+  1. Severity rating (Critical, High, Medium, Low, Info)
+  2. Location in code (file:line)
+  3. Description of the vulnerability
+  4. Proof of concept or example
+  5. Recommended remediation
+  6. References (CWE, OWASP, etc.)
+
+PROMPT Generate a security audit report in markdown format.
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE security-audit-report.md
