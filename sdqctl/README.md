@@ -89,6 +89,7 @@ OUTPUT-FILE security-report.md
 | `RUN-OUTPUT-LIMIT` | Max output chars (10K, 50K, 1M, none) |
 | `RUN-ENV` | Set environment variable (KEY=value) |
 | `RUN-TIMEOUT` | Command timeout (30, 30s, 2m) |
+| `RUN-CWD` | Working directory for RUN commands |
 | `ALLOW-SHELL` | Enable shell features like pipes (true/false) |
 | `PAUSE` | Checkpoint and exit for human review |
 | `CHECKPOINT-AFTER` | When to checkpoint (each-cycle, each-prompt) |
@@ -207,6 +208,15 @@ RUN-TIMEOUT 2m          # 2 minutes
 RUN npm run build
 ```
 
+#### Working Directory
+
+Set working directory for RUN commands (paths relative to workflow file):
+
+```dockerfile
+RUN-CWD ./backend       # Relative to workflow location
+RUN npm test            # Runs in ./backend directory
+```
+
 #### Auto-Checkpoint on Failure
 
 When a RUN command fails with `RUN-ON-ERROR stop` (default), sdqctl automatically saves a checkpoint containing all captured output. This preserves debugging context even on failure.
@@ -230,6 +240,16 @@ PROMPT Generate remediation plan based on findings.
 Resume with:
 ```bash
 sdqctl resume ~/.sdqctl/sessions/<session-id>/pause.json
+
+# List available checkpoints
+sdqctl resume --list
+
+# Preview what would be resumed (dry run)
+sdqctl resume pause.json --dry-run
+
+# JSON output for scripting
+sdqctl resume --list --json
+sdqctl resume pause.json --dry-run --json
 ```
 
 ## Commands
