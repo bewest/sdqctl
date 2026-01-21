@@ -158,7 +158,13 @@ else:
 
 ## Completed This Session
 
-**Session: 2026-01-21T19:20**
+**Session: 2026-01-21T19:33**
+
+1. **All 41 tests passing** - Full test suite green (verified)
+2. **R2 bug location confirmed** - run.py:469-475 returns early before output capture at lines 477-487
+3. **Report updated** - Tracked progress, confirmed next priorities
+
+**Previous Session: 2026-01-21T19:20**
 
 1. **All 41 tests passing** - Full test suite green (verified current state)
 2. **Progress review complete** - Analyzed run.py:430-520 for R2 status
@@ -195,6 +201,8 @@ else:
 6. **Integration tests verify behavior without mocking AI** - The T1 tests verify subprocess.run behavior directly, which catches real issues without needing to mock the adapter layer.
 
 7. **Code review matches line numbers exactly** - run.py:430-520 confirmed the subprocess handling structure. The R2 bug is at lines 469-475 (early return) vs 477-487 (output capture).
+
+8. **Short iterative sessions work well** - Each ~10 min session verified state, made progress, documented findings. Context files enable continuity.
 
 ---
 
