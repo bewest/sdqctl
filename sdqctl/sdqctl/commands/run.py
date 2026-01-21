@@ -11,6 +11,7 @@ Usage:
 import logging
 import shlex
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -24,6 +25,7 @@ from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from .utils import run_async
 from ..core.conversation import ConversationFile, FileRestrictions, substitute_template_variables
+from ..core.exceptions import MissingContextFiles
 from ..core.logging import get_logger
 from ..core.progress import progress, ProgressTracker
 from ..core.session import Session
@@ -187,6 +189,15 @@ async def _run_async(
         conv = ConversationFile.from_file(target_path)
         logger.info(f"Loaded workflow from {target_path}")
         progress(f"Running {target_path.name}...")
+        
+        # Validate mandatory context files before execution
+        missing_files = conv.validate_context_files()
+        if missing_files:
+            patterns = [pattern for pattern, _ in missing_files]
+            console.print(f"[red]Error: Missing mandatory context files:[/red]")
+            for pattern, resolved in missing_files:
+                console.print(f"[red]  - {pattern} (resolved to {resolved})[/red]")
+            sys.exit(MissingContextFiles(patterns).exit_code)
     else:
         # Treat as inline prompt
         conv = ConversationFile(

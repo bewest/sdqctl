@@ -75,6 +75,7 @@ class AdapterBase(ABC):
         session: AdapterSession,
         prompt: str,
         on_chunk: Optional[Callable[[str], None]] = None,
+        on_reasoning: Optional[Callable[[str], None]] = None,
     ) -> str:
         """
         Send a prompt and get response.
@@ -83,6 +84,7 @@ class AdapterBase(ABC):
             session: The session to send to
             prompt: The prompt text
             on_chunk: Optional callback for streaming chunks
+            on_reasoning: Optional callback for AI reasoning (for loop detection)
 
         Returns:
             The complete response text

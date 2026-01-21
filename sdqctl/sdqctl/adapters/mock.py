@@ -63,6 +63,7 @@ class MockAdapter(AdapterBase):
         session: AdapterSession,
         prompt: str,
         on_chunk: Optional[Callable[[str], None]] = None,
+        on_reasoning: Optional[Callable[[str], None]] = None,
     ) -> str:
         """Send prompt and get mock response."""
         # Simulate delay

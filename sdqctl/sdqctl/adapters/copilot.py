@@ -165,8 +165,16 @@ class CopilotAdapter(AdapterBase):
         session: AdapterSession,
         prompt: str,
         on_chunk: Optional[Callable[[str], None]] = None,
+        on_reasoning: Optional[Callable[[str], None]] = None,
     ) -> str:
-        """Send a prompt and get response."""
+        """Send a prompt and get response.
+        
+        Args:
+            session: The adapter session
+            prompt: The prompt to send
+            on_chunk: Optional callback for streaming chunks
+            on_reasoning: Optional callback for AI reasoning (for loop detection)
+        """
         from ..core.progress import progress
         
         copilot_session = session._internal
@@ -177,6 +185,7 @@ class CopilotAdapter(AdapterBase):
         done = asyncio.Event()
         chunks: list[str] = []
         full_response: str = ""
+        reasoning_parts: list[str] = []
 
         def on_event(event):
             nonlocal full_response
@@ -237,6 +246,9 @@ class CopilotAdapter(AdapterBase):
             elif event_type == "assistant.reasoning":
                 reasoning = getattr(data, "content", "") or getattr(data, "reasoning", str(data))
                 logger.debug(f"Reasoning: {reasoning[:200]}..." if len(str(reasoning)) > 200 else f"Reasoning: {reasoning}")
+                reasoning_parts.append(reasoning)
+                if on_reasoning:
+                    on_reasoning(reasoning)
 
             elif event_type == "assistant.reasoning_delta":
                 # Very verbose - only at TRACE level

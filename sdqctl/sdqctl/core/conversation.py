@@ -320,6 +320,44 @@ class ConversationFile:
         content = path.read_text()
         return cls.parse(content, source_path=path)
 
+    def validate_context_files(self) -> list[tuple[str, Path]]:
+        """Validate that all CONTEXT file references exist.
+        
+        Returns:
+            List of (pattern, resolved_path) tuples for missing files.
+            Empty list if all files exist.
+        """
+        import glob as glob_module
+        
+        missing = []
+        base_path = self.source_path.parent if self.source_path else Path.cwd()
+        
+        for context_ref in self.context_files:
+            # Only check @file references (not inline content)
+            if not context_ref.startswith("@"):
+                continue
+            
+            pattern = context_ref[1:]  # Remove @ prefix
+            
+            # Resolve relative to workflow file
+            if not Path(pattern).is_absolute():
+                resolved_pattern = base_path / pattern
+            else:
+                resolved_pattern = Path(pattern)
+            
+            # Check if it's a glob pattern or exact file
+            if "*" in pattern or "?" in pattern or "[" in pattern:
+                # Glob pattern - check if any files match
+                matches = list(glob_module.glob(str(resolved_pattern), recursive=True))
+                if not matches:
+                    missing.append((context_ref, resolved_pattern))
+            else:
+                # Exact file - check if it exists
+                if not resolved_pattern.exists():
+                    missing.append((context_ref, resolved_pattern))
+        
+        return missing
+
     def to_string(self) -> str:
         """Serialize back to ConversationFile format."""
         lines = []

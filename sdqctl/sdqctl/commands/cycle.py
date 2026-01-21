@@ -6,6 +6,7 @@ Usage:
     sdqctl cycle workflow.conv --checkpoint-dir ./checkpoints
 """
 
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -17,7 +18,9 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from ..core.conversation import ConversationFile
+from ..core.exceptions import ExitCode, LoopDetected, MissingContextFiles
 from ..core.logging import get_logger
+from ..core.loop_detector import LoopDetector
 from ..core.progress import progress as progress_print
 from ..core.session import Session
 from .utils import run_async
@@ -94,6 +97,15 @@ async def _cycle_async(
     conv = ConversationFile.from_file(Path(workflow_path))
     progress_print(f"Running {Path(workflow_path).name} (cycle mode, session={session_mode})...")
 
+    # Validate mandatory context files before execution
+    missing_files = conv.validate_context_files()
+    if missing_files:
+        patterns = [pattern for pattern, _ in missing_files]
+        console.print(f"[red]Error: Missing mandatory context files:[/red]")
+        for pattern, resolved in missing_files:
+            console.print(f"[red]  - {pattern} (resolved to {resolved})[/red]")
+        raise MissingContextFiles(patterns, {p: str(r) for p, r in missing_files})
+
     # Apply overrides
     if max_cycles_override:
         conv.max_cycles = max_cycles_override
@@ -147,6 +159,10 @@ async def _cycle_async(
         console.print(f"[red]Error: {e}[/red]")
         console.print("[yellow]Using mock adapter instead[/yellow]")
         ai_adapter = get_adapter("mock")
+
+    # Initialize loop detector
+    loop_detector = LoopDetector()
+    last_reasoning: list[str] = []  # Collect reasoning from callbacks
 
     try:
         await ai_adapter.start()
@@ -257,7 +273,24 @@ async def _cycle_async(
                             console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
                             console.print(f"[dim]{prompt[:100]}...[/dim]" if len(prompt) > 100 else f"[dim]{prompt}[/dim]")
 
-                        response = await ai_adapter.send(adapter_session, full_prompt)
+                        # Clear reasoning collector before send
+                        last_reasoning.clear()
+                        
+                        def collect_reasoning(reasoning: str) -> None:
+                            last_reasoning.append(reasoning)
+                        
+                        response = await ai_adapter.send(
+                            adapter_session, 
+                            full_prompt,
+                            on_reasoning=collect_reasoning
+                        )
+                        
+                        # Check for loop after each response
+                        combined_reasoning = " ".join(last_reasoning) if last_reasoning else None
+                        if loop_result := loop_detector.check(combined_reasoning, response, cycle_num):
+                            console.print(f"\n[red]⚠️  {loop_result}[/red]")
+                            progress_print(f"  ⚠️  Loop detected: {loop_result.reason.value}")
+                            raise loop_result
                         
                         session.add_message("user", prompt)
                         session.add_message("assistant", response)
@@ -311,6 +344,16 @@ async def _cycle_async(
         finally:
             # Always destroy session (handles both success and error paths)
             await ai_adapter.destroy_session(adapter_session)
+
+    except LoopDetected as e:
+        session.state.status = "failed"
+        logger.error(f"Loop detected: {e}")
+        sys.exit(e.exit_code)
+    
+    except MissingContextFiles as e:
+        session.state.status = "failed"
+        logger.error(f"Missing files: {e}")
+        sys.exit(e.exit_code)
 
     except Exception as e:
         session.state.status = "failed"
