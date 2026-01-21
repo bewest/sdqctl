@@ -1,8 +1,8 @@
 # sdqctl Improvements Tracker
 
 **Analysis Date:** 2026-01-21  
-**Git Branch:** main (7813035)  
-**Test Status:** 179/179 passing (109 original + 70 new CLI/command tests)
+**Git Branch:** main (f542099)  
+**Test Status:** 196/196 passing (109 original + 87 new CLI/command tests)
 
 ---
 
@@ -13,7 +13,8 @@
 - Added `tests/test_run_command.py` with 18 tests for step execution  
 - Added `tests/test_cycle_command.py` with 15 tests for multi-cycle workflows
 - Added `tests/test_flow_command.py` with 15 tests for parallel execution
-- Total test coverage increased from 109 to 179 tests
+- Added `tests/test_apply_command.py` with 17 tests for component iteration
+- Total test coverage increased from 109 to 196 tests
 
 ### ✅ Code Quality Fixes - COMPLETED
 - Fixed type hint `any` → `Any` in `adapters/copilot.py` line 85
@@ -319,10 +320,10 @@ Users cannot register their own adapters without modifying source code.
 | `commands/run.py` | 18 | ~40% | RUN subprocess paths |
 | `commands/cycle.py` | 15 | ~60% | Compaction triggers |
 | `commands/flow.py` | 15 | ~60% | Error aggregation |
-| `commands/apply.py` | 0 | 0% | Full module |
+| `commands/apply.py` | 17 | ~65% | Progress file edge cases |
 | `cli.py` | 22 | ~60% | Entry points covered |
 
-**Total estimate:** ~60% code coverage (improved from ~55%)
+**Total estimate:** ~65% code coverage (improved from ~60%)
 
 ---
 
@@ -331,7 +332,7 @@ Users cannot register their own adapters without modifying source code.
 1. ~~**`tests/test_cli.py`** - CLI command integration tests using Click test runner~~ ✅ DONE (22 tests)
 2. ~~**`tests/test_run.py`** - `sdqctl run` command with mock adapter~~ ✅ DONE (18 tests)
 3. ~~**`tests/test_cycle.py`** - Multi-cycle workflow tests~~ ✅ DONE (15 tests)
-4. **`tests/test_apply.py`** - Component iteration tests  
+4. ~~**`tests/test_apply.py`** - Component iteration tests~~ ✅ DONE (17 tests)
 5. ~~**`tests/test_flow.py`** - Parallel execution tests~~ ✅ DONE (15 tests)
 6. **`tests/test_copilot_adapter.py`** - Mocked Copilot SDK tests
 
