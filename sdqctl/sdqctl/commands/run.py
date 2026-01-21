@@ -10,6 +10,7 @@ Usage:
 
 import asyncio
 import logging
+import shlex
 import subprocess
 import time
 from pathlib import Path
@@ -434,14 +435,27 @@ async def _run_async(
                 
                 run_start = time.time()
                 try:
-                    result = subprocess.run(
-                        command,
-                        shell=True,
-                        capture_output=True,
-                        text=True,
-                        timeout=60,  # Default timeout
-                        cwd=conv.cwd or Path.cwd(),
-                    )
+                    # Security: Use shell=False by default, require ALLOW-SHELL for shell features
+                    if conv.allow_shell:
+                        # Shell mode enabled - allows pipes, redirects, etc.
+                        result = subprocess.run(
+                            command,
+                            shell=True,
+                            capture_output=True,
+                            text=True,
+                            timeout=60,
+                            cwd=conv.cwd or Path.cwd(),
+                        )
+                    else:
+                        # Safe mode - no shell injection possible
+                        result = subprocess.run(
+                            shlex.split(command),
+                            shell=False,
+                            capture_output=True,
+                            text=True,
+                            timeout=60,
+                            cwd=conv.cwd or Path.cwd(),
+                        )
                     run_elapsed = time.time() - run_start
                     
                     # Determine if we should include output

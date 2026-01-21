@@ -74,6 +74,7 @@ class DirectiveType(Enum):
     RUN = "RUN"
     RUN_ON_ERROR = "RUN-ON-ERROR"
     RUN_OUTPUT = "RUN-OUTPUT"
+    ALLOW_SHELL = "ALLOW-SHELL"  # Enable shell=True for RUN (security opt-in)
 
     # Flow control
     PAUSE = "PAUSE"
@@ -242,6 +243,7 @@ class ConversationFile:
     # Command execution settings
     run_on_error: str = "stop"  # stop, continue
     run_output: str = "always"  # always, on-error, never
+    allow_shell: bool = False  # Security: must opt-in to shell=True for RUN
 
     # Flow control
     pause_points: list[tuple[int, str]] = field(default_factory=list)  # (after_prompt_index, message)
@@ -528,6 +530,9 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.run_on_error = directive.value.lower()
         case DirectiveType.RUN_OUTPUT:
             conv.run_output = directive.value.lower()
+        case DirectiveType.ALLOW_SHELL:
+            # Parse "true", "yes", "1" as True, anything else as False
+            conv.allow_shell = directive.value.lower() in ("true", "yes", "1", "")
         
         case DirectiveType.PAUSE:
             # PAUSE after the last prompt added so far

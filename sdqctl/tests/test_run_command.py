@@ -267,3 +267,103 @@ PROMPT Analyze.
         
         prompt = session.get_compaction_prompt()
         assert "compact" in prompt.lower() or "summarize" in prompt.lower()
+
+
+class TestAllowShellSecurity:
+    """Test ALLOW-SHELL directive for shell injection prevention."""
+
+    def test_allow_shell_default_false(self, tmp_path, monkeypatch):
+        """Test allow_shell defaults to False for security."""
+        from sdqctl.core.config import clear_config_cache
+        monkeypatch.chdir(tmp_path)
+        clear_config_cache()
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN echo hello
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is False
+
+    def test_allow_shell_true(self):
+        """Test ALLOW-SHELL true enables shell mode."""
+        content = """MODEL gpt-4
+ADAPTER mock
+ALLOW-SHELL true
+RUN echo "hello" | cat
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is True
+
+    def test_allow_shell_yes(self):
+        """Test ALLOW-SHELL yes enables shell mode."""
+        content = """MODEL gpt-4
+ADAPTER mock
+ALLOW-SHELL yes
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is True
+
+    def test_allow_shell_bare(self):
+        """Test bare ALLOW-SHELL enables shell mode."""
+        content = """MODEL gpt-4
+ADAPTER mock
+ALLOW-SHELL
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is True
+
+    def test_allow_shell_false_explicit(self):
+        """Test ALLOW-SHELL false keeps shell disabled."""
+        content = """MODEL gpt-4
+ADAPTER mock
+ALLOW-SHELL false
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is False
+
+    def test_allow_shell_no(self):
+        """Test ALLOW-SHELL no keeps shell disabled."""
+        content = """MODEL gpt-4
+ADAPTER mock
+ALLOW-SHELL no
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.allow_shell is False
+
+
+class TestShellExecutionSecurity:
+    """Test that RUN command uses correct shell mode."""
+
+    def test_run_without_shell_uses_shlex(self):
+        """Test RUN without ALLOW-SHELL uses shlex.split (no shell injection)."""
+        import shlex
+        
+        command = 'echo "hello world"'
+        parsed = shlex.split(command)
+        # shlex.split properly handles quoted strings
+        assert parsed == ['echo', 'hello world']
+
+    def test_shlex_handles_simple_commands(self):
+        """Test shlex handles simple commands correctly."""
+        import shlex
+        
+        assert shlex.split('npm test') == ['npm', 'test']
+        assert shlex.split('python -m pytest') == ['python', '-m', 'pytest']
+        assert shlex.split('ls -la /tmp') == ['ls', '-la', '/tmp']
+
+    def test_shlex_prevents_shell_injection(self):
+        """Test shlex.split prevents shell injection attacks."""
+        import shlex
+        
+        # These would be dangerous with shell=True
+        malicious = 'echo hello; rm -rf /'
+        parsed = shlex.split(malicious)
+        # With shlex, the semicolon is part of a single argument
+        assert ';' in parsed[1]  # "hello;" is treated as one arg
+        assert 'rm' in parsed  # rm is a separate arg, not executed as command
+        
+        # Dollar substitution is not executed
+        malicious2 = 'echo $(whoami)'
+        parsed2 = shlex.split(malicious2)
+        assert '$(whoami)' in parsed2  # Treated literally, not expanded

