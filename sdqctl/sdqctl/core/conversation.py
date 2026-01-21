@@ -35,21 +35,32 @@ class DirectiveType(Enum):
     CONTEXT_LIMIT = "CONTEXT-LIMIT"
     ON_CONTEXT_LIMIT = "ON-CONTEXT-LIMIT"
 
+    # File control (allow/deny patterns)
+    ALLOW_FILES = "ALLOW-FILES"
+    DENY_FILES = "DENY-FILES"
+    ALLOW_DIR = "ALLOW-DIR"
+    DENY_DIR = "DENY-DIR"
+
     # Prompts
     PROMPT = "PROMPT"
     ON_CONTEXT_LIMIT_PROMPT = "ON-CONTEXT-LIMIT-PROMPT"
 
-    # Compaction
+    # Compaction & conversation control
+    COMPACT = "COMPACT"
     COMPACT_PRESERVE = "COMPACT-PRESERVE"
     COMPACT_SUMMARY = "COMPACT-SUMMARY"
+    NEW_CONVERSATION = "NEW-CONVERSATION"
 
     # Checkpointing
+    CHECKPOINT = "CHECKPOINT"
     CHECKPOINT_AFTER = "CHECKPOINT-AFTER"
     CHECKPOINT_NAME = "CHECKPOINT-NAME"
 
     # Output
+    OUTPUT = "OUTPUT"
     OUTPUT_FORMAT = "OUTPUT-FORMAT"
     OUTPUT_FILE = "OUTPUT-FILE"
+    OUTPUT_DIR = "OUTPUT-DIR"
 
     # Flow control
     PAUSE = "PAUSE"
@@ -64,6 +75,82 @@ class Directive:
     line_number: int
     raw_line: str
 
+
+@dataclass
+class FileRestrictions:
+    """File access restrictions for workflows."""
+    
+    allow_patterns: list[str] = field(default_factory=list)  # Glob patterns to include
+    deny_patterns: list[str] = field(default_factory=list)   # Glob patterns to exclude
+    allow_dirs: list[str] = field(default_factory=list)      # Directories to allow
+    deny_dirs: list[str] = field(default_factory=list)       # Directories to deny
+    
+    def merge_with_cli(self, cli_allow: list[str], cli_deny: list[str]) -> "FileRestrictions":
+        """Merge with CLI overrides (CLI takes precedence)."""
+        return FileRestrictions(
+            allow_patterns=list(cli_allow) if cli_allow else self.allow_patterns.copy(),
+            deny_patterns=list(cli_deny) + self.deny_patterns,  # CLI deny adds to file deny
+            allow_dirs=self.allow_dirs.copy(),
+            deny_dirs=self.deny_dirs.copy(),
+        )
+    
+    def is_path_allowed(self, path: str) -> bool:
+        """Check if a path is allowed by the restrictions.
+        
+        Logic:
+        - If deny patterns match, deny (deny wins)
+        - If allow patterns are specified and none match, deny
+        - Otherwise allow
+        """
+        import fnmatch
+        from pathlib import Path
+        
+        path_obj = Path(path)
+        
+        # Check deny patterns first (deny wins)
+        for pattern in self.deny_patterns:
+            if fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(str(path_obj), pattern):
+                return False
+        
+        # Check deny dirs
+        for deny_dir in self.deny_dirs:
+            deny_path = Path(deny_dir)
+            try:
+                path_obj.relative_to(deny_path)
+                return False  # Path is under denied directory
+            except ValueError:
+                pass  # Not under this directory
+        
+        # If allow patterns specified, path must match at least one
+        if self.allow_patterns:
+            for pattern in self.allow_patterns:
+                if fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(str(path_obj), pattern):
+                    return True
+            return False  # No allow pattern matched
+        
+        # If allow dirs specified, path must be under at least one
+        if self.allow_dirs:
+            for allow_dir in self.allow_dirs:
+                allow_path = Path(allow_dir)
+                try:
+                    path_obj.relative_to(allow_path)
+                    return True  # Path is under allowed directory
+                except ValueError:
+                    pass
+            return False  # Not under any allowed directory
+        
+        # No restrictions, allow by default
+        return True
+
+
+@dataclass
+class ConversationStep:
+    """A step in the conversation flow (PROMPT, COMPACT, NEW-CONVERSATION, etc.)."""
+    
+    type: str  # "prompt", "compact", "new_conversation", "checkpoint"
+    content: str = ""  # Prompt text or checkpoint name
+    preserve: list[str] = field(default_factory=list)  # For compact
+    
 
 @dataclass
 class ConversationFile:
@@ -81,9 +168,15 @@ class ConversationFile:
     context_limit: float = 0.8  # 80% of context window
     on_context_limit: str = "compact"  # compact, stop, continue
 
-    # Prompts
+    # File restrictions
+    file_restrictions: FileRestrictions = field(default_factory=FileRestrictions)
+
+    # Prompts (legacy - flat list for backward compatibility)
     prompts: list[str] = field(default_factory=list)
     on_context_limit_prompt: Optional[str] = None
+
+    # Conversation steps (new - ordered sequence including control directives)
+    steps: list[ConversationStep] = field(default_factory=list)
 
     # Compaction
     compact_preserve: list[str] = field(default_factory=list)
@@ -93,9 +186,10 @@ class ConversationFile:
     checkpoint_after: Optional[str] = None  # each-cycle, each-prompt, never
     checkpoint_name: Optional[str] = None
 
-    # Output
+    # Output (supports template variables)
     output_format: str = "markdown"
     output_file: Optional[str] = None
+    output_dir: Optional[str] = None
 
     # Flow control
     pause_points: list[tuple[int, str]] = field(default_factory=list)  # (after_prompt_index, message)
@@ -185,6 +279,20 @@ class ConversationFile:
 
         lines.append("")
 
+        # File restrictions
+        for pattern in self.file_restrictions.allow_patterns:
+            lines.append(f"ALLOW-FILES {pattern}")
+        for pattern in self.file_restrictions.deny_patterns:
+            lines.append(f"DENY-FILES {pattern}")
+        for dir_path in self.file_restrictions.allow_dirs:
+            lines.append(f"ALLOW-DIR {dir_path}")
+        for dir_path in self.file_restrictions.deny_dirs:
+            lines.append(f"DENY-DIR {dir_path}")
+        
+        if (self.file_restrictions.allow_patterns or self.file_restrictions.deny_patterns or
+            self.file_restrictions.allow_dirs or self.file_restrictions.deny_dirs):
+            lines.append("")
+
         # Context
         if self.context_limit != 0.8:
             lines.append(f"CONTEXT-LIMIT {int(self.context_limit * 100)}%")
@@ -237,13 +345,13 @@ class ConversationFile:
 
 def _parse_line(line: str, line_num: int) -> Optional[Directive]:
     """Parse a single line into a Directive."""
-    # Match DIRECTIVE value pattern
-    match = re.match(r"^([A-Z][A-Z0-9-]*)\s+(.+)$", line)
+    # Match DIRECTIVE value pattern (value is optional for some directives)
+    match = re.match(r"^([A-Z][A-Z0-9-]*)\s*(.*)$", line)
     if not match:
         return None
 
     directive_name = match.group(1)
-    value = match.group(2).strip()
+    value = match.group(2).strip() if match.group(2) else ""
 
     # Try to match to DirectiveType
     try:
@@ -275,24 +383,121 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.context_limit = float(value) / 100
         case DirectiveType.ON_CONTEXT_LIMIT:
             conv.on_context_limit = directive.value
+        
+        # File restrictions
+        case DirectiveType.ALLOW_FILES:
+            conv.file_restrictions.allow_patterns.append(directive.value)
+        case DirectiveType.DENY_FILES:
+            conv.file_restrictions.deny_patterns.append(directive.value)
+        case DirectiveType.ALLOW_DIR:
+            conv.file_restrictions.allow_dirs.append(directive.value)
+        case DirectiveType.DENY_DIR:
+            conv.file_restrictions.deny_dirs.append(directive.value)
+        
+        # Prompts - add to both flat list and steps
         case DirectiveType.PROMPT:
             conv.prompts.append(directive.value)
+            conv.steps.append(ConversationStep(type="prompt", content=directive.value))
         case DirectiveType.ON_CONTEXT_LIMIT_PROMPT:
             conv.on_context_limit_prompt = directive.value
+        
+        # Conversation control directives
+        case DirectiveType.COMPACT:
+            # COMPACT with optional preserve list
+            preserve = [x.strip() for x in directive.value.split(",")] if directive.value else []
+            conv.steps.append(ConversationStep(type="compact", preserve=preserve))
+        case DirectiveType.NEW_CONVERSATION:
+            conv.steps.append(ConversationStep(type="new_conversation"))
+        case DirectiveType.CHECKPOINT:
+            conv.steps.append(ConversationStep(type="checkpoint", content=directive.value))
+        
+        # Legacy compaction settings
         case DirectiveType.COMPACT_PRESERVE:
             # Parse "findings, recommendations" -> ["findings", "recommendations"]
             conv.compact_preserve = [x.strip() for x in directive.value.split(",")]
         case DirectiveType.COMPACT_SUMMARY:
             conv.compact_summary = directive.value
+        
         case DirectiveType.CHECKPOINT_AFTER:
             conv.checkpoint_after = directive.value
         case DirectiveType.CHECKPOINT_NAME:
             conv.checkpoint_name = directive.value
+        
+        # Output (with template variable support)
+        case DirectiveType.OUTPUT:
+            conv.output_file = directive.value
         case DirectiveType.OUTPUT_FORMAT:
             conv.output_format = directive.value
         case DirectiveType.OUTPUT_FILE:
             conv.output_file = directive.value
+        case DirectiveType.OUTPUT_DIR:
+            conv.output_dir = directive.value
+        
         case DirectiveType.PAUSE:
             # PAUSE after the last prompt added so far
             pause_index = len(conv.prompts) - 1 if conv.prompts else 0
             conv.pause_points.append((pause_index, directive.value))
+
+
+def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
+    """Substitute {{VARIABLE}} placeholders with values.
+    
+    Supported variables:
+    - COMPONENT_PATH: Full path to current component
+    - COMPONENT_NAME: Base name of component (without extension)
+    - COMPONENT_DIR: Parent directory of component
+    - COMPONENT_TYPE: Type from discovery (plugin, api, etc.)
+    - ITERATION_INDEX: Current iteration number (1-based)
+    - ITERATION_TOTAL: Total number of components
+    """
+    result = text
+    for key, value in variables.items():
+        result = result.replace(f"{{{{{key}}}}}", str(value))
+    return result
+
+
+def apply_iteration_context(conv: ConversationFile, component_path: str, 
+                            iteration_index: int = 1, iteration_total: int = 1,
+                            component_type: str = "unknown") -> ConversationFile:
+    """Create a copy of ConversationFile with template variables substituted.
+    
+    Args:
+        conv: The original ConversationFile
+        component_path: Path to the current component
+        iteration_index: Current iteration number (1-based)
+        iteration_total: Total number of iterations
+        component_type: Type of component from discovery
+        
+    Returns:
+        A new ConversationFile with substituted values
+    """
+    from pathlib import Path
+    from copy import deepcopy
+    
+    path_obj = Path(component_path)
+    variables = {
+        "COMPONENT_PATH": str(component_path),
+        "COMPONENT_NAME": path_obj.stem,
+        "COMPONENT_DIR": str(path_obj.parent),
+        "COMPONENT_TYPE": component_type,
+        "ITERATION_INDEX": str(iteration_index),
+        "ITERATION_TOTAL": str(iteration_total),
+    }
+    
+    # Deep copy to avoid modifying original
+    new_conv = deepcopy(conv)
+    
+    # Substitute in prompts
+    new_conv.prompts = [substitute_template_variables(p, variables) for p in new_conv.prompts]
+    
+    # Substitute in steps
+    for step in new_conv.steps:
+        step.content = substitute_template_variables(step.content, variables)
+    
+    # Substitute in output paths
+    if new_conv.output_file:
+        new_conv.output_file = substitute_template_variables(new_conv.output_file, variables)
+    if new_conv.output_dir:
+        new_conv.output_dir = substitute_template_variables(new_conv.output_dir, variables)
+    
+    return new_conv

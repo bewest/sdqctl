@@ -1,0 +1,57 @@
+# Multi-Phase Analysis with Conversation Control
+#
+# Demonstrates the new conversation control directives:
+# - COMPACT: Trigger compaction with preserved items
+# - CHECKPOINT: Save state for resumption
+# - NEW-CONVERSATION: Start fresh context
+#
+# This workflow does deep analysis that may exceed context limits.
+#
+# Usage:
+#   sdqctl cycle workflows/deep-analysis.conv --max-cycles 3
+
+MODEL claude-sonnet-4.5
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 3
+
+# Context management
+CONTEXT-LIMIT 75%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE findings, security_issues, recommendations
+
+# Phase 1: Initial scan
+PROMPT Perform initial security scan of the codebase.
+  Focus on:
+  - Authentication and authorization
+  - Input validation
+  - Data handling
+  
+  Track findings as you go.
+
+CHECKPOINT initial-scan
+
+# Compact to preserve findings before deep dive
+COMPACT findings, security_issues
+
+# Phase 2: Deep analysis of findings
+PROMPT Continue analysis. Previous findings are preserved.
+  For each security issue found:
+  1. Trace the data flow
+  2. Identify all affected code paths
+  3. Assess exploitability
+  4. Propose specific fixes
+
+CHECKPOINT deep-analysis
+
+# Phase 3: Generate report
+COMPACT findings, recommendations
+
+PROMPT Generate final security report.
+  Include:
+  - Executive summary
+  - Detailed findings with severity
+  - Remediation roadmap
+  - Code examples for fixes
+
+OUTPUT-FILE security-audit-report.md

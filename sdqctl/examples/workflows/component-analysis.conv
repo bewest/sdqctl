@@ -1,0 +1,41 @@
+# Component Iteration Workflow
+#
+# This workflow demonstrates the new iteration features:
+# - File restrictions (ALLOW-FILES, DENY-FILES)
+# - Template variables ({{COMPONENT_PATH}}, etc.)
+# - Output templating
+#
+# Usage:
+#   sdqctl apply workflows/component-analysis.conv \
+#     --components "lib/plugins/*.js" \
+#     --progress progress.md
+
+MODEL claude-sonnet-4.5
+ADAPTER copilot
+MODE audit
+
+# File restrictions - focus only on the component being analyzed
+# These will be overridden by --allow-files CLI if provided
+ALLOW-FILES ./lib/**/*.js
+DENY-FILES ./node_modules/**
+DENY-FILES ./**/*.test.js
+
+# Analyze the current component
+PROMPT Analyze {{COMPONENT_PATH}} for:
+  1. Code quality and maintainability
+  2. Potential bugs or edge cases
+  3. Security considerations
+  4. Documentation completeness
+
+PROMPT Component: {{COMPONENT_NAME}}
+  Type: {{COMPONENT_TYPE}}
+  Progress: {{ITERATION_INDEX}}/{{ITERATION_TOTAL}}
+
+PROMPT Generate a structured analysis report with:
+  - Summary of findings
+  - Severity ratings (Critical, High, Medium, Low, Info)
+  - Specific recommendations
+  - Code examples if applicable
+
+# Output to per-component file
+OUTPUT reports/analysis/{{COMPONENT_NAME}}.md

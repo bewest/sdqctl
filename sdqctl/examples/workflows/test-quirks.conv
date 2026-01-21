@@ -1,0 +1,41 @@
+# Test Analysis Workflow
+#
+# Demonstrates using file restrictions to focus on tests only,
+# excluding source code from the analysis context.
+#
+# Usage:
+#   sdqctl run workflows/test-quirks.conv \
+#     --allow-files "./tests/**" \
+#     --deny-files "./lib/**"
+#
+# Or with apply for batch processing:
+#   sdqctl apply workflows/test-quirks.conv \
+#     --components "tests/*.test.js" \
+#     --progress test-analysis-progress.md
+
+MODEL claude-sonnet-4.5
+ADAPTER copilot
+MODE audit
+
+# Focus on tests, exclude source
+ALLOW-FILES ./tests/**
+DENY-FILES ./lib/**
+DENY-FILES ./src/**
+
+PROMPT Analyze test file {{COMPONENT_PATH}} for:
+  - Flaky test patterns (timing dependencies, race conditions)
+  - Missing edge cases
+  - Test isolation issues
+  - Mock/stub quality
+  - Assertion completeness
+
+PROMPT Document any quirks or workarounds found in the tests.
+  Note patterns that suggest underlying code issues.
+
+PROMPT Generate a test quality report with:
+  - Overall test health score (A-F)
+  - Specific issues found
+  - Recommended improvements
+  - Priority order for fixes
+
+OUTPUT docs/test-analysis/{{COMPONENT_NAME}}.md

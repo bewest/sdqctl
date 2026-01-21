@@ -5,6 +5,7 @@ Usage:
     sdqctl run "Audit authentication module"
     sdqctl run workflow.conv
     sdqctl run workflow.conv --adapter copilot --model gpt-4
+    sdqctl run workflow.conv --allow-files "./lib/*" --deny-files "./lib/special"
 """
 
 import asyncio
@@ -18,7 +19,7 @@ from rich.panel import Panel
 
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
-from ..core.conversation import ConversationFile
+from ..core.conversation import ConversationFile, FileRestrictions
 from ..core.session import Session
 
 console = Console()
@@ -29,6 +30,10 @@ console = Console()
 @click.option("--adapter", "-a", default=None, help="AI adapter (copilot, claude, openai, mock)")
 @click.option("--model", "-m", default=None, help="Model override")
 @click.option("--context", "-c", multiple=True, help="Additional context files")
+@click.option("--allow-files", multiple=True, help="Glob pattern for allowed files (can be repeated)")
+@click.option("--deny-files", multiple=True, help="Glob pattern for denied files (can be repeated)")
+@click.option("--allow-dir", multiple=True, help="Directory to allow (can be repeated)")
+@click.option("--deny-dir", multiple=True, help="Directory to deny (can be repeated)")
 @click.option("--output", "-o", default=None, help="Output file")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
@@ -38,13 +43,40 @@ def run(
     adapter: Optional[str],
     model: Optional[str],
     context: tuple[str, ...],
+    allow_files: tuple[str, ...],
+    deny_files: tuple[str, ...],
+    allow_dir: tuple[str, ...],
+    deny_dir: tuple[str, ...],
     output: Optional[str],
     json_output: bool,
     verbose: bool,
     dry_run: bool,
 ) -> None:
-    """Execute a single prompt or ConversationFile."""
-    asyncio.run(_run_async(target, adapter, model, context, output, json_output, verbose, dry_run))
+    """Execute a single prompt or ConversationFile.
+    
+    Examples:
+    
+    \b
+    # Run inline prompt
+    sdqctl run "Audit authentication module"
+    
+    \b
+    # Run workflow file
+    sdqctl run workflow.conv
+    
+    \b
+    # Focus on lib, exclude special module
+    sdqctl run "Analyze code" --allow-files "./lib/*" --deny-files "./lib/special"
+    
+    \b
+    # Test-only analysis
+    sdqctl run workflow.conv --allow-files "./tests/**" --deny-files "./lib/**"
+    """
+    asyncio.run(_run_async(
+        target, adapter, model, context, 
+        allow_files, deny_files, allow_dir, deny_dir,
+        output, json_output, verbose, dry_run
+    ))
 
 
 async def _run_async(
@@ -52,6 +84,10 @@ async def _run_async(
     adapter_name: Optional[str],
     model: Optional[str],
     extra_context: tuple[str, ...],
+    allow_files: tuple[str, ...],
+    deny_files: tuple[str, ...],
+    allow_dir: tuple[str, ...],
+    deny_dir: tuple[str, ...],
     output_file: Optional[str],
     json_output: bool,
     verbose: bool,
@@ -86,6 +122,23 @@ async def _run_async(
     for ctx in extra_context:
         conv.context_files.append(f"@{ctx}")
 
+    # Apply CLI file restrictions (merge with file-defined ones)
+    cli_restrictions = FileRestrictions(
+        allow_patterns=list(allow_files),
+        deny_patterns=list(deny_files),
+        allow_dirs=list(allow_dir),
+        deny_dirs=list(deny_dir),
+    )
+    
+    # Merge: CLI allow patterns replace file patterns, CLI deny patterns add to file patterns
+    if allow_files or deny_files or allow_dir or deny_dir:
+        conv.file_restrictions = conv.file_restrictions.merge_with_cli(
+            list(allow_files) + list(f"{d}/**" for d in allow_dir),
+            list(deny_files) + list(f"{d}/**" for d in deny_dir),
+        )
+        if verbose:
+            console.print(f"[blue]File restrictions: allow={conv.file_restrictions.allow_patterns}, deny={conv.file_restrictions.deny_patterns}[/blue]")
+
     # Override output
     if output_file:
         conv.output_file = output_file
@@ -96,13 +149,18 @@ async def _run_async(
     # Show status
     if verbose or dry_run:
         status = session.get_status()
+        restrictions_info = ""
+        if conv.file_restrictions.allow_patterns or conv.file_restrictions.deny_patterns:
+            restrictions_info = f"\nAllow patterns: {conv.file_restrictions.allow_patterns}\nDeny patterns: {conv.file_restrictions.deny_patterns}"
+        
         console.print(Panel.fit(
             f"Adapter: {conv.adapter}\n"
             f"Model: {conv.model}\n"
             f"Mode: {conv.mode}\n"
             f"Prompts: {len(conv.prompts)}\n"
             f"Context files: {len(conv.context_files)}\n"
-            f"Context loaded: {status['context']['files_loaded']} files",
+            f"Context loaded: {status['context']['files_loaded']} files"
+            f"{restrictions_info}",
             title="Workflow Configuration"
         ))
 

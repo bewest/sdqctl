@@ -22,6 +22,7 @@ from .commands.run import run
 from .commands.cycle import cycle
 from .commands.flow import flow
 from .commands.status import status
+from .commands.apply import apply
 
 
 @click.group()
@@ -37,6 +38,7 @@ def cli(ctx: click.Context) -> None:
       run      Execute single prompt or ConversationFile
       cycle    Run multi-cycle workflow with compaction
       flow     Execute batch/parallel workflows
+      apply    Apply workflow to multiple components
       status   Show session and system status
 
     \b
@@ -45,6 +47,7 @@ def cli(ctx: click.Context) -> None:
       sdqctl run workflow.conv --adapter copilot
       sdqctl cycle workflow.conv --max-cycles 5
       sdqctl flow workflows/*.conv --parallel 4
+      sdqctl apply workflow.conv --components "lib/*.js" --progress progress.md
     """
     ctx.ensure_object(dict)
 
@@ -53,6 +56,7 @@ def cli(ctx: click.Context) -> None:
 cli.add_command(run)
 cli.add_command(cycle)
 cli.add_command(flow)
+cli.add_command(apply)
 cli.add_command(status)
 
 
