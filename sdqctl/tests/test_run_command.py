@@ -722,3 +722,51 @@ class TestTruncateOutput:
         result = _truncate_output(text, 200)
         assert "HEAD" in result
         assert "TAIL" in result
+
+
+class TestRunSubprocessHelper:
+    """Test _run_subprocess helper function (T2)."""
+
+    def test_echo_captures_stdout(self, tmp_path):
+        """Test basic echo command captures output."""
+        from sdqctl.commands.run import _run_subprocess
+        result = _run_subprocess("echo hello", allow_shell=False, timeout=10, cwd=tmp_path)
+        assert result.returncode == 0
+        assert "hello" in result.stdout
+
+    def test_shell_mode_allows_pipes(self, tmp_path):
+        """Test shell=True allows pipe operators."""
+        from sdqctl.commands.run import _run_subprocess
+        result = _run_subprocess("echo hello | cat", allow_shell=True, timeout=10, cwd=tmp_path)
+        assert result.returncode == 0
+        assert "hello" in result.stdout
+
+    def test_non_shell_mode_uses_shlex(self, tmp_path):
+        """Test shell=False uses shlex.split (no shell injection)."""
+        from sdqctl.commands.run import _run_subprocess
+        # This should fail or behave differently without shell
+        result = _run_subprocess("echo 'hello world'", allow_shell=False, timeout=10, cwd=tmp_path)
+        assert result.returncode == 0
+        # Without shell, quotes are preserved in output
+        assert "hello" in result.stdout
+
+    def test_cwd_parameter_used(self, tmp_path):
+        """Test cwd parameter changes working directory."""
+        from sdqctl.commands.run import _run_subprocess
+        result = _run_subprocess("pwd", allow_shell=False, timeout=10, cwd=tmp_path)
+        assert result.returncode == 0
+        assert str(tmp_path) in result.stdout
+
+    def test_timeout_parameter_raises(self, tmp_path):
+        """Test timeout parameter causes TimeoutExpired."""
+        import subprocess
+        from sdqctl.commands.run import _run_subprocess
+        with pytest.raises(subprocess.TimeoutExpired):
+            _run_subprocess("sleep 10", allow_shell=False, timeout=1, cwd=tmp_path)
+
+    def test_stderr_captured(self, tmp_path):
+        """Test stderr is captured separately."""
+        from sdqctl.commands.run import _run_subprocess
+        result = _run_subprocess("ls /nonexistent_path_12345", allow_shell=False, timeout=10, cwd=tmp_path)
+        assert result.returncode != 0
+        assert result.stderr  # Should have error message

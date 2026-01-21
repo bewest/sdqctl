@@ -152,6 +152,14 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T22:38 - T2 IMPLEMENTED**
+
+1. **T2: Helper Function Unit Tests - DONE**
+   - Added `TestRunSubprocessHelper` class (6 tests) to `tests/test_run_command.py`
+   - Tests: echo capture, shell mode pipes, non-shell shlex, cwd, timeout, stderr
+   - All 58 tests passing (52 + 6 new)
+2. **Test coverage now includes:** `_run_subprocess()` and `_truncate_output()` helpers
+
 **Session: 2026-01-21T22:37 - GIT COMMITS SAVED**
 
 1. **Commit `d9482a5`** - feat: R3 auto-checkpoint on RUN failure
@@ -343,16 +351,15 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Next 3 Taskable Areas
 
-### Priority 1: T2 - Helper Function Unit Tests
+### Priority 1: T3 - R3 Integration Test
 **File:** `tests/test_run_command.py`  
-**Effort:** ~20 min  
+**Effort:** ~15 min  
 **Unblocked:** Yes
 
-Tasks:
-- [ ] Add tests for `_run_subprocess()` helper directly
-- [ ] Test shell vs non-shell argument handling
-- [ ] Test timeout parameter passed correctly
-- [ ] Test cwd parameter passed correctly
+Add test to verify checkpoint is created on RUN failure:
+- [ ] Create temp workflow with failing RUN + RUN-ON-ERROR stop
+- [ ] Verify checkpoint file exists after failure
+- [ ] Verify checkpoint contains RUN output message
 
 ### Priority 2: E2 - RUN Environment Variables
 **File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
@@ -366,15 +373,12 @@ RUN-ENV DEBUG=1
 RUN ./deploy.sh
 ```
 
-### Priority 3: T3 - R3 Integration Test
-**File:** `tests/test_run_command.py`  
-**Effort:** ~15 min  
+### Priority 3: Git Push
+**Effort:** ~2 min  
 **Unblocked:** Yes
 
-Add test to verify checkpoint is created on RUN failure:
-- [ ] Create temp workflow with failing RUN + RUN-ON-ERROR stop
-- [ ] Verify checkpoint file exists after failure
-- [ ] Verify checkpoint contains RUN output message
+Push completed work to origin/main:
+- Commits: `d9482a5`, `93737e4`, `8bc99e4`, + T2 commit
 
 ---
 
