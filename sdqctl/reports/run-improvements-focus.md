@@ -155,9 +155,10 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 **Session: 2026-01-21T22:40 - GIT PUSH COMPLETE**
 
 1. **Git Push - DONE**
-   - Pushed 5 commits to origin/main (128b750..15375fb)
-   - R3 (auto-checkpoint), T2 (helper tests), T3 (integration tests) now on remote
+   - Pushed 6 commits total to origin/main (now at b35d504)
+   - R3 (auto-checkpoint), T2 (helper tests), T3 (integration tests), docs all synced
 2. **All 61 tests passing** - verified before push
+3. **Lesson #22 added** - batch commits then push
 
 **Session: 2026-01-21T22:39 - T3 IMPLEMENTED**
 
@@ -355,6 +356,8 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 20. **Session messages are in-memory only** - `session.add_message()` appends to a list but doesn't persist. Only `create_checkpoint()` or `save_pause_checkpoint()` write to disk. Early returns without checkpoint calls lose all session data.
 
 21. **Research → Implementation pipeline works** - RN1 research identified the persistence bug, R3 fixed it in the same session. Research tasks should lead directly to implementation.
+
+22. **Batch commits then push** - Grouping related commits before push keeps atomic changes together and reduces push overhead.
 
 ---
 
