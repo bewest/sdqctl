@@ -1,0 +1,196 @@
+# progress-tracker.conv - Quine-like self-improving workflow
+#
+# A workflow that uses sdqctl to improve sdqctl itself.
+# Reads findings from test discovery, works on the most impactful item,
+# documents barriers/lessons, and points to next work areas.
+#
+# Usage:
+#   cd /path/to/sdqctl
+#   sdqctl cycle progress-tracker.conv \
+#     --prologue reports/test-discovery-2026-01-20.md \
+#     --adapter copilot
+#
+# The workflow is "quine-like" because:
+# 1. It analyzes sdqctl's own codebase
+# 2. It uses sdqctl features (PROLOGUE, RUN, template vars) to do so
+# 3. Its output becomes input for the next iteration
+# 4. Each cycle improves the project and updates the backlog
+
+MODEL gpt-4
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 3
+
+# === Prompt Injection ===
+# The --prologue flag injects the test-discovery report
+# These add consistent framing to every prompt
+PROLOGUE ---
+PROLOGUE ## Session Context
+PROLOGUE Workflow: {{WORKFLOW_NAME}}
+PROLOGUE Branch: {{GIT_BRANCH}} ({{GIT_COMMIT}})
+PROLOGUE Date: {{DATETIME}}
+PROLOGUE Working directory: {{CWD}}
+PROLOGUE ---
+
+EPILOGUE ---
+EPILOGUE Remember:
+EPILOGUE - Make minimal, surgical changes
+EPILOGUE - Test changes before marking complete
+EPILOGUE - Document any blockers encountered
+EPILOGUE - Cite specific file:line references
+
+# === Source Context ===
+# Core implementation files for reference
+CONTEXT @sdqctl/core/conversation.py
+CONTEXT @sdqctl/commands/run.py
+CONTEXT @sdqctl/commands/cycle.py
+
+# === Pre-flight Check ===
+RUN-ON-ERROR continue
+RUN-OUTPUT always
+
+# Verify we can parse workflows and check current test status
+RUN python3 -c "
+import sys
+sys.path.insert(0, '.')
+from sdqctl.core.conversation import ConversationFile
+from pathlib import Path
+
+# Count test files
+test_files = list(Path('tests').glob('test_*.py'))
+print(f'Test files: {len(test_files)}')
+for tf in test_files:
+    lines = len(tf.read_text().splitlines())
+    print(f'  {tf.name}: {lines} lines')
+
+# Parse this workflow to verify directives work
+conv = ConversationFile.from_file(Path('examples/workflows/progress-tracker.conv'))
+print(f'Self-parse: {len(conv.prompts)} prompts, {len(conv.steps)} steps')
+print(f'Prologues: {len(conv.prologues)}, Epilogues: {len(conv.epilogues)}')
+"
+
+# === Cycle 1: Triage and Select ===
+PROMPT ## Task Selection
+
+You have received a test discovery report via --prologue containing prioritized issues.
+
+**Your task:** Select the SINGLE most impactful item to work on this cycle.
+
+Selection criteria (in order):
+1. P0 items that block other work
+2. P1 items that affect multiple commands (consistency issues)
+3. Items where the fix is well-understood from the report
+
+**Output format:**
+```
+### Selected Task
+**ID:** [P0-X or P1-X]
+**Title:** [Brief description]
+**Impact:** [Why this is most important now]
+**Files to modify:** [List specific files]
+**Estimated complexity:** [Low/Medium/High]
+**Dependencies:** [What must exist first]
+```
+
+If P0-3 (no unit tests) was already resolved by the test commit, skip to P1 items.
+Review the RUN output above to see current test file status.
+
+# === Cycle 2: Implementation ===
+PROMPT ## Implementation
+
+Based on your selected task, provide the implementation.
+
+**Requirements:**
+1. Show exact code changes with file paths and line numbers
+2. Use minimal diffs - change only what's necessary
+3. Follow existing code patterns in the codebase
+4. Include any necessary imports
+
+**Output format:**
+```
+### Implementation: [Task ID]
+
+#### File: path/to/file.py
+```python
+# Lines X-Y: Description of change
+[code block with full context]
+```
+
+#### Verification
+[How to verify the change works]
+
+#### Blockers Encountered
+[Any issues that prevented full implementation, or "None"]
+```
+
+If you cannot fully implement due to missing context, describe what's needed.
+
+# === Cycle 3: Document and Queue ===
+PROMPT ## Progress Documentation
+
+Summarize this work session and queue next priorities.
+
+**Section 1: Completed Work**
+- What was implemented this session
+- Files modified with line counts
+- How to verify the changes
+
+**Section 2: Barriers and Lessons**
+- Any blockers encountered
+- Workarounds applied
+- Lessons for future sessions
+
+**Section 3: Next Three Priorities**
+For each of the next 3 most impactful items:
+
+| Priority | ID | Title | Rationale | Est. Effort |
+|----------|-----|-------|-----------|-------------|
+| 1 | P?-? | ... | Why next | Low/Med/High |
+| 2 | P?-? | ... | Why next | Low/Med/High |
+| 3 | P?-? | ... | Why next | Low/Med/High |
+
+**Section 4: Updated Backlog Status**
+- P0 remaining: X items
+- P1 remaining: X items  
+- P2 remaining: X items
+- Test coverage: X files, Y lines
+
+**Section 5: Next Session Command**
+Provide the exact command to run the next improvement session:
+```bash
+sdqctl cycle examples/workflows/progress-tracker.conv \
+  --prologue reports/[updated-report].md \
+  --adapter copilot
+```
+
+# === Output Configuration ===
+HEADER # sdqctl Progress Report
+HEADER ## Session: {{DATETIME}}
+HEADER **Branch:** {{GIT_BRANCH}} | **Commit:** {{GIT_COMMIT}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Meta
+FOOTER This report was generated by `progress-tracker.conv` - a quine-like workflow
+FOOTER that uses sdqctl to improve sdqctl.
+FOOTER 
+FOOTER To continue improvement:
+FOOTER ```bash
+FOOTER sdqctl cycle examples/workflows/progress-tracker.conv \
+FOOTER   --prologue reports/test-discovery-{{DATE}}.md \
+FOOTER   --adapter copilot
+FOOTER ```
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE reports/progress-{{DATE}}.md
+
+# === Checkpointing ===
+# Save state after each major step
+CHECKPOINT-AFTER 1
+CHECKPOINT-NAME progress-triage
+
+CHECKPOINT-AFTER 2
+CHECKPOINT-NAME progress-implement
+
+CHECKPOINT-AFTER 3
+CHECKPOINT-NAME progress-document
