@@ -6,6 +6,16 @@ Handles:
 - Glob pattern expansion
 - Context window tracking
 - Compaction triggers
+
+Token Estimation Note:
+    Token counts are estimated using a simple heuristic of ~4 characters per token.
+    This is a rough approximation that works reasonably well for English text and code.
+    Actual token counts vary by model and content type:
+    - GPT models: use tiktoken for accurate counts
+    - Claude models: typically ~3.5 chars/token for code
+    
+    For precise token budgeting, consider integrating tiktoken or model-specific
+    tokenizers. The current heuristic prioritizes simplicity and zero dependencies.
 """
 
 import fnmatch
@@ -14,13 +24,22 @@ from pathlib import Path
 from typing import Optional
 
 
+def estimate_tokens(content: str) -> int:
+    """Estimate token count for content.
+    
+    Uses ~4 characters per token heuristic. This is approximate;
+    see module docstring for accuracy considerations.
+    """
+    return len(content) // 4
+
+
 @dataclass
 class ContextFile:
     """A file included in the context."""
 
     path: Path
     content: str
-    tokens_estimate: int  # Rough estimate: chars / 4
+    tokens_estimate: int  # Approximate; see estimate_tokens()
 
 
 @dataclass
@@ -119,8 +138,7 @@ class ContextManager:
         except Exception:
             return None
 
-        # Estimate tokens (rough: 4 chars per token)
-        tokens = len(content) // 4
+        tokens = estimate_tokens(content)
 
         ctx_file = ContextFile(path=path, content=content, tokens_estimate=tokens)
         self.files.append(ctx_file)

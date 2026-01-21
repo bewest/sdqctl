@@ -141,11 +141,9 @@
 
 **Recommendation:** Add configurable retry with exponential backoff.
 
-### 2. Token Estimation Inaccurate (P2)
-**File:** `sdqctl/core/context.py`, lines 112-113  
-**Issue:** Token estimation uses `len(content) // 4` which is rough approximation
-
-**Recommendation:** Use tiktoken library for accurate GPT tokenization, or document limitation.
+### 2. Token Estimation Inaccurate ✅ DOCUMENTED
+**File:** `sdqctl/core/context.py`  
+**Resolution:** Added documentation about limitation in module docstring and `estimate_tokens()` helper function. Explains ~4 chars/token heuristic and notes that tiktoken provides accurate counts.
 
 ### 3. Async Pattern Duplication (P2)
 **Files:** `commands/run.py`, `commands/cycle.py`, `commands/flow.py`, `commands/apply.py`  
