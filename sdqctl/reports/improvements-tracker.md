@@ -8,6 +8,11 @@
 
 ## Completed Items (2026-01-21)
 
+### ✅ P2-1: Progress Tracker Format Documented - COMPLETED
+- Added `sdqctl apply` command section to README.md
+- Documented `--progress` file format with example
+- Explained status indicators (✅ Done, 🔄 Running, ⏳ Pending, ❌ Failed)
+
 ### ✅ P2-3: RUN-TIMEOUT Directive - COMPLETED
 - Added `RUN-TIMEOUT` directive (default: 60s)
 - Supports seconds (`30`), with suffix (`30s`), or minutes (`2m`)
@@ -131,17 +136,17 @@
 
 **Recommendation:** Add configurable retry with exponential backoff.
 
-### 2. Progress Tracker File Format Not Documented (P2)
-**File:** `sdqctl/commands/apply.py`, lines 341-431  
-**Issue:** The `ProgressTracker` class writes markdown but format isn't documented
-
-**Recommendation:** Add format documentation to README.md or add JSON output option.
-
-### 3. Token Estimation Inaccurate (P2)
+### 2. Token Estimation Inaccurate (P2)
 **File:** `sdqctl/core/context.py`, lines 112-113  
 **Issue:** Token estimation uses `len(content) // 4` which is rough approximation
 
 **Recommendation:** Use tiktoken library for accurate GPT tokenization, or document limitation.
+
+### 3. Verbose Flag Ignored in Commands (P2)
+**File:** `sdqctl/commands/run.py` line 105, 122  
+**Issue:** `--verbose` flag accepted but never used in function body
+
+**Recommendation:** Remove duplicate flag from individual commands, or document deprecation.
 
 ---
 
@@ -234,11 +239,11 @@ When `run_on_error == "continue"`, the code path after timeout doesn't capture o
 
 ### P2 - Medium Priority Issues
 
-#### P2-1: Progress Tracker File Format Not Documented
-**File:** `sdqctl/commands/apply.py`, lines 341-431  
+#### P2-1: Progress Tracker File Format Not Documented ✅ FIXED
+**File:** `README.md`  
 **Issue:** The `ProgressTracker` class writes markdown but format isn't documented
 
-Users may want to parse this programmatically but have no schema reference.
+**Resolution:** Added `sdqctl apply` section to README.md with progress file format example.
 
 **Recommendation:** Add format documentation to README.md or add JSON output option.
 

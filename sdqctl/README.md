@@ -211,6 +211,46 @@ sdqctl flow workflows/*.conv --parallel 4
 sdqctl flow workflows/*.conv --continue-on-error
 ```
 
+### `sdqctl apply`
+
+Apply a workflow to multiple components with progress tracking:
+
+```bash
+# Apply workflow to all plugins
+sdqctl apply workflow.conv --components "lib/plugins/*.js"
+
+# With progress file
+sdqctl apply workflow.conv --components "src/**/*.ts" --progress progress.md
+
+# Parallel execution
+sdqctl apply workflow.conv --components "lib/*.js" --parallel 4 --output-dir reports/
+```
+
+#### Progress File Format
+
+The `--progress` option writes a markdown file tracking iteration status:
+
+```markdown
+## Iteration Progress
+
+Started: 2026-01-21T09:30:00
+
+| Component | Status | Output | Duration |
+|-----------|--------|--------|----------|
+| module1.js | ✅ Done | reports/module1.md | 12.3s |
+| module2.js | 🔄 Running | - | - |
+| module3.js | ⏳ Pending | - | - |
+| module4.js | ❌ Failed | - | 5.2s |
+
+**Summary:** 1/4 complete, 1 running, 1 pending, 1 failed
+```
+
+Status indicators:
+- ✅ Done - Component processed successfully
+- 🔄 Running - Currently being processed
+- ⏳ Pending - Waiting to be processed
+- ❌ Failed - Processing failed
+
 ### `sdqctl status`
 
 Show session and system status:
