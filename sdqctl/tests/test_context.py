@@ -306,3 +306,131 @@ class TestContextManagerInitialization:
         assert ctx.base_path == temp_workspace
         assert ctx.window.max_tokens == 64000
         assert ctx.window.limit_threshold == 0.7
+
+
+class TestContextManagerPathFilter:
+    """Tests for path filter functionality."""
+
+    def test_path_filter_denies_files(self, temp_workspace):
+        """Test path filter can deny specific files."""
+        # Create test files
+        (temp_workspace / "allowed.py").write_text("allowed content")
+        (temp_workspace / "denied.py").write_text("denied content")
+        
+        # Filter that denies files named "denied.py"
+        def deny_filter(path: str) -> bool:
+            return "denied.py" not in path
+        
+        ctx = ContextManager(base_path=temp_workspace, path_filter=deny_filter)
+        
+        # Allowed file should be added
+        result = ctx.add_file(temp_workspace / "allowed.py")
+        assert result is not None
+        assert len(ctx.files) == 1
+        
+        # Denied file should be filtered out
+        result = ctx.add_file(temp_workspace / "denied.py")
+        assert result is None
+        assert len(ctx.files) == 1  # Still just the allowed file
+
+    def test_path_filter_with_pattern(self, temp_workspace):
+        """Test path filter works with glob patterns."""
+        # Create test files
+        lib_dir = temp_workspace / "lib"
+        lib_dir.mkdir(exist_ok=True)
+        (lib_dir / "module1.py").write_text("module 1")
+        (lib_dir / "module2.py").write_text("module 2")
+        (lib_dir / "secret.py").write_text("secret content")
+        
+        # Filter that denies "secret"
+        def deny_secret(path: str) -> bool:
+            return "secret" not in path
+        
+        ctx = ContextManager(base_path=temp_workspace, path_filter=deny_secret)
+        added = ctx.add_pattern("@lib/*.py")
+        
+        # Should add module1 and module2, but not secret
+        assert len(added) == 2
+        names = [f.path.name for f in ctx.files]
+        assert "module1.py" in names
+        assert "module2.py" in names
+        assert "secret.py" not in names
+
+    def test_no_filter_allows_all(self, temp_workspace):
+        """Test that no filter allows all files."""
+        (temp_workspace / "file1.py").write_text("content 1")
+        (temp_workspace / "file2.py").write_text("content 2")
+        
+        ctx = ContextManager(base_path=temp_workspace)  # No filter
+        ctx.add_file(temp_workspace / "file1.py")
+        ctx.add_file(temp_workspace / "file2.py")
+        
+        assert len(ctx.files) == 2
+
+
+class TestSessionWithFileRestrictions:
+    """Tests for Session respecting file restrictions."""
+
+    def test_session_filters_context_by_deny_patterns(self, temp_workspace):
+        """Test Session applies DENY-FILES to context loading."""
+        from sdqctl.core.session import Session
+        from sdqctl.core.conversation import ConversationFile, FileRestrictions
+        
+        # Create test files
+        (temp_workspace / "public.py").write_text("public content")
+        (temp_workspace / "secret.py").write_text("secret content")
+        
+        # Create conversation with deny pattern
+        conv = ConversationFile(
+            cwd=str(temp_workspace),
+            context_files=["@*.py"],
+            file_restrictions=FileRestrictions(deny_patterns=["*secret*"]),
+        )
+        
+        session = Session(conv)
+        
+        # Public file should be loaded, secret should be denied
+        loaded_paths = [f.path.name for f in session.context.files]
+        assert "public.py" in loaded_paths
+        assert "secret.py" not in loaded_paths
+
+    def test_session_filters_context_by_allow_patterns(self, temp_workspace):
+        """Test Session applies ALLOW-FILES to context loading."""
+        from sdqctl.core.session import Session
+        from sdqctl.core.conversation import ConversationFile, FileRestrictions
+        
+        # Create test files
+        (temp_workspace / "allowed.py").write_text("allowed")
+        (temp_workspace / "denied.js").write_text("denied")
+        
+        # Create conversation with allow pattern (only .py files)
+        conv = ConversationFile(
+            cwd=str(temp_workspace),
+            context_files=["@*.*"],
+            file_restrictions=FileRestrictions(allow_patterns=["*.py"]),
+        )
+        
+        session = Session(conv)
+        
+        # Only .py file should be loaded
+        loaded_paths = [f.path.name for f in session.context.files]
+        assert "allowed.py" in loaded_paths
+        assert "denied.js" not in loaded_paths
+
+    def test_session_no_restrictions_loads_all(self, temp_workspace):
+        """Test Session with no restrictions loads all context files."""
+        from sdqctl.core.session import Session
+        from sdqctl.core.conversation import ConversationFile
+        
+        # Create test files
+        (temp_workspace / "file1.py").write_text("content 1")
+        (temp_workspace / "file2.py").write_text("content 2")
+        
+        conv = ConversationFile(
+            cwd=str(temp_workspace),
+            context_files=["@*.py"],
+        )
+        
+        session = Session(conv)
+        
+        assert len(session.context.files) == 2

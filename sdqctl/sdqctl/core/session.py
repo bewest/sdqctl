@@ -77,9 +77,16 @@ class Session:
         )
 
         # Context manager
+        # Setup context with file restriction filter
+        path_filter = None
+        if conversation.file_restrictions.allow_patterns or conversation.file_restrictions.deny_patterns or \
+           conversation.file_restrictions.allow_dirs or conversation.file_restrictions.deny_dirs:
+            path_filter = conversation.file_restrictions.is_path_allowed
+        
         self.context = ContextManager(
             base_path=Path(conversation.cwd) if conversation.cwd else Path.cwd(),
             limit_threshold=conversation.context_limit,
+            path_filter=path_filter,
         )
 
         # Load context files

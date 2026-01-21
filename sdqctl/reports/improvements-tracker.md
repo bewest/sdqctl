@@ -2,11 +2,21 @@
 
 **Analysis Date:** 2026-01-21  
 **Git Branch:** main  
-**Test Status:** 351/351 passing
+**Test Status:** 357/357 passing
 
 ---
 
 ## Completed Items (2026-01-21)
+
+### ✅ P1-2: Context Files Now Filtered by Restrictions - COMPLETED
+- Added `path_filter` parameter to ContextManager
+- Session passes FileRestrictions.is_path_allowed as filter
+- Context loading now respects ALLOW-FILES/DENY-FILES directives
+- Added 6 tests in `tests/test_context.py`:
+  - Path filter denies specific files
+  - Path filter with glob patterns
+  - Session respects deny patterns
+  - Session respects allow patterns
 
 ### ✅ P1-1: Resource Leak in Error Paths - COMPLETED
 - Restructured `run.py` with nested try/finally for proper session cleanup
@@ -115,18 +125,17 @@
 
 **Recommendation:** Add configurable retry with exponential backoff.
 
-### 2. Context Files Not Filtered by Restrictions (P1)
-**File:** `sdqctl/core/session.py` lines 86-87
-
-Context files are loaded without checking `FileRestrictions`. A workflow could load denied files via CONTEXT directive even with DENY-FILES set.
-
-**Recommendation:** Apply file restrictions when loading context.
-
-### 3. RUN Directive Timeout Hardcoded (P2)
+### 2. RUN Directive Timeout Hardcoded (P2)
 **File:** `sdqctl/commands/run.py` line 448
 **Issue:** RUN directive uses hardcoded 60s timeout
 
 **Recommendation:** Add RUN-TIMEOUT directive or configuration option.
+
+### 3. Progress Tracker File Format Not Documented (P2)
+**File:** `sdqctl/commands/apply.py`, lines 341-431  
+**Issue:** The `ProgressTracker` class writes markdown but format isn't documented
+
+**Recommendation:** Add format documentation to README.md or add JSON output option.
 
 ---
 
@@ -537,15 +546,10 @@ The `verbose` parameter is accepted but **never used** in the function body. Ver
 
 **Recommendation:** Remove the duplicate `--verbose` flag from individual commands, or document that it's deprecated.
 
-#### IQ-6: Context Files Not Filtered by Restrictions (P1)
-**File:** `sdqctl/core/session.py` lines 86-87
+#### IQ-6: Context Files Not Filtered by Restrictions ✅ FIXED
+**File:** `sdqctl/core/session.py`, `sdqctl/core/context.py`
 
-```python
-for pattern in conversation.context_files:
-    self.context.add_pattern(pattern)
-```
-
-Context files are loaded without checking `FileRestrictions`. A workflow could load denied files via CONTEXT directive even with DENY-FILES set.
+**Resolution:** Added path_filter to ContextManager. Session now passes FileRestrictions.is_path_allowed as filter.
 
 **Recommendation:** Apply file restrictions when loading context.
 

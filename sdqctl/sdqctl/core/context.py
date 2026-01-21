@@ -56,11 +56,13 @@ class ContextManager:
         base_path: Optional[Path] = None,
         max_tokens: int = 128000,
         limit_threshold: float = 0.8,
+        path_filter: Optional[callable] = None,
     ):
         self.base_path = base_path or Path.cwd()
         self.window = ContextWindow(max_tokens=max_tokens, limit_threshold=limit_threshold)
         self.files: list[ContextFile] = []
         self.conversation_tokens: int = 0
+        self.path_filter = path_filter  # Optional filter: (path: str) -> bool
 
     def resolve_pattern(self, pattern: str) -> list[Path]:
         """Resolve a context pattern to file paths.
@@ -100,9 +102,17 @@ class ContextManager:
             return []
 
     def add_file(self, path: Path) -> Optional[ContextFile]:
-        """Add a file to the context."""
+        """Add a file to the context.
+        
+        Respects path_filter if configured (e.g., for DENY-FILES restrictions).
+        """
         if not path.exists():
             return None
+        
+        # Apply path filter if configured
+        if self.path_filter is not None:
+            if not self.path_filter(str(path)):
+                return None  # Filtered out by restrictions
 
         try:
             content = path.read_text()
