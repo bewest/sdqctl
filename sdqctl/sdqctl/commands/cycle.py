@@ -347,16 +347,25 @@ async def _cycle_async(
 
     except LoopDetected as e:
         session.state.status = "failed"
+        # Save checkpoint to preserve session state before exit
+        checkpoint_path = session.save_pause_checkpoint(f"Loop detected: {e.reason.value}")
+        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
         logger.error(f"Loop detected: {e}")
         sys.exit(e.exit_code)
     
     except MissingContextFiles as e:
         session.state.status = "failed"
+        # Save checkpoint to preserve session state before exit
+        checkpoint_path = session.save_pause_checkpoint(f"Missing context files: {e.patterns}")
+        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
         logger.error(f"Missing files: {e}")
         sys.exit(e.exit_code)
 
     except Exception as e:
         session.state.status = "failed"
+        # Save checkpoint to preserve session state before exit
+        checkpoint_path = session.save_pause_checkpoint(f"Error: {e}")
+        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
         console.print(f"[red]Error: {e}[/red]")
         raise
 

@@ -152,6 +152,14 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T22:43 - CYCLE.PY R3 PARITY IMPLEMENTED**
+
+1. **cycle.py R3 Parity - DONE**
+   - Added `session.save_pause_checkpoint()` to 3 exception handlers (cycle.py:348-372)
+   - Covers: LoopDetected, MissingContextFiles, generic Exception
+   - All 65 tests passing
+2. **Both run.py and cycle.py now auto-checkpoint on failure**
+
 **Session: 2026-01-21T22:41 - E2 IMPLEMENTED**
 
 1. **E2: RUN Environment Variables - DONE**
@@ -391,20 +399,20 @@ Document new RUN features:
 - ALLOW-SHELL security model
 - Auto-checkpoint on failure behavior
 
-### Priority 2: cycle.py R3 Parity
-**File:** `sdqctl/commands/cycle.py`  
-**Effort:** ~15 min  
+### Priority 2: Resume Command Enhancement
+**File:** `sdqctl/commands/resume.py`  
+**Effort:** ~20 min  
 **Unblocked:** Yes
 
-Apply R3 auto-checkpoint pattern to cycle.py:
-- Check if cycle.py has similar early return paths
-- Add checkpoint saves before returns on failure
+Verify resume command works with new checkpoint format:
+- Test resuming from failure checkpoint
+- Ensure RUN output context is restored
 
 ### Priority 3: Git Push + Sync
 **Effort:** ~2 min  
 **Unblocked:** Yes
 
-Push E2 implementation to origin/main
+Push cycle.py R3 parity to origin/main
 
 ---
 
