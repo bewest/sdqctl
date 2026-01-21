@@ -32,6 +32,10 @@ console = Console()
 @click.option("--adapter", "-a", default=None, help="AI adapter override")
 @click.option("--model", "-m", default=None, help="Model override")
 @click.option("--checkpoint-dir", type=click.Path(), default=None, help="Checkpoint directory")
+@click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
+@click.option("--epilogue", multiple=True, help="Append to each prompt (inline text or @file)")
+@click.option("--header", multiple=True, help="Prepend to output (inline text or @file)")
+@click.option("--footer", multiple=True, help="Append to output (inline text or @file)")
 @click.option("--output", "-o", default=None, help="Output file")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
@@ -42,6 +46,10 @@ def cycle(
     adapter: Optional[str],
     model: Optional[str],
     checkpoint_dir: Optional[str],
+    prologue: tuple[str, ...],
+    epilogue: tuple[str, ...],
+    header: tuple[str, ...],
+    footer: tuple[str, ...],
     output: Optional[str],
     json_output: bool,
     verbose: bool,
@@ -50,6 +58,7 @@ def cycle(
     """Run multi-cycle workflow with compaction."""
     asyncio.run(_cycle_async(
         workflow, max_cycles, adapter, model, checkpoint_dir,
+        prologue, epilogue, header, footer,
         output, json_output, verbose, dry_run
     ))
 
@@ -60,12 +69,22 @@ async def _cycle_async(
     adapter_name: Optional[str],
     model: Optional[str],
     checkpoint_dir: Optional[str],
+    cli_prologues: tuple[str, ...],
+    cli_epilogues: tuple[str, ...],
+    cli_headers: tuple[str, ...],
+    cli_footers: tuple[str, ...],
     output_file: Optional[str],
     json_output: bool,
     verbose: bool,
     dry_run: bool,
 ) -> None:
     """Async implementation of cycle command."""
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+    )
+    
     import time
     cycle_start = time.time()
 
@@ -82,6 +101,19 @@ async def _cycle_async(
         conv.model = model
     if output_file:
         conv.output_file = output_file
+    
+    # Add CLI-provided prologues/epilogues (prepend to file-defined ones)
+    if cli_prologues:
+        conv.prologues = list(cli_prologues) + conv.prologues
+    if cli_epilogues:
+        conv.epilogues = list(cli_epilogues) + conv.epilogues
+    if cli_headers:
+        conv.headers = list(cli_headers) + conv.headers
+    if cli_footers:
+        conv.footers = list(cli_footers) + conv.footers
+    
+    # Get template variables for this workflow
+    template_vars = get_standard_variables(conv.source_path)
 
     # Create session
     session_dir = Path(checkpoint_dir) if checkpoint_dir else None
@@ -171,14 +203,20 @@ async def _cycle_async(
                 for prompt_idx, prompt in enumerate(conv.prompts):
                     session.state.prompt_index = prompt_idx
 
+                    # Build prompt with prologue/epilogue injection
+                    full_prompt = build_prompt_with_injection(
+                        prompt, conv.prologues, conv.epilogues, 
+                        conv.source_path.parent if conv.source_path else None,
+                        template_vars
+                    )
+                    
                     # Add context to first prompt of first cycle
-                    full_prompt = prompt
                     if cycle_num == 0 and prompt_idx == 0 and context_content:
-                        full_prompt = f"{context_content}\n\n{prompt}"
+                        full_prompt = f"{context_content}\n\n{full_prompt}"
                     
                     # On subsequent cycles, add continuation context
                     if cycle_num > 0 and prompt_idx == 0 and conv.on_context_limit_prompt:
-                        full_prompt = f"{conv.on_context_limit_prompt}\n\n{prompt}"
+                        full_prompt = f"{conv.on_context_limit_prompt}\n\n{full_prompt}"
 
                     if logger.isEnabledFor(10):  # DEBUG level
                         console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
@@ -216,11 +254,17 @@ async def _cycle_async(
             console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
             
             if conv.output_file:
-                # Write final summary
+                # Write final summary with header/footer injection
                 output_content = "\n\n---\n\n".join(
                     f"## Cycle {r['cycle']}, Prompt {r['prompt']}\n\n{r['response']}"
                     for r in all_responses
                 )
+                output_content = build_output_with_injection(
+                    output_content, conv.headers, conv.footers,
+                    conv.source_path.parent if conv.source_path else None,
+                    template_vars
+                )
+                Path(conv.output_file).parent.mkdir(parents=True, exist_ok=True)
                 Path(conv.output_file).write_text(output_content)
                 progress_print(f"  Writing to {conv.output_file}")
                 console.print(f"[green]Output written to {conv.output_file}[/green]")

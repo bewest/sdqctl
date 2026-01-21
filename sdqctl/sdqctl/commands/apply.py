@@ -41,6 +41,10 @@ console = Console()
 @click.option("--parallel", "-p", default=1, type=int, help="Number of parallel executions")
 @click.option("--adapter", "-a", default=None, help="AI adapter override")
 @click.option("--model", "-m", default=None, help="Model override")
+@click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
+@click.option("--epilogue", multiple=True, help="Append to each prompt (inline text or @file)")
+@click.option("--header", multiple=True, help="Prepend to output (inline text or @file)")
+@click.option("--footer", multiple=True, help="Append to output (inline text or @file)")
 @click.option("--output-dir", "-o", default=None, help="Output directory for results")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
@@ -52,6 +56,10 @@ def apply(
     parallel: int,
     adapter: Optional[str],
     model: Optional[str],
+    prologue: tuple[str, ...],
+    epilogue: tuple[str, ...],
+    header: tuple[str, ...],
+    footer: tuple[str, ...],
     output_dir: Optional[str],
     verbose: bool,
     dry_run: bool,
@@ -82,7 +90,8 @@ def apply(
     """
     asyncio.run(_apply_async(
         workflow, components, discovery_file, progress_file,
-        parallel, adapter, model, output_dir, verbose, dry_run
+        parallel, adapter, model, prologue, epilogue, header, footer,
+        output_dir, verbose, dry_run
     ))
 
 
@@ -94,11 +103,21 @@ async def _apply_async(
     parallel: int,
     adapter_name: Optional[str],
     model: Optional[str],
+    cli_prologues: tuple[str, ...],
+    cli_epilogues: tuple[str, ...],
+    cli_headers: tuple[str, ...],
+    cli_footers: tuple[str, ...],
     output_dir: Optional[str],
     verbose: bool,
     dry_run: bool,
 ) -> None:
     """Async implementation of apply command."""
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+    )
+    
     import time as time_module
     apply_start = time_module.time()
     
@@ -114,6 +133,16 @@ async def _apply_async(
         conv.model = model
     if output_dir:
         conv.output_dir = output_dir
+    
+    # Add CLI-provided prologues/epilogues (prepend to file-defined ones)
+    if cli_prologues:
+        conv.prologues = list(cli_prologues) + conv.prologues
+    if cli_epilogues:
+        conv.epilogues = list(cli_epilogues) + conv.epilogues
+    if cli_headers:
+        conv.headers = list(cli_headers) + conv.headers
+    if cli_footers:
+        conv.footers = list(cli_footers) + conv.footers
     
     # Get component list
     component_list = []
@@ -276,6 +305,12 @@ async def _process_single_component(
     progress_data: "ProgressTracker",
 ) -> None:
     """Process a single component through the workflow."""
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+    )
+    
     component_path = component["path"]
     component_type = component.get("type", "unknown")
     
@@ -288,6 +323,9 @@ async def _process_single_component(
         instance_conv = apply_iteration_context(
             conv, component_path, index, total, component_type
         )
+        
+        # Get template variables for this instance
+        template_vars = get_standard_variables(instance_conv.source_path)
         
         # Create session
         session = Session(instance_conv)
@@ -303,9 +341,14 @@ async def _process_single_component(
         for i, prompt in enumerate(instance_conv.prompts):
             logger.debug(f"  [{index}/{total}] Prompt {i+1}/{len(instance_conv.prompts)}")
             
-            full_prompt = prompt
+            # Build prompt with prologue/epilogue injection
+            full_prompt = build_prompt_with_injection(
+                prompt, instance_conv.prologues, instance_conv.epilogues,
+                instance_conv.source_path.parent if instance_conv.source_path else None,
+                template_vars
+            )
             if i == 0 and context_content:
-                full_prompt = f"{context_content}\n\n{prompt}"
+                full_prompt = f"{context_content}\n\n{full_prompt}"
             
             response = await ai_adapter.send(adapter_session, full_prompt)
             responses.append(response)
@@ -314,12 +357,17 @@ async def _process_single_component(
         
         await ai_adapter.destroy_session(adapter_session)
         
-        # Write output
+        # Write output with header/footer injection
         output_path = None
         if instance_conv.output_file:
             output_path = Path(instance_conv.output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_content = "\n\n---\n\n".join(responses)
+            output_content = build_output_with_injection(
+                output_content, instance_conv.headers, instance_conv.footers,
+                instance_conv.source_path.parent if instance_conv.source_path else None,
+                template_vars
+            )
             output_path.write_text(output_content)
             progress_print(f"  [{index}/{total}] Writing to {output_path}")
         

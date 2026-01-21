@@ -30,6 +30,10 @@ console = Console()
 @click.option("--parallel", "-p", type=int, default=1, help="Parallel execution limit")
 @click.option("--adapter", "-a", default=None, help="AI adapter override")
 @click.option("--model", "-m", default=None, help="Model override")
+@click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
+@click.option("--epilogue", multiple=True, help="Append to each prompt (inline text or @file)")
+@click.option("--header", multiple=True, help="Prepend to output (inline text or @file)")
+@click.option("--footer", multiple=True, help="Append to output (inline text or @file)")
 @click.option("--output-dir", "-o", type=click.Path(), default=None, help="Output directory")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
@@ -40,6 +44,10 @@ def flow(
     parallel: int,
     adapter: Optional[str],
     model: Optional[str],
+    prologue: tuple[str, ...],
+    epilogue: tuple[str, ...],
+    header: tuple[str, ...],
+    footer: tuple[str, ...],
     output_dir: Optional[str],
     json_output: bool,
     verbose: bool,
@@ -48,8 +56,9 @@ def flow(
 ) -> None:
     """Execute batch/parallel workflows."""
     asyncio.run(_flow_async(
-        patterns, parallel, adapter, model, output_dir,
-        json_output, verbose, dry_run, continue_on_error
+        patterns, parallel, adapter, model, 
+        prologue, epilogue, header, footer,
+        output_dir, json_output, verbose, dry_run, continue_on_error
     ))
 
 
@@ -58,6 +67,10 @@ async def _flow_async(
     parallel_limit: int,
     adapter_name: Optional[str],
     model: Optional[str],
+    cli_prologues: tuple[str, ...],
+    cli_epilogues: tuple[str, ...],
+    cli_headers: tuple[str, ...],
+    cli_footers: tuple[str, ...],
     output_dir: Optional[str],
     json_output: bool,
     verbose: bool,
@@ -65,6 +78,11 @@ async def _flow_async(
     continue_on_error: bool,
 ) -> None:
     """Async implementation of flow command."""
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+    )
 
     # Collect workflow files
     workflow_files: list[Path] = []
@@ -128,6 +146,19 @@ async def _flow_async(
                     conv.adapter = adapter_name
                 if model:
                     conv.model = model
+                
+                # Add CLI-provided prologues/epilogues (prepend to file-defined ones)
+                if cli_prologues:
+                    conv.prologues = list(cli_prologues) + conv.prologues
+                if cli_epilogues:
+                    conv.epilogues = list(cli_epilogues) + conv.epilogues
+                if cli_headers:
+                    conv.headers = list(cli_headers) + conv.headers
+                if cli_footers:
+                    conv.footers = list(cli_footers) + conv.footers
+                
+                # Get template variables for this workflow
+                template_vars = get_standard_variables(conv.source_path)
 
                 session = Session(conv)
 
@@ -140,19 +171,30 @@ async def _flow_async(
                 context_content = session.context.get_context_content()
 
                 for i, prompt in enumerate(conv.prompts):
-                    full_prompt = prompt
+                    # Build prompt with prologue/epilogue injection
+                    full_prompt = build_prompt_with_injection(
+                        prompt, conv.prologues, conv.epilogues,
+                        conv.source_path.parent if conv.source_path else None,
+                        template_vars
+                    )
                     if i == 0 and context_content:
-                        full_prompt = f"{context_content}\n\n{prompt}"
+                        full_prompt = f"{context_content}\n\n{full_prompt}"
 
                     response = await ai_adapter.send(adapter_session, full_prompt)
                     responses.append(response)
 
                 await ai_adapter.destroy_session(adapter_session)
 
-                # Write output
+                # Write output with header/footer injection
                 if output_dir:
                     output_file = Path(output_dir) / f"{wf_path.stem}-result.md"
-                    output_file.write_text("\n\n---\n\n".join(responses))
+                    output_content = "\n\n---\n\n".join(responses)
+                    output_content = build_output_with_injection(
+                        output_content, conv.headers, conv.footers,
+                        conv.source_path.parent if conv.source_path else None,
+                        template_vars
+                    )
+                    output_file.write_text(output_content)
 
                 progress.update(task_id, completed=1)
 
