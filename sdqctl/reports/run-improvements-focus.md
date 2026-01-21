@@ -152,6 +152,14 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T22:37 - GIT COMMITS SAVED**
+
+1. **Commit `d9482a5`** - feat: R3 auto-checkpoint on RUN failure
+   - Added `session.save_pause_checkpoint()` at 3 early return points
+   - Preserves captured RUN output on stop-on-error failures
+2. **Commit `93737e4`** - docs: update RUN improvements tracker
+3. **All 52 tests passing** - verified before commit
+
 **Session: 2026-01-21T22:36 - R3 IMPLEMENTED**
 
 1. **R3: Auto-checkpoint on RUN Failure - DONE**
@@ -322,6 +330,8 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 19. **Verification sessions are valid checkpoints** - Quick status checks (52 tests passing, git clean) confirm stability before moving to new work. Not every session needs implementation.
 
 20. **Session messages are in-memory only** - `session.add_message()` appends to a list but doesn't persist. Only `create_checkpoint()` or `save_pause_checkpoint()` write to disk. Early returns without checkpoint calls lose all session data.
+
+21. **Research → Implementation pipeline works** - RN1 research identified the persistence bug, R3 fixed it in the same session. Research tasks should lead directly to implementation.
 
 ---
 
