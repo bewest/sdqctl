@@ -186,6 +186,16 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T23:09 - RUN-CWD IMPLEMENTED**
+
+1. **Priority 1 complete:** Added RUN-CWD directive
+   - Added `RUN_CWD` to DirectiveType enum (conversation.py:79)
+   - Added `run_cwd` field to ConversationFile (conversation.py:252)
+   - Added parsing in `_apply_directive` (conversation.py:613-615)
+   - Updated run.py to resolve run_cwd relative to workflow dir (run.py:504-515)
+2. **All 81 tests passing** (77 + 4 new)
+3. **Usage:** `RUN-CWD ./subdir` sets working directory for RUN commands
+
 **Session: 2026-01-21T23:07 - RESUME ENHANCEMENTS COMPLETE**
 
 1. **Priority 1 complete:** Enhanced resume command (cli.py:452-605)
@@ -515,18 +525,7 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Next 3 Taskable Areas (Future Sprint)
 
-### Priority 1: RUN-CWD Directive ⬅️ NEXT
-**File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
-**Effort:** ~20 min  
-**Unblocked:** Yes
-
-Add `RUN-CWD` directive for per-command working directory:
-```
-RUN-CWD ./subdir
-RUN npm install
-```
-
-### Priority 2: Async RUN Support
+### Priority 1: Async RUN Support ⬅️ NEXT
 **File:** `sdqctl/commands/run.py`  
 **Effort:** ~45 min  
 **Unblocked:** Yes
@@ -538,7 +537,7 @@ RUN-WAIT 5s
 RUN curl localhost:3000/health
 ```
 
-### Priority 3: Resume Command Tests
+### Priority 2: Resume Command Tests for New Features
 **File:** `tests/test_resume.py`  
 **Effort:** ~15 min  
 **Unblocked:** Yes
@@ -547,6 +546,15 @@ Add tests for new resume enhancements:
 - Test `--list` flag output
 - Test `--dry-run` flag output
 - Test `--json` flag output
+
+### Priority 3: Documentation Update
+**File:** `README.md`  
+**Effort:** ~10 min  
+**Unblocked:** Yes
+
+Document new directives:
+- RUN-CWD in directives table
+- Resume command enhancements (--list, --dry-run, --json)
 
 ---
 

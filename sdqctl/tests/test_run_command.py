@@ -907,3 +907,62 @@ RUN echo test
         )
         assert result.returncode == 0
         assert result.stdout.strip()  # PATH should not be empty
+
+
+class TestRunCwdDirective:
+    """Test RUN-CWD directive for per-command working directory."""
+
+    def test_run_cwd_parsed(self):
+        """Test RUN-CWD directive is parsed correctly."""
+        from sdqctl.core.conversation import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-CWD ./subdir
+RUN echo test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.run_cwd == "./subdir"
+
+    def test_run_cwd_absolute_path(self):
+        """Test RUN-CWD with absolute path."""
+        from sdqctl.core.conversation import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-CWD /tmp
+RUN pwd
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.run_cwd == "/tmp"
+
+    def test_run_cwd_overrides_cwd(self):
+        """Test RUN-CWD takes precedence over CWD directive."""
+        from sdqctl.core.conversation import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+CWD /home
+RUN-CWD /tmp
+RUN pwd
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.cwd == "/home"
+        assert conv.run_cwd == "/tmp"
+
+    def test_run_cwd_subprocess_execution(self, tmp_path):
+        """Test RUN command uses run_cwd directory."""
+        from sdqctl.commands.run import _run_subprocess
+        
+        # Create a subdirectory
+        subdir = tmp_path / "mysubdir"
+        subdir.mkdir()
+        
+        result = _run_subprocess(
+            "pwd",
+            allow_shell=False,
+            timeout=10,
+            cwd=subdir,
+        )
+        assert result.returncode == 0
+        assert "mysubdir" in result.stdout

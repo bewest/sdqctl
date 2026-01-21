@@ -499,11 +499,23 @@ async def _run_async(
                     
                     run_start = time.time()
                     try:
+                        # Determine working directory: run_cwd overrides cwd
+                        if conv.run_cwd:
+                            run_dir = Path(conv.run_cwd)
+                            # Make relative paths relative to workflow dir or cwd
+                            if not run_dir.is_absolute():
+                                base = conv.source_path.parent if conv.source_path else Path.cwd()
+                                run_dir = base / run_dir
+                        elif conv.cwd:
+                            run_dir = Path(conv.cwd)
+                        else:
+                            run_dir = Path.cwd()
+                        
                         result = _run_subprocess(
                             command,
                             allow_shell=conv.allow_shell,
                             timeout=conv.run_timeout,
-                            cwd=Path(conv.cwd) if conv.cwd else Path.cwd(),
+                            cwd=run_dir,
                             env=conv.run_env if conv.run_env else None,
                         )
                         run_elapsed = time.time() - run_start

@@ -76,6 +76,7 @@ class DirectiveType(Enum):
     RUN_OUTPUT = "RUN-OUTPUT"
     RUN_OUTPUT_LIMIT = "RUN-OUTPUT-LIMIT"  # Max chars to capture (e.g., 10K, 50K, none)
     RUN_ENV = "RUN-ENV"  # Environment variables for RUN commands (KEY=value)
+    RUN_CWD = "RUN-CWD"  # Working directory for RUN commands
     ALLOW_SHELL = "ALLOW-SHELL"  # Enable shell=True for RUN (security opt-in)
     RUN_TIMEOUT = "RUN-TIMEOUT"  # Timeout in seconds for RUN commands
 
@@ -248,6 +249,7 @@ class ConversationFile:
     run_output: str = "always"  # always, on-error, never
     run_output_limit: Optional[int] = None  # Max chars to capture (None = unlimited)
     run_env: dict[str, str] = field(default_factory=dict)  # Environment variables for RUN
+    run_cwd: Optional[str] = None  # Working directory for RUN commands (relative to workflow dir)
     allow_shell: bool = False  # Security: must opt-in to shell=True for RUN
     run_timeout: int = 60  # Timeout in seconds for RUN commands
 
@@ -608,6 +610,9 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             if "=" in directive.value:
                 key, value = directive.value.split("=", 1)
                 conv.run_env[key.strip()] = value.strip()
+        case DirectiveType.RUN_CWD:
+            # Set working directory for RUN commands
+            conv.run_cwd = directive.value.strip()
         case DirectiveType.RUN_TIMEOUT:
             # Parse timeout in seconds (supports "30", "30s", "2m")
             value = directive.value.strip().lower()
