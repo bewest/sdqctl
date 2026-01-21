@@ -186,6 +186,15 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T23:13 - DOCUMENTATION UPDATED**
+
+1. **Priority 3 complete:** Updated README.md with new features
+   - Added `RUN-CWD` to directives table (line 92)
+   - Added "Working Directory" section with usage example (lines 210-217)
+   - Expanded resume documentation with `--list`, `--dry-run`, `--json` examples (lines 231-242)
+2. **All 85 tests passing**
+3. **Committed as 6548e52, pushed to origin**
+
 **Session: 2026-01-21T23:12 - RESUME FLAG TESTS ADDED**
 
 1. **Priority 2 complete:** Added tests for resume --list and --dry-run
