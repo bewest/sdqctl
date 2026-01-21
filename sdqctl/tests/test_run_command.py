@@ -849,3 +849,61 @@ RUN my_command --flag
         data = json.loads(checkpoint_path.read_text())
         assert "RUN failed" in data.get("message", "")
         assert "my_command" in data.get("message", "")
+
+
+class TestRunEnvDirective:
+    """Test E2: RUN-ENV directive for environment variables."""
+
+    def test_run_env_parsed(self):
+        """Test RUN-ENV directive is parsed correctly."""
+        from sdqctl.core.conversation import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-ENV API_KEY=secret123
+RUN-ENV DEBUG=1
+RUN echo test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.run_env == {"API_KEY": "secret123", "DEBUG": "1"}
+
+    def test_run_env_with_equals_in_value(self):
+        """Test RUN-ENV handles values containing equals sign."""
+        from sdqctl.core.conversation import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-ENV CONNECTION=host=localhost;port=5432
+RUN echo test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.run_env["CONNECTION"] == "host=localhost;port=5432"
+
+    def test_run_env_passed_to_subprocess(self, tmp_path):
+        """Test environment variables are passed to subprocess."""
+        from sdqctl.commands.run import _run_subprocess
+        
+        result = _run_subprocess(
+            "printenv MY_TEST_VAR",
+            allow_shell=False,
+            timeout=10,
+            cwd=tmp_path,
+            env={"MY_TEST_VAR": "hello_world"}
+        )
+        assert result.returncode == 0
+        assert "hello_world" in result.stdout
+
+    def test_run_env_merges_with_os_environ(self, tmp_path):
+        """Test custom env merges with (not replaces) OS environment."""
+        from sdqctl.commands.run import _run_subprocess
+        
+        # PATH should still be available (inherited from os.environ)
+        result = _run_subprocess(
+            "echo $PATH",
+            allow_shell=True,
+            timeout=10,
+            cwd=tmp_path,
+            env={"MY_VAR": "test"}
+        )
+        assert result.returncode == 0
+        assert result.stdout.strip()  # PATH should not be empty

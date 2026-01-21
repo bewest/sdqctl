@@ -152,6 +152,17 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T22:41 - E2 IMPLEMENTED**
+
+1. **E2: RUN Environment Variables - DONE**
+   - Added `RUN_ENV` to DirectiveType enum (conversation.py:78)
+   - Added `run_env: dict[str, str]` field to ConversationFile (conversation.py:251)
+   - Added parsing in `_apply_directive` (conversation.py:607-610)
+   - Updated `_run_subprocess()` to accept and merge env (run.py:36-70)
+   - Added 4 tests in `TestRunEnvDirective` class
+   - All 65 tests passing (61 + 4 new)
+2. **Usage:** `RUN-ENV API_KEY=secret` sets env var for subsequent RUN commands
+
 **Session: 2026-01-21T22:40 - GIT PUSH COMPLETE**
 
 1. **Git Push - DONE**
@@ -369,29 +380,18 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Next 3 Taskable Areas
 
-### Priority 1: E2 - RUN Environment Variables
-**File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
-**Effort:** ~30 min  
-**Unblocked:** Yes
-
-Add `RUN-ENV` directive to set environment variables for RUN commands:
-```
-RUN-ENV API_KEY=secret
-RUN-ENV DEBUG=1
-RUN ./deploy.sh
-```
-
-### Priority 2: Documentation Update
+### Priority 1: Documentation Update
 **File:** `README.md` or dedicated docs  
 **Effort:** ~20 min  
 **Unblocked:** Yes
 
 Document new RUN features:
+- RUN-ENV directive
 - RUN-OUTPUT-LIMIT directive
 - ALLOW-SHELL security model
 - Auto-checkpoint on failure behavior
 
-### Priority 3: cycle.py R3 Parity
+### Priority 2: cycle.py R3 Parity
 **File:** `sdqctl/commands/cycle.py`  
 **Effort:** ~15 min  
 **Unblocked:** Yes
@@ -399,6 +399,12 @@ Document new RUN features:
 Apply R3 auto-checkpoint pattern to cycle.py:
 - Check if cycle.py has similar early return paths
 - Add checkpoint saves before returns on failure
+
+### Priority 3: Git Push + Sync
+**Effort:** ~2 min  
+**Unblocked:** Yes
+
+Push E2 implementation to origin/main
 
 ---
 

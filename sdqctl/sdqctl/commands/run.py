@@ -38,6 +38,7 @@ def _run_subprocess(
     allow_shell: bool,
     timeout: int,
     cwd: Path,
+    env: Optional[dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     """Execute a subprocess with consistent settings.
     
@@ -46,10 +47,19 @@ def _run_subprocess(
         allow_shell: If True, use shell=True (allows pipes, redirects)
         timeout: Timeout in seconds
         cwd: Working directory for command
+        env: Additional environment variables (merged with os.environ)
         
     Returns:
         CompletedProcess with stdout/stderr captured as text
     """
+    import os
+    
+    # Merge env with current environment (env overrides)
+    run_env = None
+    if env:
+        run_env = os.environ.copy()
+        run_env.update(env)
+    
     args = command if allow_shell else shlex.split(command)
     return subprocess.run(
         args,
@@ -58,6 +68,7 @@ def _run_subprocess(
         text=True,
         timeout=timeout,
         cwd=cwd,
+        env=run_env,
     )
 
 
@@ -493,6 +504,7 @@ async def _run_async(
                             allow_shell=conv.allow_shell,
                             timeout=conv.run_timeout,
                             cwd=Path(conv.cwd) if conv.cwd else Path.cwd(),
+                            env=conv.run_env if conv.run_env else None,
                         )
                         run_elapsed = time.time() - run_start
                         
