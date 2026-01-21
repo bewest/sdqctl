@@ -82,6 +82,7 @@ async def _flow_async(
         build_prompt_with_injection,
         build_output_with_injection,
         get_standard_variables,
+        substitute_template_variables,
     )
 
     # Collect workflow files

@@ -194,3 +194,4 @@ CHECKPOINT-NAME progress-implement
 
 CHECKPOINT-AFTER 3
 CHECKPOINT-NAME progress-document
+COMPACT

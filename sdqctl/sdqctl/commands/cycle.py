@@ -87,6 +87,7 @@ async def _cycle_async(
         build_prompt_with_injection,
         build_output_with_injection,
         get_standard_variables,
+        substitute_template_variables,
     )
     
     import time
@@ -290,6 +291,9 @@ async def _cycle_async(
             console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
             
             if conv.output_file:
+                # Substitute template variables in output path
+                effective_output = substitute_template_variables(conv.output_file, template_vars)
+                
                 # Write final summary with header/footer injection
                 output_content = "\n\n---\n\n".join(
                     f"## Cycle {r['cycle']}, Prompt {r['prompt']}\n\n{r['response']}"
@@ -300,10 +304,10 @@ async def _cycle_async(
                     conv.source_path.parent if conv.source_path else None,
                     template_vars
                 )
-                Path(conv.output_file).parent.mkdir(parents=True, exist_ok=True)
-                Path(conv.output_file).write_text(output_content)
-                progress_print(f"  Writing to {conv.output_file}")
-                console.print(f"[green]Output written to {conv.output_file}[/green]")
+                Path(effective_output).parent.mkdir(parents=True, exist_ok=True)
+                Path(effective_output).write_text(output_content)
+                progress_print(f"  Writing to {effective_output}")
+                console.print(f"[green]Output written to {effective_output}[/green]")
         
         progress_print(f"Done in {cycle_elapsed:.1f}s")
 
