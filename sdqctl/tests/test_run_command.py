@@ -770,3 +770,82 @@ class TestRunSubprocessHelper:
         result = _run_subprocess("ls /nonexistent_path_12345", allow_shell=False, timeout=10, cwd=tmp_path)
         assert result.returncode != 0
         assert result.stderr  # Should have error message
+
+
+class TestR3FailureCheckpoint:
+    """Test R3: Auto-checkpoint on RUN failure."""
+
+    def test_checkpoint_file_created_on_run_failure(self, tmp_path):
+        """Verify pause.json checkpoint created when RUN fails with stop-on-error."""
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.session import Session
+        
+        # Create workflow with failing RUN
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-ON-ERROR stop
+RUN exit 1
+"""
+        conv = ConversationFile.parse(content)
+        session = Session(conv, session_dir=tmp_path)
+        
+        # Simulate adding a message before failure (like RUN output capture)
+        session.add_message("system", "[RUN output]\n```\n$ exit 1 (exit 1)\n```")
+        
+        # Save checkpoint (what R3 does before early return)
+        checkpoint_path = session.save_pause_checkpoint("RUN failed: exit 1 (exit 1)")
+        
+        # Verify checkpoint exists
+        assert checkpoint_path.exists()
+        assert checkpoint_path.name == "pause.json"
+        
+    def test_checkpoint_contains_run_output(self, tmp_path):
+        """Verify checkpoint preserves RUN output messages."""
+        import json
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.session import Session
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-ON-ERROR stop
+RUN false
+"""
+        conv = ConversationFile.parse(content)
+        session = Session(conv, session_dir=tmp_path)
+        
+        # Add RUN output message
+        run_output = "[RUN output]\n```\n$ false (exit 1)\nCommand failed\n```"
+        session.add_message("system", run_output)
+        
+        # Save checkpoint
+        checkpoint_path = session.save_pause_checkpoint("RUN failed: false")
+        
+        # Load and verify
+        data = json.loads(checkpoint_path.read_text())
+        messages = data.get("messages", [])
+        assert len(messages) == 1
+        assert messages[0]["role"] == "system"
+        assert "RUN output" in messages[0]["content"]
+        assert "Command failed" in messages[0]["content"]
+
+    def test_checkpoint_contains_failure_message(self, tmp_path):
+        """Verify checkpoint message describes the failure."""
+        import json
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.session import Session
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN-ON-ERROR stop
+RUN my_command --flag
+"""
+        conv = ConversationFile.parse(content)
+        session = Session(conv, session_dir=tmp_path)
+        
+        # Save checkpoint with descriptive message
+        checkpoint_path = session.save_pause_checkpoint("RUN failed: my_command --flag (exit 127)")
+        
+        # Verify message in checkpoint
+        data = json.loads(checkpoint_path.read_text())
+        assert "RUN failed" in data.get("message", "")
+        assert "my_command" in data.get("message", "")

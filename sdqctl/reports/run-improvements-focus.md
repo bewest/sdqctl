@@ -152,6 +152,14 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T22:39 - T3 IMPLEMENTED**
+
+1. **T3: R3 Integration Test - DONE**
+   - Added `TestR3FailureCheckpoint` class (3 tests) to `tests/test_run_command.py`
+   - Tests: checkpoint created, contains RUN output, contains failure message
+   - All 61 tests passing (58 + 3 new)
+2. **R3 feature now fully tested** - checkpoint persistence on RUN failure verified
+
 **Session: 2026-01-21T22:38 - T2 IMPLEMENTED**
 
 1. **T2: Helper Function Unit Tests - DONE**
@@ -351,15 +359,12 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Next 3 Taskable Areas
 
-### Priority 1: T3 - R3 Integration Test
-**File:** `tests/test_run_command.py`  
-**Effort:** ~15 min  
+### Priority 1: Git Push
+**Effort:** ~2 min  
 **Unblocked:** Yes
 
-Add test to verify checkpoint is created on RUN failure:
-- [ ] Create temp workflow with failing RUN + RUN-ON-ERROR stop
-- [ ] Verify checkpoint file exists after failure
-- [ ] Verify checkpoint contains RUN output message
+Push completed work to origin/main:
+- Commits: `d9482a5` (R3), `d3521b3` (T2), + T3 commit
 
 ### Priority 2: E2 - RUN Environment Variables
 **File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
@@ -373,12 +378,15 @@ RUN-ENV DEBUG=1
 RUN ./deploy.sh
 ```
 
-### Priority 3: Git Push
-**Effort:** ~2 min  
+### Priority 3: Documentation Update
+**File:** `README.md` or dedicated docs  
+**Effort:** ~20 min  
 **Unblocked:** Yes
 
-Push completed work to origin/main:
-- Commits: `d9482a5`, `93737e4`, `8bc99e4`, + T2 commit
+Document new RUN features:
+- RUN-OUTPUT-LIMIT directive
+- ALLOW-SHELL security model
+- Auto-checkpoint on failure behavior
 
 ---
 
