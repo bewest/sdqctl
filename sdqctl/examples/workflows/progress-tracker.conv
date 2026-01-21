@@ -49,26 +49,6 @@ CONTEXT @sdqctl/commands/cycle.py
 RUN-ON-ERROR continue
 RUN-OUTPUT always
 
-# Verify we can parse workflows and check current test status
-RUN python3 -c "
-import sys
-sys.path.insert(0, '.')
-from sdqctl.core.conversation import ConversationFile
-from pathlib import Path
-
-# Count test files
-test_files = list(Path('tests').glob('test_*.py'))
-print(f'Test files: {len(test_files)}')
-for tf in test_files:
-    lines = len(tf.read_text().splitlines())
-    print(f'  {tf.name}: {lines} lines')
-
-# Parse this workflow to verify directives work
-conv = ConversationFile.from_file(Path('examples/workflows/progress-tracker.conv'))
-print(f'Self-parse: {len(conv.prompts)} prompts, {len(conv.steps)} steps')
-print(f'Prologues: {len(conv.prologues)}, Epilogues: {len(conv.epilogues)}')
-"
-
 # === Cycle 1: Triage and Select ===
 PROMPT ## Task Selection
 
@@ -98,32 +78,18 @@ Review the RUN output above to see current test file status.
 # === Cycle 2: Implementation ===
 PROMPT ## Implementation
 
-Based on your selected task, provide the implementation.
+Based on your selected task, implement the fix now.
 
 **Requirements:**
-1. Show exact code changes with file paths and line numbers
-2. Use minimal diffs - change only what's necessary
+1. Edit the relevant source files to make the changes
+2. Make minimal, surgical changes - modify only what's necessary
 3. Follow existing code patterns in the codebase
-4. Include any necessary imports
+4. Run tests to verify your changes work: `python -m pytest tests/ -v --tb=short`
+5. If tests pass, commit your changes with a descriptive message
 
-**Output format:**
-```
-### Implementation: [Task ID]
+**Do NOT just describe or show code changes. Actually edit the files.**
 
-#### File: path/to/file.py
-```python
-# Lines X-Y: Description of change
-[code block with full context]
-```
-
-#### Verification
-[How to verify the change works]
-
-#### Blockers Encountered
-[Any issues that prevented full implementation, or "None"]
-```
-
-If you cannot fully implement due to missing context, describe what's needed.
+If you encounter blockers that prevent implementation, document them clearly and move on.
 
 # === Cycle 3: Document and Queue ===
 PROMPT ## Progress Documentation
@@ -194,4 +160,5 @@ CHECKPOINT-NAME progress-implement
 
 CHECKPOINT-AFTER 3
 CHECKPOINT-NAME progress-document
+PROMPT Let's save everything that is appropraite in git.
 COMPACT
