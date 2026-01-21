@@ -323,6 +323,10 @@ class ConversationFile:
     def validate_context_files(self) -> list[tuple[str, Path]]:
         """Validate that all CONTEXT file references exist.
         
+        Resolution order for relative paths:
+        1. CWD (current working directory) - intuitive for users
+        2. Workflow file directory - for self-contained workflows
+        
         Returns:
             List of (pattern, resolved_path) tuples for missing files.
             Empty list if all files exist.
@@ -330,7 +334,8 @@ class ConversationFile:
         import glob as glob_module
         
         missing = []
-        base_path = self.source_path.parent if self.source_path else Path.cwd()
+        workflow_base = self.source_path.parent if self.source_path else Path.cwd()
+        cwd = Path.cwd()
         
         for context_ref in self.context_files:
             # Only check @file references (not inline content)
@@ -339,24 +344,34 @@ class ConversationFile:
             
             pattern = context_ref[1:]  # Remove @ prefix
             
-            # Resolve relative to workflow file
-            if not Path(pattern).is_absolute():
-                resolved_pattern = base_path / pattern
-            else:
+            # Absolute paths resolve directly
+            if Path(pattern).is_absolute():
                 resolved_pattern = Path(pattern)
+                found = self._check_pattern_exists(resolved_pattern, glob_module)
+                if not found:
+                    missing.append((context_ref, resolved_pattern))
+                continue
             
-            # Check if it's a glob pattern or exact file
-            if "*" in pattern or "?" in pattern or "[" in pattern:
-                # Glob pattern - check if any files match
-                matches = list(glob_module.glob(str(resolved_pattern), recursive=True))
-                if not matches:
-                    missing.append((context_ref, resolved_pattern))
-            else:
-                # Exact file - check if it exists
-                if not resolved_pattern.exists():
-                    missing.append((context_ref, resolved_pattern))
+            # Try CWD first, then workflow directory
+            cwd_resolved = cwd / pattern
+            workflow_resolved = workflow_base / pattern
+            
+            cwd_found = self._check_pattern_exists(cwd_resolved, glob_module)
+            workflow_found = self._check_pattern_exists(workflow_resolved, glob_module)
+            
+            if not cwd_found and not workflow_found:
+                # Report CWD path since that's what users expect
+                missing.append((context_ref, cwd_resolved))
         
         return missing
+    
+    def _check_pattern_exists(self, resolved_pattern: Path, glob_module) -> bool:
+        """Check if a pattern (file or glob) resolves to existing files."""
+        pattern_str = str(resolved_pattern)
+        if "*" in pattern_str or "?" in pattern_str or "[" in pattern_str:
+            return bool(list(glob_module.glob(pattern_str, recursive=True)))
+        else:
+            return resolved_pattern.exists()
 
     def to_string(self) -> str:
         """Serialize back to ConversationFile format."""

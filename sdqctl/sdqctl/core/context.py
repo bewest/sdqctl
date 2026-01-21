@@ -90,13 +90,31 @@ class ContextManager:
           @lib/auth.js        -> Single file
           @lib/auth/*.js      -> Glob pattern
           @lib/**/*.js        -> Recursive glob
+          
+        Resolution order for relative paths:
+          1. CWD (current working directory) - intuitive for users
+          2. base_path (workflow file directory) - for self-contained workflows
         """
         # Strip @ prefix if present
         if pattern.startswith("@"):
             pattern = pattern[1:]
 
-        # Resolve relative to base path
-        full_pattern = self.base_path / pattern
+        # Absolute paths resolve directly
+        if Path(pattern).is_absolute():
+            return self._resolve_pattern_from_base(Path(pattern).parent, Path(pattern).name)
+
+        # Try CWD first, then base_path
+        cwd = Path.cwd()
+        cwd_results = self._resolve_pattern_from_base(cwd, pattern)
+        if cwd_results:
+            return cwd_results
+        
+        # Fall back to base_path (workflow directory)
+        return self._resolve_pattern_from_base(self.base_path, pattern)
+    
+    def _resolve_pattern_from_base(self, base: Path, pattern: str) -> list[Path]:
+        """Resolve a pattern relative to a specific base path."""
+        full_pattern = base / pattern
 
         # Check if it's a glob pattern
         if "*" in pattern or "?" in pattern:
@@ -105,9 +123,10 @@ class ContextManager:
                 # Recursive glob
                 parts = pattern.split("**")
                 if len(parts) == 2:
-                    base = self.base_path / parts[0].rstrip("/")
+                    glob_base = base / parts[0].rstrip("/")
                     sub_pattern = parts[1].lstrip("/")
-                    return list(base.glob(f"**/{sub_pattern}"))
+                    if glob_base.exists():
+                        return list(glob_base.glob(f"**/{sub_pattern}"))
             else:
                 parent = full_pattern.parent
                 name_pattern = full_pattern.name
