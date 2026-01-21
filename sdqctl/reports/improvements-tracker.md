@@ -1,8 +1,8 @@
 # sdqctl Improvements Tracker
 
 **Analysis Date:** 2026-01-21  
-**Git Branch:** main (f542099)  
-**Test Status:** 221/221 passing (109 original + 87 CLI/command + 25 copilot adapter tests)
+**Git Branch:** main  
+**Test Status:** 270/270 passing (109 original + 87 CLI/command + 25 copilot + 21 status + 28 logging tests)
 
 ---
 
@@ -24,7 +24,23 @@
   - Token usage accumulation
   - Tool call tracking
   - Context usage estimation
-- Total test count now 221 tests
+
+### ✅ P2-7: Status Command Tests - COMPLETED
+- Added `tests/test_status_command.py` with 21 tests covering:
+  - Overview display and JSON output
+  - Adapter listing
+  - Session enumeration
+  - Checkpoint details
+  - Edge cases (corrupted files, empty dirs)
+
+### ✅ P2-8: Logging Configuration Tests - COMPLETED  
+- Added `tests/test_logging.py` with 28 tests covering:
+  - TRACE level setup
+  - Verbosity levels (0=WARNING, 1=INFO, 2=DEBUG, 3=TRACE)
+  - Quiet mode
+  - Log format at different levels
+  - Handler configuration
+  - Module logger inheritance
 
 ### ✅ P1-3: File Reference Warning - COMPLETED
 - Added warning logging for unresolved `@file` references in `conversation.py`
@@ -314,6 +330,7 @@ Users cannot register their own adapters without modifying source code.
 | `core/conversation.py` | 36 | ~85% | Multiline edge cases |
 | `core/context.py` | 27 | ~90% | Binary file handling |
 | `core/session.py` | 30 | ~80% | Error recovery paths |
+| `core/logging.py` | 28 | ~95% | None significant |
 | `adapters/mock.py` | 20 | ~95% | None significant |
 | `adapters/copilot.py` | 25 | ~75% | Real SDK integration |
 | `adapters/registry.py` | 3 | ~60% | Plugin loading |
@@ -321,9 +338,10 @@ Users cannot register their own adapters without modifying source code.
 | `commands/cycle.py` | 15 | ~60% | Compaction triggers |
 | `commands/flow.py` | 15 | ~60% | Error aggregation |
 | `commands/apply.py` | 17 | ~65% | Progress file edge cases |
+| `commands/status.py` | 21 | ~85% | None significant |
 | `cli.py` | 22 | ~60% | Entry points covered |
 
-**Total estimate:** ~70% code coverage (improved from ~65%)
+**Total estimate:** ~75% code coverage (improved from ~70%)
 
 ---
 
@@ -335,8 +353,10 @@ Users cannot register their own adapters without modifying source code.
 4. ~~**`tests/test_apply.py`** - Component iteration tests~~ ✅ DONE (17 tests)
 5. ~~**`tests/test_flow.py`** - Parallel execution tests~~ ✅ DONE (15 tests)
 6. ~~**`tests/test_copilot_adapter.py`** - Mocked Copilot SDK tests~~ ✅ DONE (25 tests)
-7. **`tests/test_status_command.py`** - Status command output (P2)
-8. **`tests/test_logging.py`** - Logging configuration (P2)
+7. ~~**`tests/test_status_command.py`** - Status command output~~ ✅ DONE (21 tests)
+8. ~~**`tests/test_logging.py`** - Logging configuration~~ ✅ DONE (28 tests)
+9. **`tests/test_progress.py`** - Progress module tests (P2)
+10. **`tests/test_registry.py`** - Adapter registry tests (P2)
 
 ---
 
