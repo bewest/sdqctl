@@ -9,7 +9,9 @@ Usage:
 """
 
 import asyncio
+import logging
 import subprocess
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -20,8 +22,12 @@ from rich.panel import Panel
 
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
-from ..core.conversation import ConversationFile, FileRestrictions
+from ..core.conversation import ConversationFile, FileRestrictions, substitute_template_variables
+from ..core.logging import get_logger
+from ..core.progress import progress, ProgressTracker
 from ..core.session import Session
+
+logger = get_logger(__name__)
 
 
 def git_commit_checkpoint(
@@ -90,6 +96,10 @@ console = Console()
 @click.option("--deny-files", multiple=True, help="Glob pattern for denied files (can be repeated)")
 @click.option("--allow-dir", multiple=True, help="Directory to allow (can be repeated)")
 @click.option("--deny-dir", multiple=True, help="Directory to deny (can be repeated)")
+@click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
+@click.option("--epilogue", multiple=True, help="Append to each prompt (inline text or @file)")
+@click.option("--header", multiple=True, help="Prepend to output (inline text or @file)")
+@click.option("--footer", multiple=True, help="Append to output (inline text or @file)")
 @click.option("--output", "-o", default=None, help="Output file")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
@@ -103,6 +113,10 @@ def run(
     deny_files: tuple[str, ...],
     allow_dir: tuple[str, ...],
     deny_dir: tuple[str, ...],
+    prologue: tuple[str, ...],
+    epilogue: tuple[str, ...],
+    header: tuple[str, ...],
+    footer: tuple[str, ...],
     output: Optional[str],
     json_output: bool,
     verbose: bool,
@@ -125,12 +139,17 @@ def run(
     sdqctl run "Analyze code" --allow-files "./lib/*" --deny-files "./lib/special"
     
     \b
-    # Test-only analysis
-    sdqctl run workflow.conv --allow-files "./tests/**" --deny-files "./lib/**"
+    # Add context to every prompt
+    sdqctl run workflow.conv --prologue "Date: 2026-01-21" --epilogue @templates/footer.md
+    
+    \b
+    # Add header/footer to output
+    sdqctl run workflow.conv --header "# Report" --footer @templates/disclaimer.md
     """
     asyncio.run(_run_async(
         target, adapter, model, context, 
         allow_files, deny_files, allow_dir, deny_dir,
+        prologue, epilogue, header, footer,
         output, json_output, verbose, dry_run
     ))
 
@@ -144,20 +163,32 @@ async def _run_async(
     deny_files: tuple[str, ...],
     allow_dir: tuple[str, ...],
     deny_dir: tuple[str, ...],
+    cli_prologues: tuple[str, ...],
+    cli_epilogues: tuple[str, ...],
+    cli_headers: tuple[str, ...],
+    cli_footers: tuple[str, ...],
     output_file: Optional[str],
     json_output: bool,
     verbose: bool,
     dry_run: bool,
 ) -> None:
     """Async implementation of run command."""
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+    )
+    
+    import time
+    start_time = time.time()
 
     # Determine if target is a file or inline prompt
     target_path = Path(target)
     if target_path.exists() and target_path.suffix in (".conv", ".copilot"):
         # Load ConversationFile
         conv = ConversationFile.from_file(target_path)
-        if verbose:
-            console.print(f"[blue]Loaded workflow from {target_path}[/blue]")
+        logger.info(f"Loaded workflow from {target_path}")
+        progress(f"Running {target_path.name}...")
     else:
         # Treat as inline prompt
         conv = ConversationFile(
@@ -165,8 +196,8 @@ async def _run_async(
             adapter=adapter_name or "mock",
             model=model or "gpt-4",
         )
-        if verbose:
-            console.print("[blue]Running inline prompt[/blue]")
+        logger.info("Running inline prompt")
+        progress("Running inline prompt...")
 
     # Apply overrides
     if adapter_name:
@@ -192,8 +223,20 @@ async def _run_async(
             list(allow_files) + list(f"{d}/**" for d in allow_dir),
             list(deny_files) + list(f"{d}/**" for d in deny_dir),
         )
-        if verbose:
-            console.print(f"[blue]File restrictions: allow={conv.file_restrictions.allow_patterns}, deny={conv.file_restrictions.deny_patterns}[/blue]")
+        logger.info(f"File restrictions: allow={conv.file_restrictions.allow_patterns}, deny={conv.file_restrictions.deny_patterns}")
+
+    # Add CLI-provided prologues/epilogues (prepend to file-defined ones)
+    if cli_prologues:
+        conv.prologues = list(cli_prologues) + conv.prologues
+    if cli_epilogues:
+        conv.epilogues = list(cli_epilogues) + conv.epilogues
+    if cli_headers:
+        conv.headers = list(cli_headers) + conv.headers
+    if cli_footers:
+        conv.footers = list(cli_footers) + conv.footers
+    
+    # Get template variables for this workflow
+    template_vars = get_standard_variables(conv.source_path)
 
     # Override output
     if output_file:
@@ -203,7 +246,7 @@ async def _run_async(
     session = Session(conv)
 
     # Show status
-    if verbose or dry_run:
+    if dry_run:
         status = session.get_status()
         restrictions_info = ""
         if conv.file_restrictions.allow_patterns or conv.file_restrictions.deny_patterns:
@@ -219,6 +262,9 @@ async def _run_async(
             f"{restrictions_info}",
             title="Workflow Configuration"
         ))
+    else:
+        logger.debug(f"Adapter: {conv.adapter}, Model: {conv.model}, Mode: {conv.mode}")
+        logger.debug(f"Prompts: {len(conv.prompts)}, Context files: {len(conv.context_files)}")
 
     if dry_run:
         console.print("\n[yellow]Dry run - no execution[/yellow]")
@@ -276,28 +322,39 @@ async def _run_async(
             if step_type == "prompt":
                 prompt = step_content
                 prompt_count += 1
+                step_start = time.time()
                 
-                if verbose:
-                    console.print(f"\n[bold blue]Sending prompt {prompt_count}/{total_prompts}...[/bold blue]")
+                logger.info(f"Sending prompt {prompt_count}/{total_prompts}...")
+                progress(f"  Step {prompt_count}/{total_prompts}: Sending prompt...")
 
+                # Build prompt with prologue/epilogue injection
+                base_path = conv.source_path.parent if conv.source_path else Path.cwd()
+                injected_prompt = build_prompt_with_injection(
+                    prompt, conv.prologues, conv.epilogues,
+                    base_path=base_path,
+                    variables=template_vars
+                )
+                
                 # Add context to first prompt
-                full_prompt = prompt
+                full_prompt = injected_prompt
                 if first_prompt and context_content:
-                    full_prompt = f"{context_content}\n\n{prompt}"
+                    full_prompt = f"{context_content}\n\n{injected_prompt}"
                     first_prompt = False
 
                 # Stream response
-                if verbose:
-                    console.print("[dim]Response:[/dim]")
+                logger.debug("Awaiting response...")
 
                 def on_chunk(chunk: str) -> None:
-                    if verbose and not json_output:
+                    if logger.isEnabledFor(logging.DEBUG) and not json_output:
                         console.print(chunk, end="")
 
                 response = await ai_adapter.send(adapter_session, full_prompt, on_chunk=on_chunk)
 
-                if verbose:
+                if logger.isEnabledFor(logging.DEBUG):
                     console.print()  # Newline after streaming
+
+                step_elapsed = time.time() - step_start
+                progress(f"  Step {prompt_count}/{total_prompts}: Response received ({step_elapsed:.1f}s)")
 
                 responses.append(response)
                 session.add_message("user", prompt)
@@ -322,8 +379,8 @@ async def _run_async(
                 # Save session state and commit outputs to git
                 checkpoint_name = step_content or f"checkpoint-{len(session.state.checkpoints) + 1}"
                 
-                if verbose:
-                    console.print(f"\n[bold yellow]📌 CHECKPOINT: {checkpoint_name}[/bold yellow]")
+                logger.info(f"📌 CHECKPOINT: {checkpoint_name}")
+                progress(f"  📌 CHECKPOINT: {checkpoint_name}")
                 
                 # Write current output to file if configured
                 if conv.output_file and responses:
@@ -331,8 +388,8 @@ async def _run_async(
                     output_path = Path(conv.output_file)
                     output_path.parent.mkdir(parents=True, exist_ok=True)
                     output_path.write_text(current_output)
-                    if verbose:
-                        console.print(f"[dim]Output written to {output_path}[/dim]")
+                    logger.debug(f"Output written to {output_path}")
+                    progress(f"  Writing to {output_path}")
                 
                 # Save session checkpoint
                 checkpoint = session.create_checkpoint(checkpoint_name)
@@ -343,13 +400,14 @@ async def _run_async(
                 
                 if git_commit_checkpoint(checkpoint_name, output_path, output_dir):
                     console.print(f"[green]✓ Git commit: checkpoint: {checkpoint_name}[/green]")
-                elif verbose:
-                    console.print("[dim]No git changes to commit[/dim]")
+                    progress(f"  ✓ Git commit created")
+                else:
+                    logger.debug("No git changes to commit")
             
             elif step_type == "compact":
                 # Request compaction from the AI
-                if verbose:
-                    console.print("\n[bold magenta]🗜  COMPACTING conversation...[/bold magenta]")
+                logger.info("🗜  COMPACTING conversation...")
+                progress("  🗜  Compacting conversation...")
                 
                 preserve = step.preserve if hasattr(step, 'preserve') else []
                 compact_prompt = session.get_compaction_prompt()
@@ -359,13 +417,13 @@ async def _run_async(
                 response = await ai_adapter.send(adapter_session, compact_prompt)
                 session.add_message("system", f"[Compaction summary]\n{response}")
                 
-                if verbose:
-                    console.print("[dim]Conversation compacted[/dim]")
+                logger.debug("Conversation compacted")
+                progress("  🗜  Compaction complete")
             
             elif step_type == "new_conversation":
                 # End current session, start fresh
-                if verbose:
-                    console.print("\n[bold cyan]🔄 Starting new conversation...[/bold cyan]")
+                logger.info("🔄 Starting new conversation...")
+                progress("  🔄 Starting new conversation...")
                 
                 await ai_adapter.destroy_session(adapter_session)
                 adapter_session = await ai_adapter.create_session(
@@ -373,15 +431,95 @@ async def _run_async(
                 )
                 first_prompt = True  # Re-include context in next prompt
                 
-                if verbose:
-                    console.print("[dim]New session created[/dim]")
+                logger.debug("New session created")
+            
+            elif step_type == "run":
+                # Execute shell command
+                command = step_content
+                logger.info(f"🔧 RUN: {command}")
+                progress(f"  🔧 Running: {command[:50]}...")
+                
+                run_start = time.time()
+                try:
+                    result = subprocess.run(
+                        command,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=60,  # Default timeout
+                        cwd=conv.cwd or Path.cwd(),
+                    )
+                    run_elapsed = time.time() - run_start
+                    
+                    # Determine if we should include output
+                    include_output = (
+                        conv.run_output == "always" or
+                        (conv.run_output == "on-error" and result.returncode != 0)
+                    )
+                    
+                    if result.returncode == 0:
+                        logger.info(f"  ✓ Command succeeded ({run_elapsed:.1f}s)")
+                        progress(f"  ✓ Command succeeded ({run_elapsed:.1f}s)")
+                    else:
+                        logger.warning(f"  ✗ Command failed with exit code {result.returncode}")
+                        progress(f"  ✗ Command failed (exit {result.returncode})")
+                        
+                        if conv.run_on_error == "stop":
+                            console.print(f"[red]RUN failed: {command}[/red]")
+                            console.print(f"[dim]Exit code: {result.returncode}[/dim]")
+                            if result.stderr:
+                                console.print(f"[dim]stderr: {result.stderr[:500]}[/dim]")
+                            session.state.status = "failed"
+                            await ai_adapter.destroy_session(adapter_session)
+                            await ai_adapter.stop()
+                            return
+                    
+                    # Add output to context for next prompt if configured
+                    if include_output:
+                        output_text = result.stdout or ""
+                        if result.stderr:
+                            output_text += f"\n\n[stderr]\n{result.stderr}"
+                        
+                        # Store as context for next prompt (add to session messages)
+                        if output_text.strip():
+                            run_context = f"```\n$ {command}\n{output_text}\n```"
+                            session.add_message("system", f"[RUN output]\n{run_context}")
+                            logger.debug(f"Added RUN output to context ({len(output_text)} chars)")
+                
+                except subprocess.TimeoutExpired:
+                    logger.error(f"  ✗ Command timed out")
+                    progress(f"  ✗ Command timed out")
+                    
+                    if conv.run_on_error == "stop":
+                        console.print(f"[red]RUN timed out: {command}[/red]")
+                        session.state.status = "failed"
+                        await ai_adapter.destroy_session(adapter_session)
+                        await ai_adapter.stop()
+                        return
+                
+                except Exception as e:
+                    logger.error(f"  ✗ Command error: {e}")
+                    
+                    if conv.run_on_error == "stop":
+                        console.print(f"[red]RUN error: {e}[/red]")
+                        session.state.status = "failed"
+                        await ai_adapter.destroy_session(adapter_session)
+                        await ai_adapter.stop()
+                        return
 
         # Cleanup
         await ai_adapter.destroy_session(adapter_session)
         session.state.status = "completed"
 
-        # Output
-        final_output = "\n\n---\n\n".join(responses)
+        # Output with header/footer injection
+        raw_output = "\n\n---\n\n".join(responses)
+        base_path = conv.source_path.parent if conv.source_path else Path.cwd()
+        final_output = build_output_with_injection(
+            raw_output, conv.headers, conv.footers,
+            base_path=base_path,
+            variables=template_vars
+        )
+        total_elapsed = time.time() - start_time
 
         if json_output:
             import json
@@ -393,12 +531,21 @@ async def _run_async(
             }
             console.print_json(json.dumps(result))
         else:
-            if output_file:
-                Path(output_file).write_text(final_output)
-                console.print(f"\n[green]Output written to {output_file}[/green]")
+            # Use conv.output_file which includes both CLI override and workflow OUTPUT-FILE
+            effective_output = conv.output_file
+            if effective_output:
+                # Substitute template variables in output path
+                effective_output = substitute_template_variables(effective_output, template_vars)
+                output_path = Path(effective_output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(final_output)
+                progress(f"  Writing to {effective_output}")
+                console.print(f"\n[green]Output written to {effective_output}[/green]")
             else:
                 console.print("\n" + "=" * 60)
                 console.print(Markdown(final_output))
+        
+        progress(f"Done in {total_elapsed:.1f}s")
 
     except Exception as e:
         session.state.status = "failed"

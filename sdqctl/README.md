@@ -80,12 +80,79 @@ OUTPUT-FILE security-report.md
 | `CONTEXT` | Include file/pattern |
 | `CONTEXT-LIMIT` | Context window threshold |
 | `ON-CONTEXT-LIMIT` | Action when limit reached (compact, stop) |
+| `PROLOGUE` | Prepend to each prompt (inline or @file) |
+| `EPILOGUE` | Append to each prompt (inline or @file) |
 | `PROMPT` | Prompt to send (runs LLM conversation cycle) |
+| `RUN` | Execute shell command |
+| `RUN-ON-ERROR` | Behavior on command failure (stop, continue) |
+| `RUN-OUTPUT` | When to include output (always, on-error, never) |
 | `PAUSE` | Checkpoint and exit for human review |
 | `CHECKPOINT-AFTER` | When to checkpoint (each-cycle, each-prompt) |
 | `COMPACT-PRESERVE` | What to preserve during compaction |
+| `HEADER` | Prepend to output (inline or @file) |
+| `FOOTER` | Append to output (inline or @file) |
 | `OUTPUT-FORMAT` | Output format (markdown, json) |
 | `OUTPUT-FILE` | Output destination |
+
+### Template Variables
+
+Available in PROLOGUE, EPILOGUE, HEADER, FOOTER, PROMPT, and OUTPUT paths:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{DATE}}` | ISO date | 2026-01-21 |
+| `{{DATETIME}}` | ISO datetime | 2026-01-21T12:00:00 |
+| `{{WORKFLOW_NAME}}` | Workflow filename | security-audit |
+| `{{COMPONENT_NAME}}` | Component name (for iterations) | auth |
+| `{{ITERATION_INDEX}}` | Current iteration | 3 |
+| `{{ITERATION_TOTAL}}` | Total iterations | 15 |
+| `{{GIT_BRANCH}}` | Current git branch | main |
+| `{{GIT_COMMIT}}` | Short commit SHA | abc1234 |
+| `{{CWD}}` | Current working directory | /home/user/project |
+
+### Prompt/Output Injection
+
+Inject consistent content into prompts or output:
+
+```dockerfile
+# Prepend date context to every prompt
+PROLOGUE Current date: {{DATE}}
+PROLOGUE @templates/5-facet-context.md
+
+# Append reminder to every prompt
+EPILOGUE Remember to update progress.md
+
+# Add headers/footers to output
+HEADER # Analysis Report - {{WORKFLOW_NAME}}
+FOOTER ---\nGenerated: {{DATETIME}} by sdqctl
+```
+
+CLI options:
+```bash
+sdqctl run workflow.conv \
+  --prologue "Date: 2026-01-21" \
+  --epilogue @templates/footer.md \
+  --header "# Report" \
+  --footer @templates/disclaimer.md
+```
+
+### RUN Directive (Command Execution)
+
+Execute shell commands during workflow:
+
+```dockerfile
+# Run verification tool, output goes to AI context
+RUN python tools/verify_refs.py --json
+PROMPT Analyze the verification results above
+
+# Control error handling
+RUN-ON-ERROR continue
+RUN make test
+
+# Only include output on failure
+RUN-OUTPUT on-error
+RUN npm run lint
+```
 
 ### Human-in-the-Loop with PAUSE
 

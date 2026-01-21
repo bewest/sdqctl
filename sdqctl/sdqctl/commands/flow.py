@@ -18,8 +18,10 @@ from rich.table import Table
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from ..core.conversation import ConversationFile
+from ..core.logging import get_logger
 from ..core.session import Session
 
+logger = get_logger(__name__)
 console = Console()
 
 
@@ -89,9 +91,8 @@ async def _flow_async(
     workflow_files.sort()
 
     console.print(f"\n[bold]Found {len(workflow_files)} workflows[/bold]")
-    if verbose:
-        for wf in workflow_files:
-            console.print(f"  - {wf}")
+    for wf in workflow_files:
+        logger.debug(f"  - {wf}")
 
     if dry_run:
         console.print(f"\n[yellow]Would execute {len(workflow_files)} workflows with parallelism {parallel_limit}[/yellow]")

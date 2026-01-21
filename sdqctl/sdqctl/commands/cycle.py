@@ -18,8 +18,11 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from ..core.conversation import ConversationFile
+from ..core.logging import get_logger
+from ..core.progress import progress as progress_print
 from ..core.session import Session
 
+logger = get_logger(__name__)
 console = Console()
 
 
@@ -63,9 +66,12 @@ async def _cycle_async(
     dry_run: bool,
 ) -> None:
     """Async implementation of cycle command."""
+    import time
+    cycle_start = time.time()
 
     # Load workflow
     conv = ConversationFile.from_file(Path(workflow_path))
+    progress_print(f"Running {Path(workflow_path).name} (cycle mode)...")
 
     # Apply overrides
     if max_cycles_override:
@@ -81,7 +87,7 @@ async def _cycle_async(
     session_dir = Path(checkpoint_dir) if checkpoint_dir else None
     session = Session(conv, session_dir=session_dir)
 
-    if verbose or dry_run:
+    if dry_run:
         console.print(Panel.fit(
             f"Workflow: {workflow_path}\n"
             f"Adapter: {conv.adapter}\n"
@@ -92,6 +98,9 @@ async def _cycle_async(
             f"On context limit: {conv.on_context_limit}",
             title="Cycle Configuration"
         ))
+    else:
+        logger.info(f"Loaded workflow from {workflow_path}")
+        logger.debug(f"Adapter: {conv.adapter}, Model: {conv.model}, Max Cycles: {conv.max_cycles}")
 
     if dry_run:
         console.print("\n[yellow]Dry run - no execution[/yellow]")
@@ -134,10 +143,12 @@ async def _cycle_async(
                     description=f"Cycle {cycle_num + 1}/{conv.max_cycles}",
                     completed=cycle_num
                 )
+                progress_print(f"  Cycle {cycle_num + 1}/{conv.max_cycles}...")
 
                 # Check for compaction
                 if session.needs_compaction():
                     console.print(f"\n[yellow]Context near limit, compacting...[/yellow]")
+                    progress_print(f"  🗜  Compacting context...")
                     
                     compact_result = await ai_adapter.compact(
                         adapter_session,
@@ -146,11 +157,13 @@ async def _cycle_async(
                     )
                     
                     console.print(f"[green]Compacted: {compact_result.tokens_before} → {compact_result.tokens_after} tokens[/green]")
+                    progress_print(f"  🗜  Compacted: {compact_result.tokens_before} → {compact_result.tokens_after} tokens")
 
                 # Checkpoint if configured
                 if session.should_checkpoint():
                     checkpoint = session.create_checkpoint(f"cycle-{cycle_num}")
                     console.print(f"[blue]Checkpoint saved: {checkpoint.name}[/blue]")
+                    progress_print(f"  📌 Checkpoint: {checkpoint.name}")
 
                 # Run all prompts in this cycle
                 context_content = session.context.get_context_content() if cycle_num == 0 else ""
@@ -167,7 +180,7 @@ async def _cycle_async(
                     if cycle_num > 0 and prompt_idx == 0 and conv.on_context_limit_prompt:
                         full_prompt = f"{conv.on_context_limit_prompt}\n\n{prompt}"
 
-                    if verbose:
+                    if logger.isEnabledFor(10):  # DEBUG level
                         console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
                         console.print(f"[dim]{prompt[:100]}...[/dim]" if len(prompt) > 100 else f"[dim]{prompt}[/dim]")
 
@@ -186,6 +199,7 @@ async def _cycle_async(
         # Cleanup
         await ai_adapter.destroy_session(adapter_session)
         session.state.status = "completed"
+        cycle_elapsed = time.time() - cycle_start
 
         # Output
         if json_output:
@@ -208,7 +222,10 @@ async def _cycle_async(
                     for r in all_responses
                 )
                 Path(conv.output_file).write_text(output_content)
+                progress_print(f"  Writing to {conv.output_file}")
                 console.print(f"[green]Output written to {conv.output_file}[/green]")
+        
+        progress_print(f"Done in {cycle_elapsed:.1f}s")
 
     except Exception as e:
         session.state.status = "failed"

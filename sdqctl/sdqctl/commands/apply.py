@@ -24,8 +24,11 @@ from rich.table import Table
 from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from ..core.conversation import ConversationFile, apply_iteration_context
+from ..core.logging import get_logger
+from ..core.progress import progress as progress_print
 from ..core.session import Session
 
+logger = get_logger(__name__)
 console = Console()
 
 
@@ -96,11 +99,13 @@ async def _apply_async(
     dry_run: bool,
 ) -> None:
     """Async implementation of apply command."""
+    import time as time_module
+    apply_start = time_module.time()
     
     # Load workflow
     conv = ConversationFile.from_file(Path(workflow_path))
-    if verbose:
-        console.print(f"[blue]Loaded workflow from {workflow_path}[/blue]")
+    logger.info(f"Loaded workflow from {workflow_path}")
+    progress_print(f"Applying {Path(workflow_path).name}...")
     
     # Apply overrides
     if adapter_name:
@@ -147,6 +152,8 @@ async def _apply_async(
         console.print("[yellow]No components found matching pattern[/yellow]")
         return
     
+    progress_print(f"  Found {len(component_list)} components")
+    
     # Show what we'll process
     console.print(Panel.fit(
         f"Workflow: {workflow_path}\n"
@@ -157,7 +164,7 @@ async def _apply_async(
         title="Apply Configuration"
     ))
     
-    if verbose or dry_run:
+    if dry_run:
         table = Table(title="Components")
         table.add_column("Index", style="dim")
         table.add_column("Path")
@@ -165,6 +172,9 @@ async def _apply_async(
         for i, comp in enumerate(component_list, 1):
             table.add_row(str(i), comp["path"], comp.get("type", "unknown"))
         console.print(table)
+    else:
+        for comp in component_list:
+            logger.debug(f"  - {comp['path']} ({comp.get('type', 'unknown')})")
     
     if dry_run:
         console.print("\n[yellow]Dry run - no execution[/yellow]")
@@ -198,42 +208,44 @@ async def _apply_async(
     await ai_adapter.start()
     
     try:
-        # Process components (sequential or parallel)
-        if parallel > 1:
-            # Parallel execution with semaphore
-            semaphore = asyncio.Semaphore(parallel)
-            tasks = []
-            for i, comp in enumerate(component_list, 1):
-                task = _process_component_with_semaphore(
-                    semaphore, conv, comp, i, len(component_list),
-                    ai_adapter, progress_data, verbose
-                )
-                tasks.append(task)
-            await asyncio.gather(*tasks)
-        else:
-            # Sequential execution with progress bar
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                console=console,
-            ) as progress:
-                task = progress.add_task("Processing components...", total=len(component_list))
-                
+            # Process components (sequential or parallel)
+            if parallel > 1:
+                # Parallel execution with semaphore
+                semaphore = asyncio.Semaphore(parallel)
+                tasks = []
                 for i, comp in enumerate(component_list, 1):
-                    progress.update(task, description=f"[{i}/{len(component_list)}] {comp['path']}")
-                    await _process_single_component(
-                        conv, comp, i, len(component_list),
-                        ai_adapter, progress_data, verbose
+                    task = _process_component_with_semaphore(
+                        semaphore, conv, comp, i, len(component_list),
+                        ai_adapter, progress_data
                     )
-                    progress.advance(task)
+                    tasks.append(task)
+                await asyncio.gather(*tasks)
+            else:
+                # Sequential execution with progress bar
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    console=console,
+                ) as progress:
+                    task = progress.add_task("Processing components...", total=len(component_list))
+                    
+                    for i, comp in enumerate(component_list, 1):
+                        progress.update(task, description=f"[{i}/{len(component_list)}] {comp['path']}")
+                        await _process_single_component(
+                            conv, comp, i, len(component_list),
+                            ai_adapter, progress_data
+                        )
+                        progress.advance(task)
     
     finally:
         await ai_adapter.stop()
         progress_data.write_final()
     
     # Summary
+    apply_elapsed = time_module.time() - apply_start
+    progress_print(f"Done in {apply_elapsed:.1f}s")
     console.print(f"\n[green]✓ Completed {len(component_list)} components[/green]")
     if progress_file:
         console.print(f"[dim]Progress saved to: {progress_file}[/dim]")
@@ -247,12 +259,11 @@ async def _process_component_with_semaphore(
     total: int,
     ai_adapter,
     progress_data: "ProgressTracker",
-    verbose: bool,
 ) -> None:
     """Process a single component with semaphore for parallel limiting."""
     async with semaphore:
         await _process_single_component(
-            conv, component, index, total, ai_adapter, progress_data, verbose
+            conv, component, index, total, ai_adapter, progress_data
         )
 
 
@@ -263,7 +274,6 @@ async def _process_single_component(
     total: int,
     ai_adapter,
     progress_data: "ProgressTracker",
-    verbose: bool,
 ) -> None:
     """Process a single component through the workflow."""
     component_path = component["path"]
@@ -271,6 +281,7 @@ async def _process_single_component(
     
     start_time = time.time()
     progress_data.update_status(component_path, "running")
+    progress_print(f"  [{index}/{total}] Processing {component_path}...")
     
     try:
         # Apply template variables
@@ -290,8 +301,7 @@ async def _process_single_component(
         context_content = session.context.get_context_content()
         
         for i, prompt in enumerate(instance_conv.prompts):
-            if verbose:
-                console.print(f"  [{index}/{total}] Prompt {i+1}/{len(instance_conv.prompts)}")
+            logger.debug(f"  [{index}/{total}] Prompt {i+1}/{len(instance_conv.prompts)}")
             
             full_prompt = prompt
             if i == 0 and context_content:
@@ -311,8 +321,10 @@ async def _process_single_component(
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_content = "\n\n---\n\n".join(responses)
             output_path.write_text(output_content)
+            progress_print(f"  [{index}/{total}] Writing to {output_path}")
         
         duration = time.time() - start_time
+        progress_print(f"  [{index}/{total}] Done ({duration:.1f}s)")
         progress_data.update_status(
             component_path, "done", 
             output=str(output_path) if output_path else None,
@@ -321,9 +333,9 @@ async def _process_single_component(
         
     except Exception as e:
         duration = time.time() - start_time
+        progress_print(f"  [{index}/{total}] Failed: {e}")
         progress_data.update_status(component_path, "failed", error=str(e), duration=duration)
-        if verbose:
-            console.print(f"  [red]Error: {e}[/red]")
+        logger.warning(f"  Error processing {component_path}: {e}")
 
 
 class ProgressTracker:

@@ -23,12 +23,16 @@ from .commands.cycle import cycle
 from .commands.flow import flow
 from .commands.status import status
 from .commands.apply import apply
+from .core.logging import get_logger, setup_logging
+from .core.progress import set_quiet
 
 
 @click.group()
 @click.version_option(version=__version__, prog_name="sdqctl")
+@click.option("-v", "--verbose", count=True, help="Increase verbosity (-v, -vv, -vvv)")
+@click.option("-q", "--quiet", is_flag=True, help="Suppress output except errors")
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, verbose: int, quiet: bool) -> None:
     """sdqctl - Software Defined Quality Control
 
     Vendor-agnostic CLI for orchestrating AI-assisted development workflows.
@@ -42,14 +46,26 @@ def cli(ctx: click.Context) -> None:
       status   Show session and system status
 
     \b
+    Verbosity:
+      -v       INFO level (key operations)
+      -vv      DEBUG level (detailed tracing)
+      -vvv     TRACE level (everything)
+      -q       Quiet mode (errors only)
+
+    \b
     Examples:
       sdqctl run "Audit authentication module"
       sdqctl run workflow.conv --adapter copilot
+      sdqctl -vv run workflow.conv  # with debug output
       sdqctl cycle workflow.conv --max-cycles 5
       sdqctl flow workflows/*.conv --parallel 4
       sdqctl apply workflow.conv --components "lib/*.js" --progress progress.md
     """
     ctx.ensure_object(dict)
+    ctx.obj["verbosity"] = verbose
+    ctx.obj["quiet"] = quiet
+    setup_logging(verbose, quiet)
+    set_quiet(quiet)
 
 
 # Register commands
@@ -436,7 +452,7 @@ def show(workflow: str) -> None:
 @cli.command()
 @click.argument("checkpoint", type=click.Path(exists=True))
 @click.option("--adapter", "-a", default=None, help="AI adapter override")
-@click.option("--verbose", "-v", is_flag=True, help="Verbose output")
+@click.option("--verbose", "-v", is_flag=True, help="Verbose output (deprecated, use -v on main command)")
 def resume(checkpoint: str, adapter: str, verbose: bool) -> None:
     """Resume a paused workflow from checkpoint.
     
@@ -446,6 +462,7 @@ def resume(checkpoint: str, adapter: str, verbose: bool) -> None:
         sdqctl resume ~/.sdqctl/sessions/abc123/pause.json
     """
     import asyncio
+    import logging
     from pathlib import Path
     from rich.console import Console
     from rich.panel import Panel
@@ -455,12 +472,18 @@ def resume(checkpoint: str, adapter: str, verbose: bool) -> None:
     from .core.session import Session
     
     console = Console()
+    resume_logger = get_logger(__name__)
     
-    asyncio.run(_resume_async(checkpoint, adapter, verbose, console))
+    # Boost verbosity if --verbose flag used on this command
+    if verbose and not resume_logger.isEnabledFor(logging.INFO):
+        setup_logging(1)
+    
+    asyncio.run(_resume_async(checkpoint, adapter, console))
 
 
-async def _resume_async(checkpoint: str, adapter_name: str, verbose: bool, console) -> None:
+async def _resume_async(checkpoint: str, adapter_name: str, console) -> None:
     """Async implementation of resume command."""
+    import logging
     from pathlib import Path
     from rich.panel import Panel
     
@@ -468,6 +491,7 @@ async def _resume_async(checkpoint: str, adapter_name: str, verbose: bool, conso
     from .adapters.base import AdapterConfig
     from .core.session import Session
     
+    resume_logger = get_logger(__name__)
     checkpoint_path = Path(checkpoint)
     
     try:
@@ -511,13 +535,11 @@ async def _resume_async(checkpoint: str, adapter_name: str, verbose: bool, conso
         for i in range(start_idx, len(conv.prompts)):
             prompt = conv.prompts[i]
             
-            if verbose:
-                console.print(f"\n[bold blue]Sending prompt {i + 1}/{len(conv.prompts)}...[/bold blue]")
+            resume_logger.info(f"Sending prompt {i + 1}/{len(conv.prompts)}...")
             
             response = await ai_adapter.send(adapter_session, prompt)
             
-            if verbose:
-                console.print(f"[dim]{response[:200]}...[/dim]" if len(response) > 200 else f"[dim]{response}[/dim]")
+            resume_logger.debug(f"{response[:200]}..." if len(response) > 200 else response)
             
             session.add_message("user", prompt)
             session.add_message("assistant", response)

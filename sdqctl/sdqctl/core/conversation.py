@@ -41,6 +41,10 @@ class DirectiveType(Enum):
     ALLOW_DIR = "ALLOW-DIR"
     DENY_DIR = "DENY-DIR"
 
+    # Prompt injection (prepend/append to prompts)
+    PROLOGUE = "PROLOGUE"
+    EPILOGUE = "EPILOGUE"
+
     # Prompts
     PROMPT = "PROMPT"
     ON_CONTEXT_LIMIT_PROMPT = "ON-CONTEXT-LIMIT-PROMPT"
@@ -56,11 +60,20 @@ class DirectiveType(Enum):
     CHECKPOINT_AFTER = "CHECKPOINT-AFTER"
     CHECKPOINT_NAME = "CHECKPOINT-NAME"
 
+    # Output injection (prepend/append to output)
+    HEADER = "HEADER"
+    FOOTER = "FOOTER"
+
     # Output
     OUTPUT = "OUTPUT"
     OUTPUT_FORMAT = "OUTPUT-FORMAT"
     OUTPUT_FILE = "OUTPUT-FILE"
     OUTPUT_DIR = "OUTPUT-DIR"
+
+    # Command execution
+    RUN = "RUN"
+    RUN_ON_ERROR = "RUN-ON-ERROR"
+    RUN_OUTPUT = "RUN-OUTPUT"
 
     # Flow control
     PAUSE = "PAUSE"
@@ -171,6 +184,10 @@ class ConversationFile:
     # File restrictions
     file_restrictions: FileRestrictions = field(default_factory=FileRestrictions)
 
+    # Prompt injection (prepend/append to each prompt)
+    prologues: list[str] = field(default_factory=list)  # Content prepended to each prompt
+    epilogues: list[str] = field(default_factory=list)  # Content appended to each prompt
+
     # Prompts (legacy - flat list for backward compatibility)
     prompts: list[str] = field(default_factory=list)
     on_context_limit_prompt: Optional[str] = None
@@ -190,6 +207,14 @@ class ConversationFile:
     output_format: str = "markdown"
     output_file: Optional[str] = None
     output_dir: Optional[str] = None
+
+    # Output injection (prepend/append to output)
+    headers: list[str] = field(default_factory=list)  # Content prepended to output
+    footers: list[str] = field(default_factory=list)  # Content appended to output
+
+    # Command execution settings
+    run_on_error: str = "stop"  # stop, continue
+    run_output: str = "always"  # always, on-error, never
 
     # Flow control
     pause_points: list[tuple[int, str]] = field(default_factory=list)  # (after_prompt_index, message)
@@ -320,6 +345,15 @@ class ConversationFile:
         if self.compact_preserve or self.checkpoint_after:
             lines.append("")
 
+        # Prompt injection (prologues/epilogues)
+        for prologue in self.prologues:
+            lines.append(f"PROLOGUE {prologue}")
+        for epilogue in self.epilogues:
+            lines.append(f"EPILOGUE {epilogue}")
+        
+        if self.prologues or self.epilogues:
+            lines.append("")
+
         # Prompts
         for prompt in self.prompts:
             if "\n" in prompt:
@@ -334,11 +368,26 @@ class ConversationFile:
 
         lines.append("")
 
+        # Output injection (headers/footers)
+        for header in self.headers:
+            lines.append(f"HEADER {header}")
+        for footer in self.footers:
+            lines.append(f"FOOTER {footer}")
+        
+        if self.headers or self.footers:
+            lines.append("")
+
         # Output
         if self.output_format != "markdown":
             lines.append(f"OUTPUT-FORMAT {self.output_format}")
         if self.output_file:
             lines.append(f"OUTPUT-FILE {self.output_file}")
+        
+        # RUN settings (only if non-default)
+        if self.run_on_error != "stop":
+            lines.append(f"RUN-ON-ERROR {self.run_on_error}")
+        if self.run_output != "always":
+            lines.append(f"RUN-OUTPUT {self.run_output}")
 
         return "\n".join(lines)
 
@@ -394,6 +443,12 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
         case DirectiveType.DENY_DIR:
             conv.file_restrictions.deny_dirs.append(directive.value)
         
+        # Prompt injection (prepend/append to each prompt)
+        case DirectiveType.PROLOGUE:
+            conv.prologues.append(directive.value)
+        case DirectiveType.EPILOGUE:
+            conv.epilogues.append(directive.value)
+        
         # Prompts - add to both flat list and steps
         case DirectiveType.PROMPT:
             conv.prompts.append(directive.value)
@@ -433,6 +488,20 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
         case DirectiveType.OUTPUT_DIR:
             conv.output_dir = directive.value
         
+        # Output injection (prepend/append to output)
+        case DirectiveType.HEADER:
+            conv.headers.append(directive.value)
+        case DirectiveType.FOOTER:
+            conv.footers.append(directive.value)
+        
+        # Command execution settings
+        case DirectiveType.RUN:
+            conv.steps.append(ConversationStep(type="run", content=directive.value))
+        case DirectiveType.RUN_ON_ERROR:
+            conv.run_on_error = directive.value.lower()
+        case DirectiveType.RUN_OUTPUT:
+            conv.run_output = directive.value.lower()
+        
         case DirectiveType.PAUSE:
             # PAUSE after the last prompt added so far
             pause_index = len(conv.prompts) - 1 if conv.prompts else 0
@@ -443,17 +512,92 @@ def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
     """Substitute {{VARIABLE}} placeholders with values.
     
     Supported variables:
+    - DATE: ISO date (YYYY-MM-DD)
+    - DATETIME: ISO datetime
+    - WORKFLOW_NAME: Workflow filename (stem)
+    - WORKFLOW_PATH: Full path to workflow
     - COMPONENT_PATH: Full path to current component
     - COMPONENT_NAME: Base name of component (without extension)
     - COMPONENT_DIR: Parent directory of component
     - COMPONENT_TYPE: Type from discovery (plugin, api, etc.)
     - ITERATION_INDEX: Current iteration number (1-based)
     - ITERATION_TOTAL: Total number of components
+    - GIT_BRANCH: Current git branch (if available)
+    - GIT_COMMIT: Short commit SHA (if available)
+    - CWD: Current working directory
     """
     result = text
     for key, value in variables.items():
         result = result.replace(f"{{{{{key}}}}}", str(value))
     return result
+
+
+def get_standard_variables(workflow_path: Optional[Path] = None) -> dict[str, str]:
+    """Get standard template variables available in all contexts.
+    
+    Returns dict with DATE, DATETIME, WORKFLOW_NAME, WORKFLOW_PATH, GIT_BRANCH, GIT_COMMIT, CWD.
+    """
+    import subprocess
+    from datetime import datetime
+    
+    now = datetime.now()
+    variables = {
+        "DATE": now.strftime("%Y-%m-%d"),
+        "DATETIME": now.strftime("%Y-%m-%dT%H:%M:%S"),
+        "CWD": str(Path.cwd()),
+    }
+    
+    if workflow_path:
+        variables["WORKFLOW_NAME"] = workflow_path.stem
+        variables["WORKFLOW_PATH"] = str(workflow_path)
+    
+    # Try to get git info (fail silently if not in a git repo)
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            variables["GIT_BRANCH"] = result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            variables["GIT_COMMIT"] = result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    
+    return variables
+
+
+def resolve_content_reference(value: str, base_path: Optional[Path] = None) -> str:
+    """Resolve @file references to file content.
+    
+    Args:
+        value: Either inline text or @path/to/file reference
+        base_path: Base path for relative file references
+        
+    Returns:
+        The resolved content (file contents or original value)
+    """
+    if value.startswith("@"):
+        file_path = value[1:]  # Remove @ prefix
+        if base_path:
+            full_path = base_path / file_path
+        else:
+            full_path = Path(file_path)
+        
+        if full_path.exists():
+            return full_path.read_text()
+        else:
+            # Return original reference if file not found (will be caught in validation)
+            return value
+    return value
 
 
 def apply_iteration_context(conv: ConversationFile, component_path: str, 
@@ -471,24 +615,34 @@ def apply_iteration_context(conv: ConversationFile, component_path: str,
     Returns:
         A new ConversationFile with substituted values
     """
-    from pathlib import Path
     from copy import deepcopy
     
     path_obj = Path(component_path)
-    variables = {
+    
+    # Combine standard variables with component-specific ones
+    variables = get_standard_variables(conv.source_path)
+    variables.update({
         "COMPONENT_PATH": str(component_path),
         "COMPONENT_NAME": path_obj.stem,
         "COMPONENT_DIR": str(path_obj.parent),
         "COMPONENT_TYPE": component_type,
         "ITERATION_INDEX": str(iteration_index),
         "ITERATION_TOTAL": str(iteration_total),
-    }
+    })
     
     # Deep copy to avoid modifying original
     new_conv = deepcopy(conv)
     
     # Substitute in prompts
     new_conv.prompts = [substitute_template_variables(p, variables) for p in new_conv.prompts]
+    
+    # Substitute in prologues and epilogues
+    new_conv.prologues = [substitute_template_variables(p, variables) for p in new_conv.prologues]
+    new_conv.epilogues = [substitute_template_variables(e, variables) for e in new_conv.epilogues]
+    
+    # Substitute in headers and footers
+    new_conv.headers = [substitute_template_variables(h, variables) for h in new_conv.headers]
+    new_conv.footers = [substitute_template_variables(f, variables) for f in new_conv.footers]
     
     # Substitute in steps
     for step in new_conv.steps:
@@ -501,3 +655,75 @@ def apply_iteration_context(conv: ConversationFile, component_path: str,
         new_conv.output_dir = substitute_template_variables(new_conv.output_dir, variables)
     
     return new_conv
+
+
+def build_prompt_with_injection(prompt: str, prologues: list[str], epilogues: list[str],
+                                 base_path: Optional[Path] = None,
+                                 variables: Optional[dict[str, str]] = None) -> str:
+    """Build a complete prompt with prologue/epilogue injection.
+    
+    Args:
+        prompt: The main prompt text
+        prologues: List of prologue content (inline or @file references)
+        epilogues: List of epilogue content (inline or @file references)
+        base_path: Base path for resolving @file references
+        variables: Template variables for substitution
+        
+    Returns:
+        Complete prompt with prologues prepended and epilogues appended
+    """
+    variables = variables or {}
+    parts = []
+    
+    # Resolve and add prologues
+    for prologue in prologues:
+        content = resolve_content_reference(prologue, base_path)
+        content = substitute_template_variables(content, variables)
+        parts.append(content)
+    
+    # Add main prompt
+    parts.append(substitute_template_variables(prompt, variables))
+    
+    # Resolve and add epilogues
+    for epilogue in epilogues:
+        content = resolve_content_reference(epilogue, base_path)
+        content = substitute_template_variables(content, variables)
+        parts.append(content)
+    
+    return "\n\n".join(parts)
+
+
+def build_output_with_injection(output: str, headers: list[str], footers: list[str],
+                                 base_path: Optional[Path] = None,
+                                 variables: Optional[dict[str, str]] = None) -> str:
+    """Build complete output with header/footer injection.
+    
+    Args:
+        output: The main output content
+        headers: List of header content (inline or @file references)
+        footers: List of footer content (inline or @file references)
+        base_path: Base path for resolving @file references
+        variables: Template variables for substitution
+        
+    Returns:
+        Complete output with headers prepended and footers appended
+    """
+    variables = variables or {}
+    parts = []
+    
+    # Resolve and add headers
+    for header in headers:
+        content = resolve_content_reference(header, base_path)
+        content = substitute_template_variables(content, variables)
+        parts.append(content)
+    
+    # Add main output
+    parts.append(output)
+    
+    # Resolve and add footers
+    for footer in footers:
+        content = resolve_content_reference(footer, base_path)
+        content = substitute_template_variables(content, variables)
+        parts.append(content)
+    
+    return "\n\n".join(parts)
