@@ -186,6 +186,21 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T23:05 - RESUME TESTS CREATED**
+
+1. **Priority 1 complete:** Created `tests/test_resume.py` (12 tests)
+   - `TestSavePauseCheckpoint` (5 tests): file creation, message, content, prompt_index, cycle_number
+   - `TestLoadFromPause` (5 tests): restore messages, prompt_index, cycle_number, status, session_id
+   - `TestCheckpointRoundTrip` (2 tests): RUN failure output preserved, inline conversation
+2. **All 77 tests passing** (65 + 12 new)
+3. **R3 checkpoint functionality verified** - RUN output survives save/load cycle
+
+**Session: 2026-01-21T23:05 - GIT SAVED**
+
+1. **Commit `762463a` pushed** - docs: update RUN improvements report with resume discovery
+2. **All 65 tests passing** - verified before commit
+3. **Report synced to origin/main**
+
 **Session: 2026-01-21T23:02 - RESUME COMMAND DISCOVERY**
 
 1. **Resume command already exists** - Found at cli.py:454-560
@@ -487,20 +502,10 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Next 3 Taskable Areas (Future Sprint)
 
-### Priority 1: Resume Command Integration Test ⬅️ NEXT
-**File:** `tests/test_resume.py` (new file)  
-**Effort:** ~20 min  
-**Unblocked:** Yes
-
-Test the existing resume command (cli.py:454-560) with R3 checkpoints:
-1. Create workflow with RUN that fails → verify checkpoint created
-2. Call `Session.load_from_pause()` → verify messages restored
-3. Verify `prompt_index` allows resuming from correct step
-
-### Priority 2: Resume Command Enhancements
+### Priority 1: Resume Command Enhancements ⬅️ NEXT
 **File:** `sdqctl/cli.py` lines 454-580  
 **Effort:** ~30 min  
-**Unblocked:** After Priority 1
+**Unblocked:** Yes (tests now exist)
 
 Add missing features to existing resume command:
 - `--list` flag to show available checkpoints
@@ -508,7 +513,7 @@ Add missing features to existing resume command:
 - `--json` output format
 - Output file handling (respects OUTPUT-FILE directive)
 
-### Priority 3: RUN-CWD Directive (Per-Command Working Directory)
+### Priority 2: RUN-CWD Directive (Per-Command Working Directory)
 **File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
 **Effort:** ~20 min  
 **Unblocked:** Yes
@@ -517,6 +522,18 @@ Add `RUN-CWD` directive for per-command working directory:
 ```
 RUN-CWD ./subdir
 RUN npm install
+```
+
+### Priority 3: Async RUN Support
+**File:** `sdqctl/commands/run.py`  
+**Effort:** ~45 min  
+**Unblocked:** Yes
+
+Add background command execution for long-running processes:
+```
+RUN-ASYNC npm run dev
+RUN-WAIT 5s
+RUN curl localhost:3000/health
 ```
 
 ---
