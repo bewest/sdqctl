@@ -186,6 +186,32 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ## Completed This Session
 
+**Session: 2026-01-21T23:02 - RESUME COMMAND DISCOVERY**
+
+1. **Resume command already exists** - Found at cli.py:454-560
+   - Uses `Session.load_from_pause()` correctly
+   - Handles PAUSE points in resumed workflows  
+   - Missing: `--list`, `--dry-run`, `--json`, output file handling
+2. **Redundant resume.py removed** - Accidentally created duplicate
+3. **All 65 tests passing** - No regressions
+4. **Priority 1 shifts to testing existing resume** (not creating new)
+
+**Session: 2026-01-21T23:01 - RN2 RESEARCH COMPLETE**
+
+1. **RN2 Research: Resume command integration - COMPLETE**
+   - `Session.save_pause_checkpoint()` at session.py:184-211 creates pause.json
+   - `Session.load_from_pause()` at session.py:213-250 loads checkpoint
+   - **Gap found:** Resume command does NOT exist (not in commands/__init__.py)
+2. **Checkpoint format verified** - Contains messages, cycle_number, prompt_index
+3. **Next action:** Create `sdqctl/commands/resume.py` using existing session infrastructure
+
+**Session: 2026-01-21T23:00 - STATUS VERIFICATION**
+
+1. **All 65 tests passing** - verified via `pytest tests/test_run_command.py -q`
+2. **Git synced to origin/main** - commit `9ff3c74`
+3. **Sprint complete** - all 13 items implemented, documented, and pushed
+4. **No blocking issues** - ready for future sprint on remaining improvements
+
 **Session: 2026-01-21T22:44 - DOCUMENTATION COMPLETE**
 
 1. **Documentation Update - DONE**
@@ -420,26 +446,69 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 22. **Batch commits then push** - Grouping related commits before push keeps atomic changes together and reduces push overhead.
 
+23. **Sprint completion = clear handoff** - A complete sprint with all tests passing and docs updated creates a clean handoff point. Future work can start fresh without carryover bugs.
+
+24. **Status verification sessions are cheap** - Quick "all tests passing" checks take <2 minutes and confirm stability before context switching.
+
+25. **Research before implementation** - RN2 research discovered the resume command doesn't exist, changing Priority 1 from "test resume" to "create resume". Research prevents wasted implementation time.
+
+26. **Check existing code first** - Attempted to create resume.py but resume command already existed in cli.py:454-560. Always grep for existing implementations before creating new files.
+
 ---
 
 ## Research Needed
 
-*Moved to Next 3 Taskable Areas as Priority 3 (RN1).*
+### RN2: Resume Command Integration ✅ COMPLETE
+**Status:** Complete (2026-01-21T23:01)  
+**Question:** How does `sdqctl resume` interact with new checkpoint format?  
+**Finding:** Resume command does NOT exist yet - needs to be created
+
+**Session Infrastructure (already implemented):**
+- `Session.save_pause_checkpoint()` at session.py:184-211 - saves pause.json with messages, cycle/prompt index
+- `Session.load_from_pause()` at session.py:213-250 - restores session from checkpoint
+
+**Checkpoint Format (pause.json):**
+```json
+{
+  "type": "pause",
+  "message": "RUN failed: command (exit 1)",
+  "session_id": "...",
+  "conversation_file": "/path/to/workflow.conv",
+  "cycle_number": 0,
+  "prompt_index": 2,
+  "messages": [{"role": "system", "content": "[RUN output]..."}],
+  "context_status": {...}
+}
+```
+
+**Gap:** No `sdqctl resume <checkpoint>` command to use `load_from_pause()`
 
 ---
 
 ## Next 3 Taskable Areas (Future Sprint)
 
-### Priority 1: Resume Command Enhancement
-**File:** `sdqctl/commands/resume.py`  
+### Priority 1: Resume Command Integration Test ⬅️ NEXT
+**File:** `tests/test_resume.py` (new file)  
 **Effort:** ~20 min  
 **Unblocked:** Yes
 
-Verify resume command works with new checkpoint format:
-- Test resuming from failure checkpoint
-- Ensure RUN output context is restored
+Test the existing resume command (cli.py:454-560) with R3 checkpoints:
+1. Create workflow with RUN that fails → verify checkpoint created
+2. Call `Session.load_from_pause()` → verify messages restored
+3. Verify `prompt_index` allows resuming from correct step
 
-### Priority 2: RUN Working Directory
+### Priority 2: Resume Command Enhancements
+**File:** `sdqctl/cli.py` lines 454-580  
+**Effort:** ~30 min  
+**Unblocked:** After Priority 1
+
+Add missing features to existing resume command:
+- `--list` flag to show available checkpoints
+- `--dry-run` flag to preview resume state
+- `--json` output format
+- Output file handling (respects OUTPUT-FILE directive)
+
+### Priority 3: RUN-CWD Directive (Per-Command Working Directory)
 **File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
 **Effort:** ~20 min  
 **Unblocked:** Yes
@@ -448,17 +517,6 @@ Add `RUN-CWD` directive for per-command working directory:
 ```
 RUN-CWD ./subdir
 RUN npm install
-```
-
-### Priority 3: Async RUN Support
-**File:** `sdqctl/commands/run.py`  
-**Effort:** ~45 min  
-**Unblocked:** Yes
-
-Add background command execution for long-running processes:
-```
-RUN-ASYNC npm run dev
-RUN-WAIT 5s
 ```
 
 ---
