@@ -3,7 +3,41 @@
 **Topic:** RUN directive (subprocess execution in .conv files)  
 **Source:** `reports/improvements-tracker.md`  
 **Created:** 2026-01-21  
-**Status:** ✅ All P1 items COMPLETE (R1, R2, S1, T1)
+**Status:** ✅ SPRINT COMPLETE - All items implemented and documented
+
+---
+
+## Sprint Summary
+
+**Duration:** 2026-01-21 (single day sprint)  
+**Tests:** 34 → 65 (+31 tests)  
+**Commits:** 10 commits pushed to origin/main
+
+### Completed Items
+
+| ID | Item | Type | Tests Added |
+|----|------|------|-------------|
+| R1 | Timeout partial output capture | Reliability | 2 |
+| R2 | RUN failure context enhancement | Reliability | 2 |
+| R3 | Auto-checkpoint on RUN failure | Reliability | 3 |
+| S1 | Shell injection prevention (ALLOW-SHELL) | Security | 9 |
+| Q1 | Subprocess handling refactor | Code Quality | 0 |
+| E1 | RUN-OUTPUT-LIMIT directive | Ergonomics | 9 |
+| E2 | RUN-ENV directive | Ergonomics | 4 |
+| T1 | RUN integration tests | Testing | 7 |
+| T2 | Helper function unit tests | Testing | 6 |
+| T3 | R3 checkpoint integration tests | Testing | 3 |
+| RN1 | Session persistence research | Research | 0 |
+| Docs | README RUN section update | Documentation | 0 |
+| Parity | cycle.py R3 auto-checkpoint | Reliability | 0 |
+
+### Key Files Modified
+
+- `sdqctl/commands/run.py` - subprocess helpers, checkpoint saves
+- `sdqctl/commands/cycle.py` - R3 parity checkpoint saves
+- `sdqctl/core/conversation.py` - RUN-ENV, RUN-OUTPUT-LIMIT directives
+- `tests/test_run_command.py` - 31 new tests
+- `README.md` - comprehensive RUN documentation
 
 ---
 
@@ -394,7 +428,7 @@ Reduced duplicated subprocess.run() from 18 lines to 6 lines at call site.
 
 ---
 
-## Next 3 Taskable Areas
+## Next 3 Taskable Areas (Future Sprint)
 
 ### Priority 1: Resume Command Enhancement
 **File:** `sdqctl/commands/resume.py`  
@@ -405,21 +439,27 @@ Verify resume command works with new checkpoint format:
 - Test resuming from failure checkpoint
 - Ensure RUN output context is restored
 
-### Priority 2: Sprint Summary
-**File:** `reports/run-improvements-focus.md`  
-**Effort:** ~10 min  
+### Priority 2: RUN Working Directory
+**File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
+**Effort:** ~20 min  
 **Unblocked:** Yes
 
-Create summary of all items completed this sprint:
-- List all P1 items: R1, R2, R3, S1, T1, T2, T3, Q1, E1, E2
-- Count total tests added
-- Note key lessons learned
+Add `RUN-CWD` directive for per-command working directory:
+```
+RUN-CWD ./subdir
+RUN npm install
+```
 
-### Priority 3: Git Push + Sync
-**Effort:** ~2 min  
+### Priority 3: Async RUN Support
+**File:** `sdqctl/commands/run.py`  
+**Effort:** ~45 min  
 **Unblocked:** Yes
 
-Push documentation update to origin/main
+Add background command execution for long-running processes:
+```
+RUN-ASYNC npm run dev
+RUN-WAIT 5s
+```
 
 ---
 
