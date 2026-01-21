@@ -9,7 +9,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult
 
@@ -82,7 +82,7 @@ class CopilotAdapter(AdapterBase):
         self.cli_url = cli_url
         self.use_stdio = use_stdio
         self.client = None
-        self.sessions: dict[str, any] = {}
+        self.sessions: dict[str, Any] = {}
         self.session_stats: dict[str, SessionStats] = {}
 
     async def start(self) -> None:

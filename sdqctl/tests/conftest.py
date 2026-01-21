@@ -123,5 +123,40 @@ PROMPT Generate final report.
 """
 
 
+# CLI test fixtures
+from click.testing import CliRunner
+
+
+@pytest.fixture
+def cli_runner():
+    """Click test runner for CLI testing."""
+    return CliRunner()
+
+
+@pytest.fixture
+def workflow_file(tmp_path):
+    """Create a valid workflow file for testing."""
+    content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Test prompt.
+"""
+    f = tmp_path / "test.conv"
+    f.write_text(content)
+    return f
+
+
+@pytest.fixture
+def run_workflow_file(tmp_path):
+    """Create a workflow with RUN directive for testing."""
+    content = """MODEL gpt-4
+ADAPTER mock
+RUN echo "hello world"
+PROMPT Check the output.
+"""
+    f = tmp_path / "run-test.conv"
+    f.write_text(content)
+    return f
+
+
 # Re-export fixtures from fixtures package
 pytest_plugins = ["tests.fixtures"]

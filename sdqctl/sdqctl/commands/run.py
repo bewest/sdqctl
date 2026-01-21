@@ -209,15 +209,8 @@ async def _run_async(
     for ctx in extra_context:
         conv.context_files.append(f"@{ctx}")
 
-    # Apply CLI file restrictions (merge with file-defined ones)
-    cli_restrictions = FileRestrictions(
-        allow_patterns=list(allow_files),
-        deny_patterns=list(deny_files),
-        allow_dirs=list(allow_dir),
-        deny_dirs=list(deny_dir),
-    )
-    
-    # Merge: CLI allow patterns replace file patterns, CLI deny patterns add to file patterns
+    # Merge CLI file restrictions with file-defined ones
+    # CLI allow patterns replace file patterns, CLI deny patterns add to file patterns
     if allow_files or deny_files or allow_dir or deny_dir:
         conv.file_restrictions = conv.file_restrictions.merge_with_cli(
             list(allow_files) + list(f"{d}/**" for d in allow_dir),

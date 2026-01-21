@@ -1,8 +1,23 @@
 # sdqctl Improvements Tracker
 
 **Analysis Date:** 2026-01-21  
-**Git Branch:** main (9153029)  
-**Test Status:** 109/109 passing  
+**Git Branch:** main (40f7701)  
+**Test Status:** 149/149 passing (109 original + 40 new CLI/command tests)
+
+---
+
+## Completed Items (2026-01-21)
+
+### ✅ P0-3: CLI Integration Tests - COMPLETED
+- Added `tests/test_cli.py` with 22 tests covering CLI entry points
+- Added `tests/test_run_command.py` with 18 tests for step execution  
+- Total test coverage increased from 109 to 149 tests
+
+### ✅ Code Quality Fixes - COMPLETED
+- Fixed type hint `any` → `Any` in `adapters/copilot.py` line 85
+- Removed dead code: unused `cli_restrictions` variable in `commands/run.py` lines 213-218
+- Added `pytest-cov` to dev dependencies in `pyproject.toml`
+- Added CLI test fixtures to `tests/conftest.py`
 
 ---
 
@@ -217,21 +232,11 @@ The `test_adapters.py` only tests MockAdapter. If copilot SDK behavior changes, 
 
 **Recommendation:** Add mocked copilot SDK tests or integration tests with real SDK.
 
-#### P1-6: Unused cli_restrictions Variable
+#### P1-6: Unused cli_restrictions Variable ✅ FIXED
 **File:** `sdqctl/commands/run.py` lines 213-218  
 **Issue:** `cli_restrictions` created but never used
 
-```python
-cli_restrictions = FileRestrictions(
-    allow_patterns=list(allow_files),
-    deny_patterns=list(deny_files),
-    allow_dirs=list(allow_dir),
-    deny_dirs=list(deny_dir),
-)
-# cli_restrictions never used - merge_with_cli called with raw lists instead
-```
-
-**Recommendation:** Either use the variable or remove dead code.
+**Resolution:** Removed dead code - the variable was created but merge_with_cli was called with raw lists instead.
 
 ---
 
@@ -287,7 +292,7 @@ dev = [
 ]
 ```
 
-**Recommendation:** Add `pytest-cov>=4.0` to dev dependencies.
+**Recommendation:** Add `pytest-cov>=4.0` to dev dependencies. ✅ DONE
 
 #### P2-6: Adapter Registry Extensibility
 **File:** `sdqctl/adapters/registry.py`  
@@ -309,20 +314,20 @@ Users cannot register their own adapters without modifying source code.
 | `adapters/mock.py` | 20 | ~95% | None significant |
 | `adapters/copilot.py` | 0 | 0% | Full module |
 | `adapters/registry.py` | 3 | ~60% | Plugin loading |
-| `commands/run.py` | 0 | 0% | Full module |
-| `commands/cycle.py` | 0 | 0% | Full module |
+| `commands/run.py` | 18 | ~40% | RUN subprocess paths |
+| `commands/cycle.py` | 2 | ~20% | Multi-cycle iteration |
 | `commands/flow.py` | 0 | 0% | Full module |
 | `commands/apply.py` | 0 | 0% | Full module |
-| `cli.py` | 0 | 0% | Full module |
+| `cli.py` | 22 | ~60% | Entry points covered |
 
-**Total estimate:** ~40% code coverage (core modules well tested, CLI/commands untested)
+**Total estimate:** ~55% code coverage (improved from ~40%)
 
 ---
 
 ## Recommended Test Additions (Priority Order)
 
-1. **`tests/test_cli.py`** - CLI command integration tests using Click test runner
-2. **`tests/test_run.py`** - `sdqctl run` command with mock adapter
+1. ~~**`tests/test_cli.py`** - CLI command integration tests using Click test runner~~ ✅ DONE (22 tests)
+2. ~~**`tests/test_run.py`** - `sdqctl run` command with mock adapter~~ ✅ DONE (18 tests)
 3. **`tests/test_cycle.py`** - Multi-cycle workflow tests
 4. **`tests/test_apply.py`** - Component iteration tests  
 5. **`tests/test_flow.py`** - Parallel execution tests
@@ -397,14 +402,11 @@ logger.info("Session complete", extra={"turns": stats.turns, ...})
 
 ### Code Quality Improvements
 
-#### Q1: Type Hints Incomplete (P2)
+#### Q1: Type Hints Incomplete ✅ FIXED
 **File:** `sdqctl/adapters/copilot.py`, line 85  
 **Issue:** `sessions: dict[str, any]` uses lowercase `any` (should be `Any`)
 
-```python
-# Line 85
-self.sessions: dict[str, any] = {}  # Should be dict[str, Any]
-```
+**Resolution:** Fixed to `dict[str, Any]` with proper import.
 
 #### Q2: Magic Numbers (P2)
 **File:** `sdqctl/core/context.py`, line 31  
