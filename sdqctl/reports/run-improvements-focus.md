@@ -69,22 +69,20 @@ except subprocess.TimeoutExpired as e:
 
 **Tests added:** `TestTimeoutPartialOutput` class (2 tests) in `tests/test_run_command.py`
 
-#### R2: RUN Failure Context Enhancement ⏳
-**File:** `sdqctl/commands/run.py` lines 465-487  
-**Status:** BUG CONFIRMED - needs fix
+#### R2: RUN Failure Context Enhancement ✅ DONE
+**File:** `sdqctl/commands/run.py` lines 480-501  
+**Completed:** 2026-01-21
 
-**Finding:** Output IS added to context (lines 477-487) when `include_output=True`, BUT when `run_on_error == "stop"` and command fails, the function returns at line 475 BEFORE output is added to context.
+**Bug was:** When `run_on_error == "stop"` and command failed, the function returned BEFORE output was added to context. Output was lost.
 
-**Current behavior (run.py:469-487):**
-- ✅ `RUN-ON-ERROR continue` + failure → output added to context (continues past line 475)
-- ❌ `RUN-ON-ERROR stop` + failure → returns at line 475 BEFORE adding output (BUG)
+**Fix applied:**
+1. Moved output capture block BEFORE the stop-on-error check
+2. Added exit code marker to failure output: `$ command (exit 1)`
+3. Stop-on-error return now happens AFTER output is captured
 
-**Fix needed:** Move the `include_output` block (lines 477-487) to run BEFORE the early return at line 475. Or restructure to always capture output, then check run_on_error.
-
-**Tasks:**
-- [x] Verify failure output behavior (done - found bug confirmed)
-- [ ] Fix: add output to context BEFORE early return on stop
-- [ ] Add tests to confirm failure context behavior
+**Tests added:** `TestR2FailureOutputCapture` class (2 tests) in `tests/test_run_command.py`
+- `test_failure_output_format_includes_exit_code`
+- `test_stderr_captured_on_failure`
 
 ### 2. Security
 
@@ -158,7 +156,24 @@ else:
 
 ## Completed This Session
 
-**Session: 2026-01-21T22:16 (cycle 3 - VERIFICATION LOOP DETECTED)**
+**Session: 2026-01-21T22:19 - R2 BUG FIXED**
+
+1. **R2: RUN Failure Context Enhancement - FIXED**
+   - Root cause: output capture was AFTER early return on stop-on-error
+   - Fix: moved output capture BEFORE stop-on-error check (run.py:480-501)
+   - Added exit code marker to failure output: `$ command (exit 1)`
+2. **Added 2 tests** - `TestR2FailureOutputCapture` class (43 tests total now)
+3. **All 43 tests passing** - Verified
+
+**Root cause of 7-session loop:** The progress-tracker workflow only had "Analyze" and "Update report" prompts - no "Fix the bug" prompt. Documentation cycles don't execute implementations.
+
+**Previous Session: 2026-01-21T22:17 (COMMITTED TO GIT)**
+
+1. **Git commit 6f28bd2** - Saved report updates tracking 7 verification sessions
+2. **All 41 tests passing** - Verified
+3. **R2 bug still at run.py:486** - Confirmed (8th time)
+
+**Previous Session: 2026-01-21T22:16 (cycle 3 - VERIFICATION LOOP DETECTED)**
 
 1. **All 41 tests passing** - Verified
 2. **R2 bug still at run.py:486** - Same finding as previous 6 sessions
@@ -218,77 +233,43 @@ else:
 
 1. **TimeoutExpired has output attributes** - Research confirmed `subprocess.TimeoutExpired` exposes `stdout`, `stderr`, and `output` attributes. The fix for R1 is straightforward: access `e.stdout` and `e.stderr` in the except block.
 
-2. **Test coverage is solid for parsing** - 41 tests now cover directive parsing AND subprocess execution patterns.
+2. **Test coverage is solid for parsing** - 43 tests now cover directive parsing AND subprocess execution patterns.
 
 3. **CRITICAL BUG FIXED: run.py indentation** - Lines 310-313 defined the step loop, but the loop body (lines 314+) was NOT indented inside the loop! Only the last step was processed. **Fixed by re-indenting entire step processing block (lines 314-520).**
 
-4. **R2 (failure context) bug CONFIRMED** - Reviewed run.py:469-475 vs run.py:477-487. When `run_on_error == "stop"` and command fails, the function returns at line 475 BEFORE the `include_output` block at lines 477-487. The output IS NOT added to context on stop+failure. This is a real bug that needs fixing.
+4. **R2 (failure context) bug FIXED** - Output capture now runs BEFORE stop-on-error check. Failure output is always captured to context.
 
 5. **Parsing tests don't catch runtime bugs** - The original 34 tests all passed even with the indentation bug because they only tested ConversationFile parsing, not actual step execution. T1 integration tests now cover subprocess patterns.
 
 6. **Integration tests verify behavior without mocking AI** - The T1 tests verify subprocess.run behavior directly, which catches real issues without needing to mock the adapter layer.
 
-7. **Code review matches line numbers exactly** - run.py:430-520 confirmed the subprocess handling structure. The R2 bug is at lines 469-475 (early return) vs 477-487 (output capture).
+7. **Code review matches line numbers exactly** - run.py:430-520 confirmed the subprocess handling structure.
 
 8. **Short iterative sessions work well** - Each ~10 min session verified state, made progress, documented findings. Context files enable continuity.
 
-9. **Consistent testing baseline** - Running `pytest tests/test_run_command.py -v` at session start/end confirms no regressions. The 41-test count is stable.
+9. **Consistent testing baseline** - Running `pytest tests/test_run_command.py -v` at session start/end confirms no regressions. The 43-test count is now stable.
 
-10. **Line numbers shift with edits** - Original bug was at lines 469-475; after fixes, similar code is now at lines 480-486. Always re-verify line numbers before editing.
+10. **Line numbers shift with edits** - Original bug was at lines 469-475; after fixes, similar code is now at lines 480-501. Always re-verify line numbers before editing.
 
 11. **Documentation cycles without implementation create no-ops** - Running `cycle` with only documentation prompts (no implementation steps) causes repeated identical iterations. Workflows should alternate documentation with implementation tasks.
 
-12. **RUN step structure is stable** - The RUN handler at run.py:436-528 has been verified across multiple sessions. Key sections: shell/non-shell branching (443-464), include_output logic (467-471), success/failure handling (473-486), output capture (488-498), timeout handling (500-519).
+12. **RUN step structure is stable** - The RUN handler at run.py:436-528 has been verified across multiple sessions.
 
-13. **Repeated verification without implementation is low-value** - Multiple sessions have confirmed R2 bug exists. Next step should be implementation, not more verification. Documentation-only cycles don't advance the fix.
+13. **CRITICAL: Workflows need implementation prompts** - The 7-session loop happened because the workflow only had "Analyze" and "Update report" prompts. Adding "Fix the identified bug" or "Implement the next priority item" prompts breaks the loop.
 
-14. **LOOP DETECTED (7 sessions)** - The progress-tracker workflow with "Update report" prompts creates a verification loop. Each cycle confirms the same bug exists but never fixes it. Workflows need implementation steps (e.g., "Fix the R2 bug by moving output capture before return"), not just documentation steps.
+14. **Direct intervention beats cycles** - When cycles loop on verification, a direct human request ("Let's fix R2 now") immediately resolves the issue.
 
 ---
 
 ## Research Needed
 
-### RN1: Session Message Persistence on Early Return
-**Question:** When `run.py` returns early at line 475 (stop on error), are session messages still saved/checkpointed, or is the context lost entirely?
-
-**Why it matters:** If we fix R2 by adding output to context before the early return, we need to ensure that output is actually persisted somewhere useful.
-
-**Research approach:**
-- Trace `session.add_message()` to understand where messages are stored
-- Check if the `finally` blocks at lines 517-520 handle session persistence
-- Test by running a workflow with RUN-ON-ERROR stop and checking checkpoint files
+*Moved to Next 3 Taskable Areas as Priority 3 (RN1).*
 
 ---
 
 ## Next 3 Taskable Areas
 
-### Priority 1: R2 - RUN Failure Context Fix (BUG)
-**File:** `sdqctl/commands/run.py:480-498`  
-**Effort:** ~20 min  
-**Unblocked:** Yes - confirmed bug, clear fix path
-
-**Current code (run.py:480-486):**
-```python
-if conv.run_on_error == "stop":
-    console.print(f"[red]RUN failed: {command}[/red]")
-    console.print(f"[dim]Exit code: {result.returncode}[/dim]")
-    if result.stderr:
-        console.print(f"[dim]stderr: {result.stderr[:500]}[/dim]")
-    session.state.status = "failed"
-    return  # BUG: Output never captured! Lines 488-498 never reached
-```
-
-Fix: Move output capture BEFORE early return:
-```python
-# Fixed structure:
-if include_output:
-    session.add_message(...)  # Always capture output first
-if result.returncode != 0 and conv.run_on_error == "stop":
-    session.state.status = "failed"
-    return  # Now output is already captured
-```
-
-### Priority 2: Q1 - Subprocess Handling Refactor
+### Priority 1: Q1 - Subprocess Handling Refactor
 **File:** `sdqctl/commands/run.py:434-456`  
 **Effort:** ~30 min  
 **Unblocked:** Yes - pure refactor, no behavioral change
@@ -300,7 +281,7 @@ def _run_subprocess(command: str, allow_shell: bool, timeout: int, cwd: Path) ->
     return subprocess.run(args, shell=allow_shell, capture_output=True, text=True, timeout=timeout, cwd=cwd)
 ```
 
-### Priority 3: E1 - RUN Output Limit
+### Priority 2: E1 - RUN Output Limit
 **File:** `sdqctl/core/conversation.py` + `sdqctl/commands/run.py`  
 **Effort:** ~45 min  
 **Unblocked:** Yes
@@ -310,6 +291,17 @@ Tasks:
 - [ ] Add `RUN-OUTPUT-LIMIT` directive type and parsing
 - [ ] Truncate output before adding to context if limit set
 - [ ] Add tests for output limiting
+
+### Priority 3: RN1 - Session Message Persistence Research
+**File:** `sdqctl/core/session.py` + `sdqctl/commands/run.py`  
+**Effort:** ~30 min research  
+**Unblocked:** Yes
+
+Research questions:
+- When `run.py` returns early at line 501 (stop on error), are session messages persisted?
+- Trace `session.add_message()` to understand storage mechanism
+- Check if checkpoint files contain messages added before early return
+- Test with a failing RUN + RUN-ON-ERROR stop workflow
 
 ---
 

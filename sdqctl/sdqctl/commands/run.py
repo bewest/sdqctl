@@ -477,15 +477,8 @@ async def _run_async(
                             logger.warning(f"  ✗ Command failed with exit code {result.returncode}")
                             progress(f"  ✗ Command failed (exit {result.returncode})")
                             
-                            if conv.run_on_error == "stop":
-                                console.print(f"[red]RUN failed: {command}[/red]")
-                                console.print(f"[dim]Exit code: {result.returncode}[/dim]")
-                                if result.stderr:
-                                    console.print(f"[dim]stderr: {result.stderr[:500]}[/dim]")
-                                session.state.status = "failed"
-                                return  # Session cleanup handled by finally blocks
-                        
                         # Add output to context for next prompt if configured
+                        # NOTE: Capture output BEFORE any early return to preserve debugging context
                         if include_output:
                             output_text = result.stdout or ""
                             if result.stderr:
@@ -493,9 +486,19 @@ async def _run_async(
                             
                             # Store as context for next prompt (add to session messages)
                             if output_text.strip():
-                                run_context = f"```\n$ {command}\n{output_text}\n```"
+                                status_marker = "" if result.returncode == 0 else f" (exit {result.returncode})"
+                                run_context = f"```\n$ {command}{status_marker}\n{output_text}\n```"
                                 session.add_message("system", f"[RUN output]\n{run_context}")
                                 logger.debug(f"Added RUN output to context ({len(output_text)} chars)")
+                        
+                        # Handle stop-on-error AFTER capturing output
+                        if result.returncode != 0 and conv.run_on_error == "stop":
+                                console.print(f"[red]RUN failed: {command}[/red]")
+                                console.print(f"[dim]Exit code: {result.returncode}[/dim]")
+                                if result.stderr:
+                                    console.print(f"[dim]stderr: {result.stderr[:500]}[/dim]")
+                                session.state.status = "failed"
+                                return  # Session cleanup handled by finally blocks
                     
                     except subprocess.TimeoutExpired as e:
                         logger.error(f"  ✗ Command timed out after {conv.run_timeout}s")

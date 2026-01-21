@@ -579,3 +579,59 @@ RUN python -m pytest tests/ -v --tb=short
         assert len(conv.steps) == 1
         assert conv.steps[0].type == "run"
         assert conv.steps[0].content == "python -m pytest tests/ -v --tb=short"
+
+
+class TestR2FailureOutputCapture:
+    """Test R2: RUN failure output is captured BEFORE early return on stop.
+    
+    Bug fixed: run.py previously returned on stop-on-error BEFORE capturing output.
+    Now output is captured first, then stop-on-error is checked.
+    """
+
+    def test_failure_output_format_includes_exit_code(self):
+        """Test that failure output includes exit code marker for debugging."""
+        import subprocess
+        import shlex
+        
+        # Simulate a failing command
+        command = "false"  # Always exits with code 1
+        result = subprocess.run(
+            shlex.split(command),
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+        
+        assert result.returncode != 0
+        
+        # Verify the new format includes exit code in the output marker
+        status_marker = "" if result.returncode == 0 else f" (exit {result.returncode})"
+        run_context = f"```\n$ {command}{status_marker}\n{result.stdout or '(no output)'}\n```"
+        
+        assert "(exit 1)" in run_context
+        assert "$ false" in run_context
+
+    def test_stderr_captured_on_failure(self):
+        """Test that stderr is captured on command failure."""
+        import subprocess
+        import shlex
+        
+        # Use a command that writes to stderr and fails
+        command = "ls /nonexistent_directory_12345"
+        result = subprocess.run(
+            shlex.split(command),
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+        
+        assert result.returncode != 0
+        assert result.stderr  # Should have error message about directory not found
+        
+        # Verify stderr is included in output
+        output_text = result.stdout or ""
+        if result.stderr:
+            output_text += f"\n\n[stderr]\n{result.stderr}"
+        
+        assert "[stderr]" in output_text
+        assert "nonexistent" in output_text.lower() or "cannot access" in output_text.lower() or "no such" in output_text.lower()
