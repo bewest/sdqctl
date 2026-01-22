@@ -133,6 +133,7 @@ Summarize the work and update tracking.
 **Tests:** Pass | Fail | N/A
 **Next action:** [if blocked or failed, what's needed]
 ```
+COMPACT
 
 # === Phase 4: Research and Triage ===
 PROMPT ## Phase 4: Triage
@@ -170,6 +171,7 @@ RUN python -m pytest tests/ -v --tb=short --co -q | head -20
 
 # === Output Configuration ===
 OUTPUT-FORMAT markdown
+COMPACT
 
 # === Notes ===
 # This workflow intentionally:
