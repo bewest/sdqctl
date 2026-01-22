@@ -12,6 +12,50 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | [Q-002](#q-002-sdk-abort-events-not-emitted) | SDK abort events not emitted | P1 | ✅ IMPROVED |
 | [Q-003](#q-003-template-variables-in-examples-encourage-problematic-patterns) | Template variables in examples encourage problematic patterns | P2 | ✅ RESOLVED |
 | [Q-004](#q-004-verbose-logging-shows-duplicate-content) | Verbose logging shows duplicate content | P2 | ✅ IMPROVED |
+| [Q-010](#q-010-compact-directive-ignored-by-cycle-command) | COMPACT directive ignored by cycle command | P1 | ✅ FIXED |
+
+---
+
+## Q-010: COMPACT Directive Ignored by Cycle Command
+
+**Priority:** P1 - Medium Impact  
+**Discovered:** 2026-01-22  
+**Status:** ✅ FIXED
+
+### Description
+
+The `COMPACT` directive was parsed correctly and added to `conv.steps`, but the `cycle` command only iterated through `conv.prompts`, effectively ignoring COMPACT, CHECKPOINT, and other step-based directives.
+
+### Root Cause
+
+```python
+# cycle.py (before fix) - only processed prompts
+for prompt_idx, prompt in enumerate(conv.prompts):
+    # ... prompt handling only
+
+# run.py - correctly processed all steps  
+for step in steps_to_process:
+    if step_type == "prompt": ...
+    elif step_type == "compact": ...  # ← cycle.py was missing this
+```
+
+### Fix Applied (2026-01-22)
+
+Refactored `cycle.py` to iterate `conv.steps` instead of just `conv.prompts`:
+
+1. Added step-based iteration matching `run.py` pattern
+2. Handle `prompt`, `compact`, and `checkpoint` step types
+3. Added backward compatibility fallback for legacy files without steps
+
+**Files modified:** `sdqctl/commands/cycle.py`
+
+### Verification
+
+```bash
+# COMPACT directives now execute during cycle
+sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot
+# 🗜  Compacting conversation... (now appears after phase 2)
+```
 
 ---
 

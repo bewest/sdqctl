@@ -377,61 +377,97 @@ async def _cycle_async(
                         console.print(f"[blue]Checkpoint saved: {checkpoint.name}[/blue]")
                         progress_print(f"  📌 Checkpoint: {checkpoint.name}")
 
-                    # Run all prompts in this cycle
+                    # Run all steps in this cycle (prompts, compact, etc.)
                     # For fresh mode: re-inject context on each cycle (like cycle 0)
                     if session_mode == "fresh":
                         context_content = session.context.get_context_content()
                     else:
                         context_content = session.context.get_context_content() if cycle_num == 0 else ""
 
-                    for prompt_idx, prompt in enumerate(conv.prompts):
-                        session.state.prompt_index = prompt_idx
+                    # Use steps if available, fallback to prompts for backward compat
+                    steps_to_process = conv.steps if conv.steps else [
+                        {"type": "prompt", "content": p} for p in conv.prompts
+                    ]
+                    
+                    prompt_idx = 0
+                    for step in steps_to_process:
+                        step_type = step.type if hasattr(step, 'type') else step.get('type')
+                        step_content = step.content if hasattr(step, 'content') else step.get('content', '')
+                        
+                        if step_type == "prompt":
+                            prompt = step_content
+                            session.state.prompt_index = prompt_idx
 
-                        # Build prompt with prologue/epilogue injection
-                        full_prompt = build_prompt_with_injection(
-                            prompt, conv.prologues, conv.epilogues, 
-                            conv.source_path.parent if conv.source_path else None,
-                            cycle_vars
-                        )
-                        
-                        # Add context to first prompt (always for fresh, only cycle 0 for others)
-                        if prompt_idx == 0 and context_content:
-                            full_prompt = f"{context_content}\n\n{full_prompt}"
-                        
-                        # On subsequent cycles (accumulate mode), add continuation context
-                        if session_mode == "accumulate" and cycle_num > 0 and prompt_idx == 0 and conv.on_context_limit_prompt:
-                            full_prompt = f"{conv.on_context_limit_prompt}\n\n{full_prompt}"
+                            # Build prompt with prologue/epilogue injection
+                            full_prompt = build_prompt_with_injection(
+                                prompt, conv.prologues, conv.epilogues, 
+                                conv.source_path.parent if conv.source_path else None,
+                                cycle_vars
+                            )
+                            
+                            # Add context to first prompt (always for fresh, only cycle 0 for others)
+                            if prompt_idx == 0 and context_content:
+                                full_prompt = f"{context_content}\n\n{full_prompt}"
+                            
+                            # On subsequent cycles (accumulate mode), add continuation context
+                            if session_mode == "accumulate" and cycle_num > 0 and prompt_idx == 0 and conv.on_context_limit_prompt:
+                                full_prompt = f"{conv.on_context_limit_prompt}\n\n{full_prompt}"
 
-                        if logger.isEnabledFor(10):  # DEBUG level
-                            console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
-                            console.print(f"[dim]{prompt[:100]}...[/dim]" if len(prompt) > 100 else f"[dim]{prompt}[/dim]")
+                            if logger.isEnabledFor(10):  # DEBUG level
+                                console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
+                                console.print(f"[dim]{prompt[:100]}...[/dim]" if len(prompt) > 100 else f"[dim]{prompt}[/dim]")
 
-                        # Clear reasoning collector before send
-                        last_reasoning.clear()
+                            # Clear reasoning collector before send
+                            last_reasoning.clear()
+                            
+                            def collect_reasoning(reasoning: str) -> None:
+                                last_reasoning.append(reasoning)
+                            
+                            response = await ai_adapter.send(
+                                adapter_session, 
+                                full_prompt,
+                                on_reasoning=collect_reasoning
+                            )
+                            
+                            # Check for loop after each response
+                            combined_reasoning = " ".join(last_reasoning) if last_reasoning else None
+                            if loop_result := loop_detector.check(combined_reasoning, response, cycle_num):
+                                console.print(f"\n[red]⚠️  {loop_result}[/red]")
+                                progress_print(f"  ⚠️  Loop detected: {loop_result.reason.value}")
+                                raise loop_result
+                            
+                            session.add_message("user", prompt)
+                            session.add_message("assistant", response)
+                            all_responses.append({
+                                "cycle": cycle_num + 1,
+                                "prompt": prompt_idx + 1,
+                                "response": response
+                            })
+                            prompt_idx += 1
                         
-                        def collect_reasoning(reasoning: str) -> None:
-                            last_reasoning.append(reasoning)
+                        elif step_type == "compact":
+                            # Execute inline COMPACT directive
+                            console.print("[yellow]🗜  Compacting conversation...[/yellow]")
+                            progress_print("  🗜  Compacting conversation...")
+                            
+                            preserve = step.preserve if hasattr(step, 'preserve') else []
+                            all_preserve = conv.compact_preserve + preserve
+                            compact_prompt = session.get_compaction_prompt()
+                            if all_preserve:
+                                compact_prompt = f"Preserve these items: {', '.join(all_preserve)}\n\n{compact_prompt}"
+                            
+                            compact_response = await ai_adapter.send(adapter_session, compact_prompt)
+                            session.add_message("system", f"[Compaction summary]\n{compact_response}")
+                            
+                            console.print("[green]🗜  Compaction complete[/green]")
+                            progress_print("  🗜  Compaction complete")
                         
-                        response = await ai_adapter.send(
-                            adapter_session, 
-                            full_prompt,
-                            on_reasoning=collect_reasoning
-                        )
-                        
-                        # Check for loop after each response
-                        combined_reasoning = " ".join(last_reasoning) if last_reasoning else None
-                        if loop_result := loop_detector.check(combined_reasoning, response, cycle_num):
-                            console.print(f"\n[red]⚠️  {loop_result}[/red]")
-                            progress_print(f"  ⚠️  Loop detected: {loop_result.reason.value}")
-                            raise loop_result
-                        
-                        session.add_message("user", prompt)
-                        session.add_message("assistant", response)
-                        all_responses.append({
-                            "cycle": cycle_num + 1,
-                            "prompt": prompt_idx + 1,
-                            "response": response
-                        })
+                        elif step_type == "checkpoint":
+                            # Save checkpoint mid-cycle
+                            checkpoint_name = step_content or f"cycle-{cycle_num}-step"
+                            checkpoint = session.create_checkpoint(checkpoint_name)
+                            console.print(f"[blue]📌 Checkpoint: {checkpoint.name}[/blue]")
+                            progress_print(f"  📌 Checkpoint: {checkpoint.name}")
 
                     progress.update(cycle_task, completed=cycle_num + 1)
 
