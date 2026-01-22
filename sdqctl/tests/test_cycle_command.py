@@ -268,6 +268,25 @@ PROMPT Analyze iteration.
         # Compact mode logs compaction activity
         assert "Compacting" in result.output or "Completed 2 cycles" in result.output
 
+    def test_inline_compact_step_executes(self, cli_runner, tmp_path):
+        """Test COMPACT directive within workflow executes during cycle (Q-010 fix)."""
+        workflow = tmp_path / "inline-compact.conv"
+        workflow.write_text("""MODEL gpt-4
+ADAPTER mock
+PROMPT Step 1: Do something.
+COMPACT
+PROMPT Step 2: Continue after compaction.
+""")
+        result = cli_runner.invoke(cli, [
+            "cycle", str(workflow),
+            "--max-cycles", "1",
+            "--adapter", "mock"
+        ])
+        assert result.exit_code == 0
+        # Verify COMPACT step was executed (shows compaction message)
+        assert "Compacting" in result.output or "🗜" in result.output
+        assert "Completed 1 cycles" in result.output
+
     def test_session_mode_default_is_accumulate(self, cli_runner, workflow_file):
         """Test default session mode is accumulate."""
         result = cli_runner.invoke(cli, [
