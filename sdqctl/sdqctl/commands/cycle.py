@@ -426,6 +426,23 @@ async def _cycle_async(
                     "responses": all_responses,
                     "session": session.to_dict(),
                 }
+                # Include adapter stats (intents, tokens, tools) if available
+                if hasattr(ai_adapter, 'get_session_stats'):
+                    stats = ai_adapter.get_session_stats(adapter_session)
+                    if stats:
+                        result["adapter_stats"] = {
+                            "total_input_tokens": stats.total_input_tokens,
+                            "total_output_tokens": stats.total_output_tokens,
+                            "total_tool_calls": stats.total_tool_calls,
+                            "tool_calls_succeeded": getattr(stats, 'tool_calls_succeeded', 0),
+                            "tool_calls_failed": getattr(stats, 'tool_calls_failed', 0),
+                            "turns": stats.turns,
+                            "model": stats.model,
+                        }
+                        # Include intent tracking if available
+                        if hasattr(stats, 'current_intent'):
+                            result["adapter_stats"]["current_intent"] = stats.current_intent
+                            result["adapter_stats"]["intent_history"] = stats.intent_history
                 console.print_json(json.dumps(result))
             else:
                 console.print(f"\n[green]✓ Completed {conv.max_cycles} cycles[/green]")

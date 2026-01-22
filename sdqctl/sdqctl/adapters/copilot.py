@@ -6,9 +6,11 @@ Install with: pip install github-copilot-sdk
 """
 
 import asyncio
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Callable, Optional
 
 from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult
@@ -50,9 +52,16 @@ class SessionStats:
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     total_tool_calls: int = 0
+    tool_calls_succeeded: int = 0
+    tool_calls_failed: int = 0
     turns: int = 0
     model: Optional[str] = None
     context_info: Optional[dict] = None
+    # Intent tracking
+    current_intent: Optional[str] = None
+    intent_history: list = field(default_factory=list)
+    # Active tools (for timing)
+    active_tools: dict = field(default_factory=dict)
 
 
 class CopilotAdapter(AdapterBase):
@@ -147,9 +156,15 @@ class CopilotAdapter(AdapterBase):
             # Log final stats
             stats = self.session_stats.get(session.id)
             if stats and stats.total_input_tokens > 0:
+                intent_summary = f", {len(stats.intent_history)} intents" if stats.intent_history else ""
+                tool_summary = ""
+                if stats.total_tool_calls > 0:
+                    tool_summary = f", {stats.total_tool_calls} tools"
+                    if stats.tool_calls_failed > 0:
+                        tool_summary += f" ({stats.tool_calls_failed} failed)"
                 logger.info(
                     f"Session complete: {stats.turns} turns, "
-                    f"{stats.total_input_tokens} in / {stats.total_output_tokens} out tokens"
+                    f"{stats.total_input_tokens} in / {stats.total_output_tokens} out tokens{tool_summary}{intent_summary}"
                 )
             
             try:
@@ -230,7 +245,15 @@ class CopilotAdapter(AdapterBase):
 
             elif event_type == "assistant.intent":
                 intent = getattr(data, "intent", None) or getattr(data, "content", str(data))
-                logger.info(f"Intent: {intent}")
+                # Track intent changes
+                if intent and intent != stats.current_intent:
+                    stats.current_intent = intent
+                    stats.intent_history.append({
+                        "intent": intent,
+                        "turn": stats.turns,
+                    })
+                    logger.info(f"🎯 Intent: {intent}")
+                    progress(f"  🎯 {intent}")
 
             # Message events
             elif event_type == "assistant.message_delta":
@@ -272,13 +295,48 @@ class CopilotAdapter(AdapterBase):
             # Tool events
             elif event_type == "tool.execution_start":
                 tool_name = getattr(data, "name", None) or getattr(data, "tool", "unknown")
+                tool_call_id = getattr(data, "tool_call_id", None) or getattr(data, "id", str(turn_stats.tool_calls))
+                tool_args = getattr(data, "arguments", None) or getattr(data, "args", {})
+                
                 turn_stats.tool_calls += 1
                 stats.total_tool_calls += 1
-                logger.info(f"Tool: {tool_name}")
+                
+                # Track active tool for timing
+                stats.active_tools[tool_call_id] = {
+                    "name": tool_name,
+                    "args": tool_args,
+                    "start_time": datetime.now(),
+                }
+                
+                logger.info(f"🔧 Tool: {tool_name}")
+                # Log args at DEBUG level (truncated)
+                if tool_args and logger.isEnabledFor(logging.DEBUG):
+                    args_str = json.dumps(tool_args) if isinstance(tool_args, dict) else str(tool_args)
+                    if len(args_str) > 500:
+                        args_str = args_str[:500] + "..."
+                    logger.debug(f"  Args: {args_str}")
 
             elif event_type == "tool.execution_complete":
                 tool_name = getattr(data, "name", None) or getattr(data, "tool", "unknown")
-                logger.debug(f"Tool complete: {tool_name}")
+                tool_call_id = getattr(data, "tool_call_id", None) or getattr(data, "id", None)
+                success = getattr(data, "success", True)  # Default to success if not specified
+                
+                # Calculate duration if we tracked this tool
+                duration_str = ""
+                if tool_call_id and tool_call_id in stats.active_tools:
+                    tool_info = stats.active_tools.pop(tool_call_id)
+                    duration = datetime.now() - tool_info["start_time"]
+                    duration_str = f" ({duration.total_seconds():.1f}s)"
+                
+                # Track success/failure counts
+                if success:
+                    stats.tool_calls_succeeded += 1
+                    status_icon = "✓"
+                else:
+                    stats.tool_calls_failed += 1
+                    status_icon = "✗"
+                
+                logger.info(f"  {status_icon} {tool_name}{duration_str}")
 
             elif event_type == "tool.execution_partial_result":
                 logger.debug(f"Tool partial result")

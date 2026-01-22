@@ -300,6 +300,57 @@ class TestCopilotAdapterEventHandling:
     """Test event handler for various SDK event types."""
     
     @pytest.mark.asyncio
+    async def test_intent_tracking(self, mock_copilot_client, mock_copilot_session):
+        """Test assistant.intent events are captured in session stats."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        session = await adapter.create_session(AdapterConfig())
+        
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+            
+            # Simulate turn start
+            event = MagicMock()
+            event.type = MockEventType("assistant.turn_start")
+            handler(event)
+            
+            # Simulate first intent
+            event = MagicMock()
+            event.type = MockEventType("assistant.intent")
+            event.data = MagicMock(intent="Exploring codebase")
+            handler(event)
+            
+            # Simulate second intent (should be added to history)
+            event = MagicMock()
+            event.type = MockEventType("assistant.intent")
+            event.data = MagicMock(intent="Implementing feature")
+            handler(event)
+            
+            # Simulate same intent again (should NOT be added)
+            event = MagicMock()
+            event.type = MockEventType("assistant.intent")
+            event.data = MagicMock(intent="Implementing feature")
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+        
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+        
+        stats = adapter.session_stats[session.id]
+        assert stats.current_intent == "Implementing feature"
+        assert len(stats.intent_history) == 2
+        assert stats.intent_history[0]["intent"] == "Exploring codebase"
+        assert stats.intent_history[1]["intent"] == "Implementing feature"
+        # Each entry should have a turn number
+        assert "turn" in stats.intent_history[0]
+    
+    @pytest.mark.asyncio
     async def test_session_start_captures_context(self, mock_copilot_client, mock_copilot_session):
         """Test session.start event captures context info."""
         mock_copilot_client.create_session.return_value = mock_copilot_session
@@ -398,6 +449,55 @@ class TestCopilotAdapterEventHandling:
         
         stats = adapter.session_stats[session.id]
         assert stats.total_tool_calls == 3
+    
+    @pytest.mark.asyncio
+    async def test_tool_execution_with_timing_and_status(self, mock_copilot_client, mock_copilot_session):
+        """Test tool execution tracks timing and success/failure status."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        session = await adapter.create_session(AdapterConfig())
+        
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+            
+            # Simulate successful tool
+            event = MagicMock()
+            event.type = MockEventType("tool.execution_start")
+            event.data = MagicMock(name="view", tool_call_id="tc1", arguments={"path": "/test.py"})
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("tool.execution_complete")
+            event.data = MagicMock(name="view", tool_call_id="tc1", success=True)
+            handler(event)
+            
+            # Simulate failed tool
+            event = MagicMock()
+            event.type = MockEventType("tool.execution_start")
+            event.data = MagicMock(name="edit", tool_call_id="tc2", arguments={"path": "/missing.py"})
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("tool.execution_complete")
+            event.data = MagicMock(name="edit", tool_call_id="tc2", success=False)
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+        
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+        
+        stats = adapter.session_stats[session.id]
+        assert stats.total_tool_calls == 2
+        assert stats.tool_calls_succeeded == 1
+        assert stats.tool_calls_failed == 1
+        # Active tools should be empty after completion
+        assert len(stats.active_tools) == 0
 
 
 class TestCopilotAdapterInfo:
