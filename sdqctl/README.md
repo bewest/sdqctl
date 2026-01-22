@@ -262,6 +262,7 @@ Execute a single prompt or workflow:
 sdqctl run "Analyze this codebase"
 sdqctl run workflow.conv --adapter copilot
 sdqctl run workflow.conv --dry-run
+sdqctl run workflow.conv --render-only  # Preview prompts, no AI calls
 ```
 
 ### `sdqctl cycle`
@@ -271,7 +272,43 @@ Multi-cycle execution with compaction:
 ```bash
 sdqctl cycle workflow.conv --max-cycles 5
 sdqctl cycle workflow.conv --checkpoint-dir ./checkpoints
+sdqctl cycle workflow.conv -n 3 --render-only  # Preview all cycles
 ```
+
+### `sdqctl render`
+
+Render workflow prompts without executing (no AI calls):
+
+```bash
+# Basic render to stdout
+sdqctl render workflow.conv
+
+# Render with multiple cycles
+sdqctl render workflow.conv -n 3
+
+# JSON output for tooling
+sdqctl render workflow.conv --json
+
+# Render to file
+sdqctl render workflow.conv -o rendered.md
+
+# Fresh mode with separate files per cycle
+sdqctl render workflow.conv -s fresh -n 3 -o rendered/
+
+# Render specific cycle or prompt
+sdqctl render workflow.conv --cycle 2
+sdqctl render workflow.conv --prompt 1
+
+# Add extra prologues/epilogues
+sdqctl render workflow.conv --prologue "Date: 2026-01-22"
+```
+
+The render command produces fully-resolved prompts with all context files, 
+template variables (`{{DATE}}`, `{{CYCLE_NUMBER}}`, etc.), prologues, and 
+epilogues expanded. Useful for:
+- Debugging template issues before running expensive AI calls
+- Using sdqctl as a prompt templating engine
+- CI/CD validation of workflow content
 
 ### `sdqctl flow`
 

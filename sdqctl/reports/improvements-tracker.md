@@ -1,8 +1,31 @@
 # sdqctl Improvements Tracker
 
-**Analysis Date:** 2026-01-21  
+**Analysis Date:** 2026-01-22  
 **Git Branch:** main  
-**Test Status:** 362/362 passing
+**Test Status:** 376/376 passing (14 new render tests)
+
+---
+
+## Completed Items (2026-01-22)
+
+### ✅ Render Command - COMPLETED
+- Added `sdqctl render` command for previewing fully-resolved prompts
+- Added `--render-only` flag to `run` and `cycle` commands
+- Created `sdqctl/core/renderer.py` module with:
+  - `render_workflow()` - renders complete workflow with all cycles
+  - `render_cycle()` - renders single cycle with prompts and context
+  - `render_prompt()` - renders single prompt with prologues/epilogues
+  - `format_rendered_markdown()` - markdown output formatting
+  - `format_rendered_json()` - JSON output for tooling
+- Features:
+  - Full template variable substitution ({{DATE}}, {{CYCLE_NUMBER}}, etc.)
+  - Context file inclusion with syntax highlighting
+  - Prologue/epilogue resolution (including @file references)
+  - Session mode support (fresh mode outputs separate files)
+  - stdout by default, --output for files
+  - --json for machine-readable output
+- Added 14 tests in `tests/test_render_command.py`
+- Updated README.md with render command documentation
 
 ---
 

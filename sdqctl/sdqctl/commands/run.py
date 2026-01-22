@@ -164,6 +164,7 @@ console = Console()
 @click.option("--output", "-o", default=None, help="Output file")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
+@click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
 def run(
     target: str,
     adapter: Optional[str],
@@ -180,6 +181,7 @@ def run(
     output: Optional[str],
     json_output: bool,
     dry_run: bool,
+    render_only: bool,
 ) -> None:
     """Execute a single prompt or ConversationFile.
     
@@ -204,7 +206,46 @@ def run(
     \b
     # Add header/footer to output
     sdqctl run workflow.conv --header "# Report" --footer @templates/disclaimer.md
+    
+    \b
+    # Render prompts without executing (no AI calls)
+    sdqctl run workflow.conv --render-only
     """
+    # Handle --render-only by delegating to render command logic
+    if render_only:
+        import json as json_module
+        from ..core.renderer import render_workflow, format_rendered_json, format_rendered_markdown
+        
+        target_path = Path(target)
+        if target_path.exists() and target_path.suffix in (".conv", ".copilot"):
+            conv = ConversationFile.from_file(target_path)
+        else:
+            # Inline prompt - create minimal ConversationFile
+            conv = ConversationFile()
+            conv.prompts = [target]
+        
+        # Apply CLI options
+        if prologue:
+            conv.prologues = list(prologue) + conv.prologues
+        if epilogue:
+            conv.epilogues = list(epilogue) + conv.epilogues
+        for pattern in context:
+            conv.context_files.append(pattern)
+        
+        rendered = render_workflow(conv, session_mode="accumulate", max_cycles=1)
+        
+        if json_output:
+            output_content = json_module.dumps(format_rendered_json(rendered), indent=2)
+            console.print_json(output_content)
+        else:
+            output_content = format_rendered_markdown(rendered)
+            if output:
+                Path(output).write_text(output_content)
+                console.print(f"[green]Rendered to {output}[/green]")
+            else:
+                console.print(output_content)
+        return
+    
     run_async(_run_async(
         target, adapter, model, context, 
         allow_files, deny_files, allow_dir, deny_dir,

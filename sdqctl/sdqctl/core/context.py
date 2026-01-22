@@ -188,7 +188,11 @@ class ContextManager:
 
         parts = ["## Context Files\n"]
         for ctx_file in self.files:
-            rel_path = ctx_file.path.relative_to(self.base_path) if self.base_path else ctx_file.path
+            try:
+                rel_path = ctx_file.path.relative_to(self.base_path) if self.base_path else ctx_file.path
+            except ValueError:
+                # File is not in base_path subtree, use absolute or name
+                rel_path = ctx_file.path
             parts.append(f"### {rel_path}\n```\n{ctx_file.content}\n```\n")
 
         return "\n".join(parts)

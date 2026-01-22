@@ -44,6 +44,7 @@ console = Console()
 @click.option("--output", "-o", default=None, help="Output file")
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
+@click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
 def cycle(
     workflow: str,
     max_cycles: Optional[int],
@@ -58,8 +59,72 @@ def cycle(
     output: Optional[str],
     json_output: bool,
     dry_run: bool,
+    render_only: bool,
 ) -> None:
     """Run multi-cycle workflow with compaction."""
+    # Handle --render-only by delegating to render logic
+    if render_only:
+        import json
+        from ..core.renderer import render_workflow, format_rendered_json, format_rendered_markdown
+        
+        conv = ConversationFile.from_file(Path(workflow))
+        
+        # Apply CLI options
+        if prologue:
+            conv.prologues = list(prologue) + conv.prologues
+        if epilogue:
+            conv.epilogues = list(epilogue) + conv.epilogues
+        
+        # Map session mode names (shared -> accumulate for render)
+        render_session_mode = "accumulate" if session_mode == "shared" else session_mode
+        
+        rendered = render_workflow(
+            conv, 
+            session_mode=render_session_mode, 
+            max_cycles=max_cycles or conv.max_cycles
+        )
+        
+        if json_output:
+            output_content = json.dumps(format_rendered_json(rendered), indent=2)
+        else:
+            output_content = format_rendered_markdown(rendered)
+        
+        if output:
+            output_path = Path(output)
+            # Handle fresh mode with directory output
+            if session_mode == "fresh" and output_path.suffix == "" and len(rendered.cycles) > 1:
+                output_path.mkdir(parents=True, exist_ok=True)
+                for c in rendered.cycles:
+                    from ..core.renderer import RenderedWorkflow
+                    single_cycle = RenderedWorkflow(
+                        workflow_path=rendered.workflow_path,
+                        workflow_name=rendered.workflow_name,
+                        session_mode=rendered.session_mode,
+                        adapter=rendered.adapter,
+                        model=rendered.model,
+                        max_cycles=rendered.max_cycles,
+                        cycles=[c],
+                        base_variables=rendered.base_variables,
+                    )
+                    if json_output:
+                        cycle_content = json.dumps(format_rendered_json(single_cycle), indent=2)
+                        cycle_file = output_path / f"cycle-{c.number}.json"
+                    else:
+                        cycle_content = format_rendered_markdown(single_cycle)
+                        cycle_file = output_path / f"cycle-{c.number}.md"
+                    cycle_file.write_text(cycle_content)
+                    console.print(f"[green]Wrote {cycle_file}[/green]")
+            else:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(output_content)
+                console.print(f"[green]Rendered to {output_path}[/green]")
+        else:
+            if json_output:
+                console.print_json(output_content)
+            else:
+                console.print(output_content)
+        return
+    
     run_async(_cycle_async(
         workflow, max_cycles, session_mode, adapter, model, checkpoint_dir,
         prologue, epilogue, header, footer,
