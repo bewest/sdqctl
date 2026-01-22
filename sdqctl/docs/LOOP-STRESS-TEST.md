@@ -27,6 +27,30 @@ source sdqctl/bin/activate
 ./test-loop-stress.sh --mock --verbose
 ```
 
+## Test Types
+
+### Automated Unit Tests (pytest)
+
+The standard test suite (`pytest tests/`) includes **automated unit tests** for loop detection that run without API calls:
+
+- `test_loop_detector.py` - Tests all 4 detection mechanisms with mock data
+- `test_stop_file_existence_check.py` - Tests the "refuse to run if stop file exists" behavior
+
+These run in CI and require no external dependencies.
+
+### Manual Integration Tests (Live SDK)
+
+The stress test tool (`tests/integration/test_loop_stress.py`) requires a **live Copilot SDK connection** for full verification:
+
+```bash
+# These make real API calls to the Copilot SDK
+python -m tests.integration.test_loop_stress -v stopfile   # Verify agent creates stop file
+python -m tests.integration.test_loop_stress -v elicit     # Verify loop-aware responses
+python -m tests.integration.test_loop_stress -v repeated   # Verify identical response detection
+```
+
+Use `--adapter mock` for development without API calls (limited verification).
+
 ## Test Cases
 
 ### 1. Repeated Prompt Test (`--repeated`)
