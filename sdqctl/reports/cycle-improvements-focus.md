@@ -3,7 +3,7 @@
 **Topic:** `sdqctl cycle` command session management  
 **Source:** User feedback + code analysis  
 **Created:** 2026-01-21  
-**Status:** Planning
+**Status:** In Progress (C1 ✅, T1 ✅, E1 ✅, Q1 pending)
 
 ---
 
@@ -43,11 +43,11 @@ sdqctl cycle workflow.conv --session-mode accumulate  # currently called 'shared
 
 ### Session Modes
 
-| Mode | Current Name | Intended Behavior | Current Implementation |
-|------|-------------|-------------------|------------------------|
-| **Accumulate** | `shared` | Context grows, compact only when limit reached | ✅ Works correctly |
+| Mode | CLI Name | Intended Behavior | Current Implementation |
+|------|----------|-------------------|------------------------|
+| **Accumulate** | `accumulate` | Context grows, compact only when limit reached | ✅ Works correctly |
 | **Compact** | `compact` | Summarize after each cycle, stay in same session | ✅ Works correctly |
-| **Fresh** | `fresh` | Start completely new session each cycle | ⚠️ Partial - see gaps |
+| **Fresh** | `fresh` | Start completely new session each cycle | ✅ Fixed - reloads CONTEXT files |
 
 ### Fresh Mode Gaps
 
@@ -70,7 +70,7 @@ Work is organized by complexity. Complete one chunk before moving to the next.
 
 ### 1. Correctness (C)
 
-#### C1: Fresh Mode Should Reload CONTEXT Files ⏳
+#### C1: Fresh Mode Should Reload CONTEXT Files ✅
 
 **Current State:**
 - `Session.__init__()` loads CONTEXT files once (session.py lines 92-94)
@@ -98,9 +98,9 @@ for pattern in conversation.context_files:
 - CONTEXT file modified during cycle → NOT visible (compact/accumulate mode)
 
 **Acceptance Criteria:**
-- [ ] `reload_context()` method exists
-- [ ] Fresh mode calls it at cycle start
-- [ ] Integration test validates file refresh
+- [x] `reload_context()` method exists
+- [x] Fresh mode calls it at cycle start
+- [x] Integration test validates file refresh
 
 ---
 
@@ -131,9 +131,9 @@ for pattern in conversation.context_files:
 **Migration Path:** Log deprecation warning if "shared" used, accept as alias for 6 months
 
 **Acceptance Criteria:**
-- [ ] `accumulate` is the documented mode name
-- [ ] `shared` works with deprecation warning (optional)
-- [ ] Tests updated
+- [x] `accumulate` is the documented mode name
+- [x] `shared` removed (breaking change as decided)
+- [x] Tests updated
 
 ---
 
@@ -189,8 +189,8 @@ class TestCycleSessionModes:
 - `tests/test_cycle_command.py`: Add session mode tests
 
 **Acceptance Criteria:**
-- [ ] Each mode has dedicated test
-- [ ] File refresh behavior verified for fresh mode
+- [x] Each mode has dedicated test
+- [x] File refresh behavior verified for fresh mode
 
 ---
 
@@ -206,21 +206,29 @@ class TestCycleSessionModes:
 ## Session Tracking
 
 ### Current Session
-- **Date:** 2026-01-21
-- **Focus:** Planning and analysis
-- **Status:** Completed analysis, created focus document
+- **Date:** 2026-01-21/2026-01-22
+- **Focus:** E1 Implementation - Rename shared → accumulate
+- **Status:** ✅ Completed E1
 
 ### Completed Items
 - [x] Analyzed cycle.py implementation
 - [x] Identified fresh mode gap (context files not reloaded)
 - [x] Clarified scope with user (reload CONTEXT files, not .conv)
 - [x] Confirmed naming change: shared → accumulate
+- [x] **C1: Implemented `reload_context()` method** (session.py:96-106)
+- [x] **C1: Added call in fresh mode** (cycle.py:277)
+- [x] **T1 (partial): Added unit tests for reload_context** (test_session.py:345-393)
+- [x] **T1: Added session mode integration tests** (test_cycle_command.py:193-277)
+- [x] **Bugfix: Extended mock adapter responses** (mock.py:27-31) - fixed loop detector triggering
+- [x] **E1: Renamed 'shared' → 'accumulate'** (cycle.py:35-36, 78-79, 294-295, 335-336)
+- [x] **E1: Updated tests** (test_cycle_command.py - 4 occurrences)
 
 ### Remaining Work
-- [ ] C1: Implement reload_context()
-- [ ] T1: Add session mode tests
-- [ ] E1: Rename shared → accumulate
-- [ ] Q1: Update documentation
+- [ ] Q1: Update documentation (README session modes section)
+
+### Git Commits (2026-01-22)
+- `e2dd4f6` feat(cycle): implement session mode improvements (C1, T1, E1)
+- `4eaa393` docs: update cycle improvements focus and progress
 
 ---
 
@@ -235,12 +243,65 @@ class TestCycleSessionModes:
   - Fix is localized to session.py + cycle.py
   - Low complexity change (~15-20 lines)
 
+### Implementation Phase (2026-01-22)
+- **C1 Implementation:** Added `reload_context()` method that:
+  - Uses existing `clear_files()` to remove cached files
+  - Re-reads patterns from `self.conversation.context_files`
+  - Preserves conversation token count (not cleared by `clear_files()`)
+  
+- **Key files modified:**
+  - `sdqctl/core/session.py:96-106` - new `reload_context()` method
+  - `sdqctl/commands/cycle.py:277` - call in fresh mode block
+  - `tests/test_session.py:345-393` - 2 new tests
+
+- **T1 Implementation:** Added session mode integration tests:
+  - 5 new tests in `TestCycleSessionModes` class (test_cycle_command.py:193-277)
+  - Tests verify fresh, compact, and shared modes all execute correctly
+  - Tests validate context file reloading in fresh mode
+  
+- **Bugfix discovered during T1:**
+  - Mock adapter responses were 45 chars, below MIN_RESPONSE_LENGTH (50)
+  - Loop detector triggered false positive on multi-cycle tests
+  - Fixed by extending mock responses to ~120 chars each (mock.py:27-31)
+  - This also fixed 2 pre-existing test failures in TestCycleExecution
+
 ### Design Decisions
 1. **Q: Re-read .conv file on fresh mode?**  
    A: No - .conv is the "stable contract" that defines workflow structure
    
 2. **Q: Keep 'shared' as alias?**  
    A: User chose breaking change (rename to 'accumulate')
+
+---
+
+## Next 3 Taskable Areas
+
+### 1. Q1: Document Session Mode Semantics (High Priority)
+Add clear documentation for session modes:
+- Docstring expansion in `_cycle_async()` explaining each mode
+- SESSION_MODES constant with formal descriptions
+- README comparison table
+
+**Files:** `cycle.py`, `README.md`  
+**Effort:** ~30 lines of documentation
+
+### 2. Loop Detector Tuning (Medium Priority - Research)
+The mock adapter fix revealed loop detector may be too aggressive:
+- MIN_RESPONSE_LENGTH = 50 chars triggers on valid short responses
+- Consider: adaptive thresholds based on prompt type?
+- Consider: configurable via workflow directive?
+
+**Files:** `loop_detector.py`  
+**Effort:** Research needed before implementation
+
+### 3. Fresh Mode Enhancements (Low Priority - Future)
+Potential improvements for fresh mode:
+- Option to preserve specific context across cycles
+- Selective file reload (only modified files)
+- Performance optimization for large context sets
+
+**Files:** `session.py`, `cycle.py`  
+**Effort:** Design discussion needed
 
 ---
 
