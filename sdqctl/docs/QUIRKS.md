@@ -291,11 +291,19 @@ if result := detector.check(reasoning, response, cycle):
 detector.cleanup_stop_file()
 ```
 
-**Agent instruction example:**
+**Template variables for agent communication:**
+
+The `${STOP_FILE}` and `${SESSION_ID}` template variables are now available in prompts. Use in a PROLOGUE to tell the agent the exact filename:
+
+```conv
+PROLOGUE <<<
+If you detect you are in a loop or cannot make progress, create:
+    ${STOP_FILE}
+with {"reason": "your explanation"}.
+>>>
 ```
-If you detect you are in a loop or cannot make progress, create a file
-named STOPAUTOMATION-{hash}.json with {"reason": "your explanation"}.
-```
+
+This resolves to the actual filename like `STOPAUTOMATION-bd7065173b6b.json`.
 
 ### See Also
 

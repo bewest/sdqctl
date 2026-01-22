@@ -759,6 +759,7 @@ def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
 def get_standard_variables(
     workflow_path: Optional[Path] = None,
     include_workflow_vars: bool = False,
+    session_id: Optional[str] = None,
 ) -> dict[str, str]:
     """Get standard template variables available in all contexts.
     
@@ -772,6 +773,8 @@ def get_standard_variables(
         workflow_path: Path to the workflow file
         include_workflow_vars: If True, include WORKFLOW_NAME and WORKFLOW_PATH
             (use only for output paths, not agent-visible prompts)
+        session_id: Session ID for stop file naming. When provided, adds
+            STOP_FILE and SESSION_ID variables for agent stop signaling.
     
     Returns:
         Dict with template variables. Always includes __WORKFLOW_NAME__ and
@@ -817,6 +820,13 @@ def get_standard_variables(
             variables["GIT_COMMIT"] = result.stdout.strip()
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
+    
+    # Add stop file variables if session_id provided (Q-002 agent stop signaling)
+    if session_id:
+        import hashlib
+        session_hash = hashlib.sha256(session_id.encode()).hexdigest()[:12]
+        variables["SESSION_ID"] = session_id
+        variables["STOP_FILE"] = f"STOPAUTOMATION-{session_hash}.json"
     
     return variables
 

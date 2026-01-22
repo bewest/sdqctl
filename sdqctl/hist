@@ -1,0 +1,60 @@
+  516  sdqctl run -v --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done reports/test-discovery-2026-01-20.md"
+  517  sdqctl run  --adapter -vv --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done reports/test-discovery-2026-01-20.md"
+  518  sdqctl run  --adapter copilot -vv --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done reports/test-discovery-2026-01-20.md"
+  519  view reports/test-discovery-2026-01-20.md 
+  520  sdqctl -vv run --epilogue "save any recommendations for improvements not related to tests in @reports/improvements-tracker.md and make sure there is a section for pointers to the next three highest priority taskabale work areas"  examples/workflows/test-discovery.conv 
+  521  view reports/test-discovery-2026-01-20.md
+  522  git status
+  523  git add reports/
+  524  git commit  -avm 'pin in reports'
+  525  sdqctl  -vv cycle --help  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well."
+  526  sdqctl  -vv  --help  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well."
+  527  sdqctl cycle --hellp
+  528  sdqctl cycle --help
+  529  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well."
+  530  sdqctl --help
+  531  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv 
+  532  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2>&1 > err
+  533  view err 
+  534  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2>&1 err
+  535  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2>&1 > err
+  536  cat err 
+  537  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2&>1 > err
+  538* 
+  539  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2>&1 | tee errr
+  540  cat err
+  541  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   2>&1 >> err
+  542  cat err
+  543  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   >> err 2>&1
+  544  cat err
+  545  git diff
+  546  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   
+  547  git grep COMPACT
+  548  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's update the most needed tests and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   
+  549  git log
+  550  ls
+  551  git log
+  552  git log --stat
+  553  git push origin 
+  554  git status
+  555  git diff examples/
+  556  git rm --cached sdqctl/core/__pycache__/session.cpython-312.pyc
+  557  view reports/progress-{{DATE}}.md
+  558  sdqctl  -vv cycle -n 3  --adapter copilot  --prologue @reports/test-discovery-2026-01-20.md --epilogue "let's do work on the most taskable item and update docs when done sdqctl/reports/improvements-tracker.md  make sure everything is checkinto git as appropriate as well." examples/workflows/progress-tracker.conv   
+  559  git diff
+  560  git status
+  561  git rm --cached sdqctl/core/__pycache__/context.cpython-312.pyc
+  562  git add reports/progress-2026-01-21.md 
+  563  git commit  -avm 'track progress report'
+  564  git push origin 
+  565  git log --stat HEAD^10
+  566  git log --stat HEAD^10...
+  567  git log --stat HEAD~10
+  568  git show
+  569  git log --stat HEAD..HEAD~10
+  570  git log help
+  571  git log --help
+  572  git log --stat -n 10
+  573  history -n 60 | tee hist
+  574  help history
+  575  history 60 | tee hist

@@ -77,6 +77,33 @@ The agent can create a stop file to explicitly request automation stop:
 - `STOP_FILE` triggers when the file is detected during any cycle
 - Session hash is derived from session ID for security (agent must know the ID)
 
+**Enabling Stop File Support:**
+
+The `${STOP_FILE}` template variable is now available in prompts. Add this to your workflow's PROLOGUE to enable agent-initiated stops:
+
+```conv
+PROLOGUE @stop-file-instructions.md
+```
+
+Where `stop-file-instructions.md` contains:
+
+```markdown
+## Stop Automation Signal
+
+If you detect you are in a repetitive loop, cannot make further progress, 
+or the task requires human review, create a file named:
+
+    ${STOP_FILE}
+
+With JSON contents explaining why:
+
+    {"reason": "Your explanation here", "needs_review": true}
+
+This will gracefully stop the automation cycle.
+```
+
+The `${STOP_FILE}` variable is only substituted once per session (same value across all cycles), so including it in a PROLOGUE is efficient.
+
 ## Python CLI
 
 The tool can also be run directly via Python:
@@ -161,11 +188,20 @@ After the Q-002 fix, these are the default thresholds:
 | `session_id` | None | Required for secure stop file naming |
 | `stop_file_dir` | CWD | Directory to check for stop file |
 
+### Template Variables for Stop File
+
+These variables are available in prompts and prologues:
+
+| Variable | Example Value | Notes |
+|----------|---------------|-------|
+| `${STOP_FILE}` | `STOPAUTOMATION-bd7065173b6b.json` | Full filename agent should create |
+| `${SESSION_ID}` | `20260122-213045-abc123` | Session ID (useful for logging) |
+
 ### Recommendations
 
 1. **For sdqctl cycle command**: Keep using `LoopDetector` as the primary loop detection mechanism
 2. **For stricter detection**: Configure `LoopDetector(identical_threshold=1, min_response_length=150)`
-3. **For agent-initiated stops**: Pass `session_id` to enable secure stop file detection
+3. **For agent-initiated stops**: Include `${STOP_FILE}` in a PROLOGUE to tell the agent the filename
 4. **For research**: The `--event-log` output provides rich data for analyzing AI behavior
 
 ## Files

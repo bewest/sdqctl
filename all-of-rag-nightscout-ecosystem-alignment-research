@@ -1,0 +1,2845 @@
+commit 5a2ed6c16e3ae3745a8f94d059c624233ac41e27
+Author: Ben West <bewest@gmail.com>
+Date:   Sat Jan 17 23:01:59 2026 -0800
+
+    make traceability: update traceability docs
+
+ traceability/assertion-trace.json         |   297 +-
+ traceability/assertion-trace.md           |    18 +-
+ traceability/coverage-analysis.json       |   778 +-
+ traceability/coverage-analysis.md         |     4 +-
+ traceability/refs-validation.json         |   650 +-
+ traceability/refs-validation.md           |   134 +-
+ traceability/terminology-consistency.json | 12392 +++++++++++++++-------------
+ traceability/terminology-consistency.md   |    40 +-
+ 8 files changed, 7651 insertions(+), 6662 deletions(-)
+
+commit 8660eb19dd4a87dca0da7003a3f6757e238197f5
+Author: Ben West <bewest@gmail.com>
+Date:   Sat Jan 17 23:00:10 2026 -0800
+
+    capture document organization
+
+ docs/README.md | 299 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 299 insertions(+)
+
+commit 591352a14146aba1c48afa99ee9f1e9d93fbd0d4
+Merge: 4f46a72 368ac9e
+Author: Ben West <bewest@gmail.com>
+Date:   Sat Jan 17 18:04:01 2026 -0800
+
+    Merge pull request #2 from bewest/copilot/evaluate-tooling-improvements
+
+commit 4f46a72701dcf006b64c66d870509b8b52c88250
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sun Jan 18 01:59:39 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 02a68e37-c89c-4f30-9328-e4d68ade7bba
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 18126f2d-f604-4e3e-9d42-61032ef8ea63
+    Replit-Helium-Checkpoint-Created: true
+
+commit 86a2ad841fccd40fec3d1a4a8316809933520d56
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sun Jan 18 01:59:20 2026 +0000
+
+    Add research fixtures and documentation for client data upload patterns
+    
+    Add fixture files for AAPS, deduplication, edge cases, Loop, partial failures, and Trio, and update the MongoDB modernization assessment document.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 02a68e37-c89c-4f30-9328-e4d68ade7bba
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: d15b35be-aae2-44aa-b31d-6bfb5ad8968e
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/60-research/fixtures/aaps-single-doc.js       | 158 +++++
+ docs/60-research/fixtures/deduplication.js         | 172 +++++
+ docs/60-research/fixtures/edge-cases.js            | 228 +++++++
+ docs/60-research/fixtures/index.js                 |  10 +
+ docs/60-research/fixtures/loop-batch.js            |  96 +++
+ docs/60-research/fixtures/partial-failures.js      | 188 ++++++
+ docs/60-research/fixtures/trio-pipeline.js         | 198 ++++++
+ .../mongodb-modernization-impact-assessment.md     | 726 +++++++++++++++++++++
+ 8 files changed, 1776 insertions(+)
+
+commit e1807a4c95ae564475ded7bf77bcf0e5716605e6
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sun Jan 18 01:50:33 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 02a68e37-c89c-4f30-9328-e4d68ade7bba
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 3d0b7658-622a-4de4-8809-670e034dd52f
+    Replit-Helium-Checkpoint-Created: true
+
+commit 368ac9e9465802876e222ddf0c9104efd8f858e5
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Sun Jan 18 00:55:45 2026 +0000
+
+    Fix security vulnerability: update actions/download-artifact to v4.1.3
+    
+    Co-authored-by: bewest <394179+bewest@users.noreply.github.com>
+
+ .github/workflows/validation.yml | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+commit 342f7ba7a9817a928f29144a1027aa6548a0234e
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Sun Jan 18 00:53:08 2026 +0000
+
+    Address code review feedback and security issues
+    
+    Co-authored-by: bewest <394179+bewest@users.noreply.github.com>
+
+ .github/workflows/validation.yml | 14 ++++++++++++++
+ tools/gen_traceability.py        |  4 ++++
+ tools/run_workflow.py            | 14 +++++++++++---
+ tools/workspace_cli.py           |  3 ++-
+ 4 files changed, 31 insertions(+), 4 deletions(-)
+
+commit 420b66ea551c81dd7b2316322feeda7ea3e80240
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Sun Jan 18 00:48:32 2026 +0000
+
+    Add comprehensive documentation and implementation summary
+    
+    Co-authored-by: bewest <394179+bewest@users.noreply.github.com>
+
+ IMPLEMENTATION-SUMMARY.md | 307 ++++++++++++++++++++++++++++++++++++++++++++++
+ README.md                 |  26 +++-
+ docs/TOOLING-QUICKREF.md  | 296 ++++++++++++++++++++++++++++++++++++++++++++
+ docs/tooling-roadmap.md   | 215 ++++++++++++++++++++++----------
+ 4 files changed, 778 insertions(+), 66 deletions(-)
+
+commit 21da08e683d1ae8e330407448bc7a519525e08da
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Sun Jan 18 00:44:37 2026 +0000
+
+    Add enhanced tooling for documentation and test traceability
+    
+    Co-authored-by: bewest <394179+bewest@users.noreply.github.com>
+
+ .github/workflows/validation.yml | 175 ++++++++++++++++
+ Makefile                         |  39 +++-
+ docs/TOOLING-GUIDE.md            | 414 +++++++++++++++++++++++++++++++++++++
+ tools/gen_traceability.py        | 436 +++++++++++++++++++++++++++++++++++++++
+ tools/query_workspace.py         | 371 +++++++++++++++++++++++++++++++++
+ tools/run_workflow.py            | 370 +++++++++++++++++++++++++++++++++
+ tools/validate_json.py           | 357 ++++++++++++++++++++++++++++++++
+ tools/workspace_cli.py           | 286 +++++++++++++++++++++++++
+ 8 files changed, 2447 insertions(+), 1 deletion(-)
+
+commit dc84f5a5d9842a11d2dc1be85e2c4b9872c2dbe8
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Sun Jan 18 00:35:48 2026 +0000
+
+    Initial plan
+
+commit c5a5c50466f799e93e6a43f61371283ca8abd43d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:42:14 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 72d2afef-beac-415a-8998-0e2634bc292b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8f46e3a7-cd9b-45e5-9453-d39ae415155e
+    Replit-Helium-Checkpoint-Created: true
+
+commit 433b21df162114ffec4330fd0ff2631ecf77aee2
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:42:06 2026 +0000
+
+    Update project README with current repository list and structure
+    
+    Update README.md to include all 16 repositories from workspace.lock.json and document additional project directories (mapping, specs, conformance, traceability, docs).
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 72d2afef-beac-415a-8998-0e2634bc292b
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 37cd0f75-5432-4ff2-b722-04bc256f9c27
+    Replit-Helium-Checkpoint-Created: true
+
+ README.md | 51 +++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 37 insertions(+), 14 deletions(-)
+
+commit 039dedff3a4ab6f808134762a396bba54e5f1d45
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:41:02 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 72d2afef-beac-415a-8998-0e2634bc292b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b64ea0eb-60c6-48dc-b004-bfaeb46b0f3a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0c8dd519b01701d6698d4e4de4492508e2e593c0
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:38:24 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c86c46ac-c135-4def-baee-dd43b1cb97ce
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: d45acfd5-caca-4378-aeb3-46bf41a10637
+    Replit-Helium-Checkpoint-Created: true
+
+commit 1de2b5f6b15ebaee6400d67391edf3ca1229dbb9
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:38:08 2026 +0000
+
+    Add a document outlining the state of diabetes technology in 2026
+    
+    Create a new markdown document detailing the progressive enhancement framework for diabetes technology, current state of commercial and open-source systems, and future directions.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c86c46ac-c135-4def-baee-dd43b1cb97ce
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 160d22d4-bfbd-4cf6-82ca-8a110f5f6ca0
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/state-of-diabetes-2026.md | 246 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 246 insertions(+)
+
+commit a3acec977c94f1a8d9dad962ca4541d22b555170
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:35:20 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c86c46ac-c135-4def-baee-dd43b1cb97ce
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b028982b-e4d7-4941-b77a-b562053973fd
+    Replit-Helium-Checkpoint-Created: true
+
+commit d62a4d174196ffee243f99ceed227b64a8ff1783
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:30:56 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: bd21a216-f9ae-4802-9cbb-1d3741a3015d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ec231805-97d5-4ba2-8b98-645ecf02d2f7
+    Replit-Helium-Checkpoint-Created: true
+
+commit 206d2874167782b08d15cda6009d03da3430cd52
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:30:43 2026 +0000
+
+    Add a plain-language guide to diabetes data rights
+    
+    Create a new "Data Rights Primer" document, and update cross-references in existing documentation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: bd21a216-f9ae-4802-9cbb-1d3741a3015d
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 3b2dadad-faa8-4192-afc7-39f80d5c17d9
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/data-rights-primer.md               | 221 +++++++++++++++++++++
+ .../10-domain/progressive-enhancement-framework.md |   2 +
+ docs/DIGITAL-RIGHTS.md                             |   8 +
+ replit.md                                          |   1 +
+ 4 files changed, 232 insertions(+)
+
+commit 987ae32537c8422f27307b760c260f961c90a46a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:28:20 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: bd21a216-f9ae-4802-9cbb-1d3741a3015d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: c545d38c-44e0-405a-8c40-fd6ef881c65c
+    Replit-Helium-Checkpoint-Created: true
+
+commit e336ac84d8a2e353e1440115bcf6e2a86d7ce07d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:22:57 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c220f907-51c5-4304-992f-ad105d4ed9cb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: c276083f-7dad-452d-a044-0c1e2ddcee0e
+    Replit-Helium-Checkpoint-Created: true
+
+commit 5c1fff27e88d31eb1ac346f050ba0ca77aff5a2a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:22:42 2026 +0000
+
+    Add framework for progressive enhancement in diabetes technology
+    
+    Create a progressive enhancement framework document, capability layer matrix, and update related files (progress, terminology, gaps, requirements, replit) to define layers and map systems.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c220f907-51c5-4304-992f-ad105d4ed9cb
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 37746c95-8d6f-4cbd-96a3-0c28a4b3b138
+    Replit-Helium-Checkpoint-Created: true
+
+ .../10-domain/progressive-enhancement-framework.md | 353 +++++++++++++++++++++
+ mapping/cross-project/capability-layer-matrix.md   | 294 +++++++++++++++++
+ mapping/cross-project/terminology-matrix.md        |  95 ++++++
+ progress.md                                        |  68 ++++
+ replit.md                                          |   1 +
+ traceability/gaps.md                               | 161 ++++++++++
+ traceability/requirements.md                       | 112 +++++++
+ 7 files changed, 1084 insertions(+)
+
+commit 29196d2e08b76dfefd39a1a37aeacf6cbb7d0d1b
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:15:55 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c220f907-51c5-4304-992f-ad105d4ed9cb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0074f7d8-e5c8-4319-9649-da6feb04254a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 7bf35947429e64b6357bcda9a7fcaac4b5d6d22d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:13:51 2026 +0000
+
+    Saved your changes before starting work
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: c220f907-51c5-4304-992f-ad105d4ed9cb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4224a01d-50be-46a2-bb7f-80132b2780fa
+
+ traceability/assertion-trace.json         |   40 +-
+ traceability/assertion-trace.md           |    2 +-
+ traceability/coverage-analysis.json       |    2 +-
+ traceability/coverage-analysis.md         |    2 +-
+ traceability/refs-validation.json         |    2 +-
+ traceability/refs-validation.md           |    2 +-
+ traceability/terminology-consistency.json | 6420 ++++++++++++++---------------
+ traceability/terminology-consistency.md   |    2 +-
+ 8 files changed, 3236 insertions(+), 3236 deletions(-)
+
+commit 56981ac72808bee0f41c66261351ff3478c6bdc1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:10:10 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9829aa9-bded-46a1-bc21-4c2e3f99081c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 89dae663-813e-4c10-8854-b43cf3a06590
+    Replit-Helium-Checkpoint-Created: true
+
+commit 71e31f253563ee7a6bb7bc67fbc7dc64b63592d1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 21:09:27 2026 +0000
+
+    Improve static verification tools and documentation
+    
+    Add new static verification tools for code references, coverage, terminology, and assertions. Update Makefile and documentation to include and describe these tools.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9829aa9-bded-46a1-bc21-4c2e3f99081c
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 9d3aa13d-870b-4dce-a90b-0f0b760604f5
+    Replit-Helium-Checkpoint-Created: true
+
+ Makefile                                  |    47 +-
+ replit.md                                 |    48 +-
+ tools/verify_assertions.py                |   393 +
+ tools/verify_coverage.py                  |   384 +
+ tools/verify_refs.py                      |   394 +
+ tools/verify_terminology.py               |   352 +
+ traceability/assertion-trace.json         |   650 ++
+ traceability/assertion-trace.md           |    90 +
+ traceability/coverage-analysis.json       |  2855 +++++
+ traceability/coverage-analysis.md         |    77 +
+ traceability/refs-validation.json         |   660 ++
+ traceability/refs-validation.md           |   160 +
+ traceability/terminology-consistency.json | 15884 ++++++++++++++++++++++++++++
+ traceability/terminology-consistency.md   |    83 +
+ 14 files changed, 22073 insertions(+), 4 deletions(-)
+
+commit cd11c06d76f6c9523d00b1ddc9bd934729e97116
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:59:17 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9829aa9-bded-46a1-bc21-4c2e3f99081c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ec3d9ca3-1707-42d0-8c25-cd3fc3959831
+    Replit-Helium-Checkpoint-Created: true
+
+commit 627f80b88b9badc838242ffc5eff85c8c9edc8da
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:50:30 2026 +0000
+
+    Add analysis of stakeholder priorities and gap impact
+    
+    Add a new document summarizing stakeholder groups, documented gaps, and key findings for Nightscout development.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 3cdd3d19-b828-460e-bc15-f4bd3618719c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1ed9469c-6e45-44e2-aa7d-34ba3e101519
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 91e2fd56077e0ae57de4ac3b8138909d7f97fcdb
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:50:00 2026 +0000
+
+    Add a detailed analysis of stakeholder priorities and identified gaps
+    
+    Creates a markdown document detailing stakeholder categories, their visible priorities, and what blocks them, alongside a gap analysis for the Nightscout/AID ecosystem.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 3cdd3d19-b828-460e-bc15-f4bd3618719c
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 251f6d58-a8f1-44b5-8397-3f97fd251290
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/60-research/stakeholder-priority-analysis.md | 371 ++++++++++++++++++++++
+ 1 file changed, 371 insertions(+)
+
+commit 2db8acc00b921dc7ecea56b90573d55cb225dc48
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:46:53 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 3cdd3d19-b828-460e-bc15-f4bd3618719c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b93da94e-5171-486f-8f5c-e15ccab43c6e
+    Replit-Helium-Checkpoint-Created: true
+
+commit 915427772a061061279ea111a97585183b7f554d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:31:35 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 93c4213d-746c-4370-87bc-8bce376f388e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: fb88991a-2deb-455b-95d8-e6378c40ee65
+    Replit-Helium-Checkpoint-Created: true
+
+commit 2d41aa7d0fee0c386720b43c558de6d0572aa6e5
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:31:25 2026 +0000
+
+    Add MIT license and gitignore configuration
+    
+    Add a new MIT LICENSE file and update the .gitignore to exclude the .replit configuration file.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 93c4213d-746c-4370-87bc-8bce376f388e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 6d9a6b13-565f-4cd3-9ab9-a5181598dfb4
+    Replit-Helium-Checkpoint-Created: true
+
+ .gitignore |  4 ++++
+ LICENSE    | 21 +++++++++++++++++++++
+ 2 files changed, 25 insertions(+)
+
+commit d694f3ee691541859eb5f10b2336dbf74d5963ff
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:30:44 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 93c4213d-746c-4370-87bc-8bce376f388e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 648d8cd4-40fc-4d92-8921-bad99874d9d3
+    Replit-Helium-Checkpoint-Created: true
+
+commit 682b1c25cbee066eac8cc9dfc97418498662ca51
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:25:56 2026 +0000
+
+    Add comprehensive guide to legal protections for diabetes software
+    
+    Update replit.md to reference the newly created DIGITAL-RIGHTS.md document located in the docs folder.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0c233836-1adb-4bac-b4ed-c5f7c558693b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 03e419c3-f867-4b09-b5f5-2514409919fa
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit d5b7820427859aa8cafd437287da00b85398f8d8
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:25:26 2026 +0000
+
+    Add a document outlining digital rights and legal protections for open-source diabetes software
+    
+    Create DIGITAL-RIGHTS.md in the docs folder detailing GPL v3 licensing, DMCA exemptions, interoperability defense, and right to repair landscape.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0c233836-1adb-4bac-b4ed-c5f7c558693b
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: bac1f605-09d3-4541-8a4b-7759b9342a8b
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/DIGITAL-RIGHTS.md | 441 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 441 insertions(+)
+
+commit 8d8551ac9441531159f79a433ada3185693f618c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:22:18 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0c233836-1adb-4bac-b4ed-c5f7c558693b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 15c8c09e-23d8-46f4-9fd0-f750f9d1595c
+    Replit-Helium-Checkpoint-Created: true
+
+commit 687a79993e5edf2b447a2045d4cd9e6233496123
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:14:36 2026 +0000
+
+    Update workspace documentation to reflect new specification details
+    
+    Update replit.md to include new OpenAPI specifications, JSON schema details, and alignment extension documentation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 16e56075-97c7-4ffc-aa31-85f86c5367c6
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 57603ff0-4573-49bf-9469-a0f7e14b0cbb
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+commit 7048e855ca03d077c3cfdc8f793a2d606cd7e733
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:14:07 2026 +0000
+
+    Align automated insulin delivery specifications and documentation with industry gaps
+    
+    Update OpenAPI specifications and JSON schemas for AID systems to address documented gaps, including identity, override lifecycle, and data provenance.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 16e56075-97c7-4ffc-aa31-85f86c5367c6
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: d649ec33-02cd-4642-844d-0f75adbc9726
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md |  22 +
+ specs/jsonschema/aid-events.schema.json     | 385 +++++++++++++++--
+ specs/openapi/README.md                     | 164 ++++++++
+ specs/openapi/aid-alignment-extensions.yaml | 630 ++++++++++++++++++++++++++++
+ specs/openapi/aid-devicestatus-2025.yaml    | 508 ++++++++++++++++++++++
+ specs/openapi/aid-entries-2025.yaml         | 330 +++++++++++++++
+ specs/openapi/aid-profile-2025.yaml         | 321 ++++++++++++++
+ specs/openapi/aid-treatments-2025.yaml      | 422 +++++++++++++++++++
+ 8 files changed, 2748 insertions(+), 34 deletions(-)
+
+commit f76e86482468968e6003fb6a2f130a5d59c0449b
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 20:03:32 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 16e56075-97c7-4ffc-aa31-85f86c5367c6
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 25634fea-8e46-4531-9d5a-54ba6ecdac90
+    Replit-Helium-Checkpoint-Created: true
+
+commit 5eb22525954464898eddace0263ea1d5a5ff1492
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:44:09 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 21a25851-c406-4401-bdbc-b1b1ef54c68f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 5ec9dbe9-6747-4c01-933d-8e4f4488ca0a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 14a1829f49470dde7dcfc3ac5550af7a28e8ee70
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:43:22 2026 +0000
+
+    Add comprehensive Dexcom G7 protocol documentation
+    
+    Add detailed documentation for the Dexcom G7 BLE protocol and J-PAKE authentication, including specifications, implementation guides, and cross-project comparisons.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 21a25851-c406-4401-bdbc-b1b1ef54c68f
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: ab7c5dd2-7fd8-4520-940d-246a0fbf9027
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/g7-jpake-implementation-guide.md    | 752 +++++++++++++++++++++
+ docs/10-domain/g7-protocol-specification.md        | 540 +++++++++++++++
+ .../cross-project/g7-implementation-comparison.md  | 440 ++++++++++++
+ progress.md                                        |  27 +
+ 4 files changed, 1759 insertions(+)
+
+commit 52ac70ac8bbeab4d83f7099c1994d1e67fb61024
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:34:40 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 21a25851-c406-4401-bdbc-b1b1ef54c68f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 14ea76ff-b5fc-48bc-8190-2ef469d99187
+    Replit-Helium-Checkpoint-Created: true
+
+commit d882d91c26d7da3dd4fee20a7c89816606ed5ab6
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:25:10 2026 +0000
+
+    Update documentation on API authentication and interface differences
+    
+    Update API authentication documentation, clarifying shared authorization module usage, v3 REST JWT restrictions, and differences between alarmSocket and storageSocket interfaces.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 20563249-35c2-4b8a-8ae0-3ffe98bf2af8
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0f063fdc-c895-4703-a1d2-d30204d719e1
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 3ed3502edfa554bbc325aea49ffe235643143ce7
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:24:26 2026 +0000
+
+    Update API comparison documentation to accurately reflect authentication methods
+    
+    Update API comparison table and relevant sections in documentation to distinguish between alarmSocket and storageSocket authentication mechanisms, clarifying that storageSocket exclusively uses access tokens while alarmSocket supports API_SECRET, JWT, and access tokens. Also clarifies that API v3 REST requires JWT Bearer tokens.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 20563249-35c2-4b8a-8ae0-3ffe98bf2af8
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 5f29e32a-afbb-430e-a76d-4120cb43c0ce
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/nightscout-api-comparison.md | 259 +++++++++++++++++++++++-----
+ 1 file changed, 212 insertions(+), 47 deletions(-)
+
+commit 494270872c89ba079fbdcf02143853054721e4dd
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:19:03 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 20563249-35c2-4b8a-8ae0-3ffe98bf2af8
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4f567d35-87bf-4eba-b4ed-cc6d264dc808
+    Replit-Helium-Checkpoint-Created: true
+
+commit a3b78c53de2ba8d9c45ec7d51e742851578ad382
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:08:12 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2cc51987-d6bd-43d0-a945-f90991316703
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: a2191a4f-1eef-4265-9175-25dade9e0488
+    Replit-Helium-Checkpoint-Created: true
+
+commit edf0ec0c2d107520bf6d1665e370e9dfd6fc3ffe
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 19:07:36 2026 +0000
+
+    Add detailed documentation for LoopFollow's alarm and remote command systems
+    
+    Documented LoopFollow alarm types, conditions, scheduling, and remote command protocols (Loop APNS, TRC, Nightscout) in new Markdown files and updated existing project documentation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2cc51987-d6bd-43d0-a945-f90991316703
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 026b90af-41c2-4664-86e1-d692e4d0e25b
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md | 146 ++++++
+ mapping/loopfollow/README.md                |  22 +-
+ mapping/loopfollow/alarm-system.md          | 715 ++++++++++++++++++++++++++++
+ mapping/loopfollow/remote-commands.md       | 582 ++++++++++++++++++++++
+ progress.md                                 |  35 ++
+ traceability/gaps.md                        | 206 ++++++++
+ traceability/requirements.md                | 174 +++++++
+ 7 files changed, 1871 insertions(+), 9 deletions(-)
+
+commit 5f459a290b4cd5ba0c11194cf0b174cb7f9d6a9f
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:56:57 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2cc51987-d6bd-43d0-a945-f90991316703
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 6f739070-30ec-4c37-9fc2-72194432413a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 72754c824f6ae22c10d2e59ec52ae6c640409bf5
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:51:33 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d839d88-63a2-4671-a045-5c556f075007
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: c0f905b5-fbd5-4d41-9ef8-e2de926891f6
+    Replit-Helium-Checkpoint-Created: true
+
+commit 715855cb94da074addb77cc910622392750eaf75
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:50:51 2026 +0000
+
+    Document LoopCaregiver remote command and authentication protocols
+    
+    Add new markdown files detailing LoopCaregiver's Remote 2.0 Command Protocol and Authentication flow, including QR code linking and OTP generation. Update cross-project terminology matrix, progress.md, and relevant READMEs to reflect these documented features.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d839d88-63a2-4671-a045-5c556f075007
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b888b9fc-b7b1-4372-845f-c8ae4644006a
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md |  99 +++++++
+ mapping/loopcaregiver/README.md             |  14 +-
+ mapping/loopcaregiver/authentication.md     | 440 ++++++++++++++++++++++++++++
+ mapping/loopcaregiver/remote-commands.md    | 399 +++++++++++++++++++++++++
+ progress.md                                 |  62 +++-
+ traceability/gaps.md                        |  72 +++++
+ traceability/requirements.md                |  87 ++++++
+ 7 files changed, 1158 insertions(+), 15 deletions(-)
+
+commit 4fa1012aa483286234a2c0ca0c2c1fbe9b31887f
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:44:24 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d839d88-63a2-4671-a045-5c556f075007
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f8817451-d159-42e3-a59e-d8c7510dcf80
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0db73004b4a1a89c7b7fbe2ce5c56c98d4b213d7
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:30:53 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2b711b0f-0777-43d5-9f8c-b4d76bc4ec0c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8a5018fa-4bd4-46e9-94af-0226cb70d3ca
+    Replit-Helium-Checkpoint-Created: true
+
+commit 823f9700d95f51c82793df4fa8d077b8a4e5bf84
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:30:37 2026 +0000
+
+    Add LoopFollow and LoopCaregiver apps to the workspace
+    
+    Integrate LoopFollow and LoopCaregiver repositories into the workspace, updating `workspace.lock.json` and `replit.md` with new external dependencies and generating README documentation for each.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2b711b0f-0777-43d5-9f8c-b4d76bc4ec0c
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 4245aa75-6f80-4ff5-96ab-7ae6cbfcf7da
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/loopcaregiver/README.md | 194 ++++++++++++++++++++++++++++++++++++++++
+ mapping/loopfollow/README.md    | 172 +++++++++++++++++++++++++++++++++++
+ replit.md                       |   5 +-
+ workspace.lock.json             |  15 ++++
+ 4 files changed, 385 insertions(+), 1 deletion(-)
+
+commit 3a531aab7c73a0ffb690593eac39272c1e0900a1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:25:55 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2b711b0f-0777-43d5-9f8c-b4d76bc4ec0c
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: a3ee40c5-9b43-40c2-9690-88e5c46e5ca4
+    Replit-Helium-Checkpoint-Created: true
+
+commit ee57b828346de00f115ec0fd2a52a810c92ef215
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:21:01 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 31386107-951f-423e-bdb4-e3f6579f713e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 21322440-70c2-4888-a5a6-9026b7a2cd25
+    Replit-Helium-Checkpoint-Created: true
+
+commit d249d4d6361599066e039835b3c342aafa6cd311
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:20:11 2026 +0000
+
+    Add detailed pump protocol specifications and related documentation
+    
+    Adds comprehensive documentation to the `specs/pump-protocols-spec.md` file detailing Omnipod DASH, Dana RS, and Medtronic pump communication protocols, including message structures, security mechanisms, and command opcodes. Updates `terminology-matrix.md`, `progress.md`, `traceability/gaps.md`, and `traceability/requirements.md` to reflect these new specifications and identified gaps and requirements.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 31386107-951f-423e-bdb4-e3f6579f713e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: cb99de35-c80d-4e29-a91d-d49456b3d471
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md | 104 +++++
+ progress.md                                 |  31 ++
+ specs/pump-protocols-spec.md                | 611 ++++++++++++++++++++++++++++
+ traceability/gaps.md                        |  99 +++++
+ traceability/requirements.md                |  84 ++++
+ 5 files changed, 929 insertions(+)
+
+commit 620d2cc9fd961588597ffe55f95b78c7ff9f4d8f
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:12:33 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 31386107-951f-423e-bdb4-e3f6579f713e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ef2e40a5-da6b-47a0-8bb1-0eda300495e0
+    Replit-Helium-Checkpoint-Created: true
+
+commit be800b6fc6708a58e2bdd67a5e30e7b90cc8e6e1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 18:05:27 2026 +0000
+
+    Update documentation for Libre CGM sensor protocols
+    
+    Update terminology matrix, requirements, and gaps documentation to accurately reflect Libre CGM sensor protocol details, including FRAM scope, BLE UUIDs, and encryption specifics.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 08fcd9fd-6c64-443b-b6be-103cb168fef4
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 454d7098-8c04-43e8-b93c-1d6b3751033f
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/libre-protocol-deep-dive.md  | 829 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md | 135 +++++
+ replit.md                                   |   1 +
+ traceability/gaps.md                        | 135 +++++
+ traceability/requirements.md                | 105 ++++
+ 5 files changed, 1205 insertions(+)
+
+commit dc3c6594cfd6c69f1a66b6a6e0ac4c787485c393
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 17:55:30 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 08fcd9fd-6c64-443b-b6be-103cb168fef4
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 6d362a4e-12f3-40ec-a28c-c712f549a4cf
+    Replit-Helium-Checkpoint-Created: true
+
+commit 88591271697b09746e1270ca467f600681989106
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 17:51:07 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: d21a6f74-f7c3-48c6-8791-fa6901cf2a0a
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 88c949da-d527-4c5a-a745-daa6768513b8
+    Replit-Helium-Checkpoint-Created: true
+
+commit d8bbfbb4e4ce2beb1e8495c2ce9f55ee3d564139
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 17:50:18 2026 +0000
+
+    Update documentation to compare carb absorption models across systems
+    
+    Update terminology matrix, progress, gaps, and requirements files to detail and compare carb absorption models used by Loop, oref0, and AAPS, including identification of discrepancies and gaps in cross-system compatibility.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: d21a6f74-f7c3-48c6-8791-fa6901cf2a0a
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b7cf0af7-2c2f-41ab-9c36-d6000982f015
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/carb-absorption-deep-dive.md | 528 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  84 +++++
+ progress.md                                 |  53 ++-
+ traceability/gaps.md                        | 116 ++++++
+ traceability/requirements.md                | 106 ++++++
+ 5 files changed, 882 insertions(+), 5 deletions(-)
+
+commit 58da1a82879ebc45509b00b73f2f8f2c68e28a0e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 17:42:02 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: d21a6f74-f7c3-48c6-8791-fa6901cf2a0a
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0d131446-c5e2-48d2-b19a-ee9edef4069d
+    Replit-Helium-Checkpoint-Created: true
+
+commit 226e1714a7cc25eb167a74a4cd23649c2d3d61c4
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:45:16 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8278be85-0673-48d5-a90d-4f1805c34cce
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 702c2bed-1877-413c-895b-886d4b664dfd
+    Replit-Helium-Checkpoint-Created: true
+
+commit 870bed25d1aefc6e9387644471918c0e40cbf8d1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:43:41 2026 +0000
+
+    Add detailed documentation for Dexcom G6 and G7 Bluetooth protocols
+    
+    Update terminology matrix, requirements, gaps, and create a deep dive document specifying Dexcom G6/G7 BLE protocols, including UUIDs, opcodes, authentication methods, and message structures.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8278be85-0673-48d5-a90d-4f1805c34cce
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 6dd87eb9-67dd-4d02-ad40-ba385f5ede20
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/dexcom-ble-protocol-deep-dive.md | 636 ++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md     | 104 ++++
+ progress.md                                     |  34 ++
+ traceability/gaps.md                            | 108 +++-
+ traceability/requirements.md                    | 108 ++++
+ 5 files changed, 989 insertions(+), 1 deletion(-)
+
+commit 933b646930c7558dcc61aebbebca0e6a7fb37925
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:36:49 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8278be85-0673-48d5-a90d-4f1805c34cce
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 7839fc55-fd6c-4aa6-893e-bbca6f406176
+    Replit-Helium-Checkpoint-Created: true
+
+commit 9f4817e05d3b9a27abc61d76baeb64ee00085f5c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:33:32 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 28f75f28-b4a9-4e04-a2e6-b001ee1ae42e
+    Replit-Helium-Checkpoint-Created: true
+
+commit bbaa04fc92b79984de036d92939ce130468997e3
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:33:16 2026 +0000
+
+    Add DiaBLE and xdrip-js to documentation and comparison tables
+    
+    Integrates documentation and comparison tables for DiaBLE and xdrip-js, detailing their CGM data handling capabilities, protocols, and Nightscout integration.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: d740be50-1512-4c30-806e-851821b70f07
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/cgm-apps-comparison.md | 179 +++++--
+ mapping/diable/README.md                     | 193 +++++++
+ mapping/diable/cgm-transmitters.md           | 733 +++++++++++++++++++++++++++
+ mapping/diable/data-models.md                | 561 ++++++++++++++++++++
+ mapping/diable/nightscout-sync.md            | 521 +++++++++++++++++++
+ mapping/xdrip-js/README.md                   | 249 +++++++++
+ mapping/xdrip-js/ble-protocol.md             | 549 ++++++++++++++++++++
+ mapping/xdrip-js/data-models.md              | 422 +++++++++++++++
+ traceability/gaps.md                         | 104 ++++
+ 9 files changed, 3463 insertions(+), 48 deletions(-)
+
+commit a1159f5987ae58a755ef7c790cf44754b423a89a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:16:11 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 89cd03c2-61b0-460d-a133-5491f55505b8
+    Replit-Helium-Checkpoint-Created: true
+
+commit 29bec20f7a6df13b000fc0b60ea2a5e1492d61aa
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:13:20 2026 +0000
+
+    Add support for new diabetes management tools and libraries
+    
+    Update replit.md to document the addition of DiaBLE and xdrip-js as external dependencies for the workspace.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8b9239ab-fe60-4e1e-a2a7-3573582b7622
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+commit ab420b9dd5c88a5d2073072beb28f9ebb151c27e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:13:00 2026 +0000
+
+    Add new diabetes-related projects to the workspace lock
+    
+    Add DiaBLE and xdrip-js repositories to the workspace.lock.json file.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 5926d426-759d-4173-b2ee-8c98b1a13499
+    Replit-Helium-Checkpoint-Created: true
+
+ workspace.lock.json | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+commit 9a3ade2f2690f5e1c766c0e976dc4126ccc3b1af
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:12:17 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b06cee33-2998-474e-8d4b-c3e748392d6a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 8e5f9cd8036583d1631ba7e6bcd514dc02b15f08
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:10:59 2026 +0000
+
+    Saved your changes before starting work
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 4eeca9a9-cce4-47c3-9f55-95e5ab7dec4d
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1b1554f2-ad7b-4d77-9356-140e40f40971
+
+ traceability/inventory.json | 2 +-
+ traceability/inventory.md   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+commit af486847d03a42624b292600a242d0ffb6c97b33
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:01:21 2026 +0000
+
+    Add inventory generation tool and document future tooling improvements
+    
+    Introduce `gen_inventory.py` to create traceability artifacts and document a tooling roadmap in `replit.md`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 1c83b089-7907-49b3-93d4-8813ba108236
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1d33ceab-779c-48b6-ad5f-6ccac598ccba
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit 173231a4bd9a246db3334666d355cf6efd18eeb1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 07:00:54 2026 +0000
+
+    Add tool to generate workspace artifact inventory
+    
+    Add `inventory` target to Makefile and create `tools/gen_inventory.py` to scan and report on project artifacts, generating `traceability/inventory.json` and `traceability/inventory.md`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 1c83b089-7907-49b3-93d4-8813ba108236
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 49500009-0a99-4a34-8d9a-30da67367d90
+    Replit-Helium-Checkpoint-Created: true
+
+ Makefile                    |   8 +-
+ docs/tooling-roadmap.md     | 147 ++++++++
+ tools/gen_inventory.py      | 359 +++++++++++++++++++
+ traceability/inventory.json | 832 ++++++++++++++++++++++++++++++++++++++++++++
+ traceability/inventory.md   | 217 ++++++++++++
+ 5 files changed, 1562 insertions(+), 1 deletion(-)
+
+commit b0175652d1926878f83122d31a66d2fdbc6bd110
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:57:13 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 1c83b089-7907-49b3-93d4-8813ba108236
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4034f7b8-1e32-4f85-8228-10d7e5e9a59b
+    Replit-Helium-Checkpoint-Created: true
+
+commit 28edd8af1027d1045e2826023820fb0fbfd2fb7e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:18:50 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a0f1a83a-179b-4ad3-9b0c-ec37797978eb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f73b9ff2-e1f2-4be6-b5f7-1d12c754e9fa
+    Replit-Helium-Checkpoint-Created: true
+
+commit 7b6722dd0ef8f1a47fbcf1954ede46161bc61359
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:18:39 2026 +0000
+
+    Add documentation explaining the rationale for avoiding custom credentials
+    
+    Create an Architecture Decision Record (ADR) and update existing documentation to explain the philosophical reasons behind Nightscout's approach to authentication, emphasizing zero trust and informed consent over traditional username/password flows.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a0f1a83a-179b-4ad3-9b0c-ec37797978eb
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 1ef61e29-8533-43c5-9180-3954d7d71cc3
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/authority-model.md                  |  32 +++
+ .../nightscout-roles-gateway-docs.md               |  14 ++
+ docs/90-decisions/adr-003-no-custom-credentials.md | 242 +++++++++++++++++++++
+ replit.md                                          |   1 +
+ 4 files changed, 289 insertions(+)
+
+commit 7d5f27e321123be1233149936b8ad9ccdc998f23
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:16:19 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a0f1a83a-179b-4ad3-9b0c-ec37797978eb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 7ba64fe8-a520-428f-83a1-6b7cf7ae433b
+    Replit-Helium-Checkpoint-Created: true
+
+commit cbe9f2f01b198606feef04980e4a32cf66b2b0ff
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:08:00 2026 +0000
+
+    Update controller registration protocol proposal with enhanced details
+    
+    Update the controller registration protocol proposal document to include enhanced details, such as a v2 designation, Nightscout Core contract information, an OpenAPI schema, an implementation roadmap, and resolved open questions.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0bae43f6-eb35-48c4-9dcd-d88ef531f614
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: fbf84c11-d2e1-4429-b784-079196ce3197
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 02d504a11e15c1e5aa96ce2597969dff80896e5d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:07:24 2026 +0000
+
+    Update controller registration protocol proposal to target Nightscout core
+    
+    Enhance controller registration protocol proposal to be a contract within Nightscout Core, clarifying stakeholder and technical alignment, and improving OpenAPI response schema references.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0bae43f6-eb35-48c4-9dcd-d88ef531f614
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 5fa0353f-fa25-42a5-9d21-0e7936feeda9
+    Replit-Helium-Checkpoint-Created: true
+
+ .../controller-registration-protocol-proposal.md   | 1114 +++++++++++++++-----
+ 1 file changed, 873 insertions(+), 241 deletions(-)
+
+commit 3a4e9a4ec062091e15ad38ea970f35f2c3f4f489
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 06:01:17 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0bae43f6-eb35-48c4-9dcd-d88ef531f614
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0ce8eb10-5577-48f8-b118-fbfcebd73deb
+    Replit-Helium-Checkpoint-Created: true
+
+commit 8c876b3ab020c023ca0511dd0fa27348665ab508
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:49:59 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 5fca5da7-801c-4bc3-942a-21f1ab8ce79c
+    Replit-Helium-Checkpoint-Created: true
+
+commit c19444fe643f29b2b46a77e09a2b8a0e109be3b8
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:49:38 2026 +0000
+
+    Introduce proposal for evolving profile data model semantics
+    
+    Create a new proposal document outlining improvements for the Nightscout profile model, including a desired vs. observed split and capability tracking.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 7b538121-aff2-41af-975e-e7419a17a629
+    Replit-Helium-Checkpoint-Created: true
+
+ .../profile-model-evolution-proposal.md            | 548 +++++++++++++++++++++
+ .../90-decisions/adr-002-sync-identity-strategy.md |   1 +
+ replit.md                                          |   1 +
+ 3 files changed, 550 insertions(+)
+
+commit 44d728685b2a75607f606f7a3900289b614f0565
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:46:44 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0908591a-77b5-41d6-a213-6bb1da9af891
+    Replit-Helium-Checkpoint-Created: true
+
+commit 7b9c6db00be341230fdf089cab4f2de2671dae0d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:41:48 2026 +0000
+
+    Add documentation for app developer integration and control protocols
+    
+    Add three new markdown files to the docs directory: an integration guide for app developers, a proposal for a controller registration protocol, and an ADR for sync identity strategy.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8d99fae9-0fb7-4d8c-b73a-d119f7253eb2
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+commit d1c52c1ec8f753d65984ce4fcdfc91c390628546
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:41:16 2026 +0000
+
+    Create documentation for Nightscout integration, proposals, and decisions
+    
+    Adds three new markdown files: `nightscout-integration-guide.md`, `controller-registration-protocol-proposal.md`, and `adr-002-sync-identity-strategy.md`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: fa325e04-d36a-4cf5-a2d5-377840bc0697
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/30-design/nightscout-integration-guide.md     | 325 +++++++++++++++
+ .../controller-registration-protocol-proposal.md   | 463 +++++++++++++++++++++
+ .../90-decisions/adr-002-sync-identity-strategy.md | 316 ++++++++++++++
+ 3 files changed, 1104 insertions(+)
+
+commit 0074829610d4a8a52c3b44e747d094c10a2a3782
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 05:37:01 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 8d7634d4-8ff2-4f69-8ea5-13d026cfee3e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4f87681e-7a36-4d0c-bb58-b7360e5e4359
+    Replit-Helium-Checkpoint-Created: true
+
+commit 936f91f5a9190865867bf2ff1906b69fdea1c92c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:57:05 2026 +0000
+
+    Refine workspace documentation and project structure descriptions
+    
+    Update `replit.md` to clarify the project's overview, user preferences, and system architecture, detailing the purpose and organization of documentation, specifications, and conformance testing directories.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9658b9b9-15dc-421c-bff2-030bd14c5717
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: cefd9f81-5728-45e3-908c-fc203802d531
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 174 ++++++++------------------------------------------------------
+ 1 file changed, 20 insertions(+), 154 deletions(-)
+
+commit 2e6eeb8910879cfe32beca70d71567fd18b6a180
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:56:26 2026 +0000
+
+    Update insulin curve models and associated documentation
+    
+    Update terminology matrix, requirements, and gaps documents with comprehensive details on insulin curve models, including mathematical formulas, peak times, DIA constraints, and implementation differences across AID systems. A new deep dive document is also added for detailed analysis.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9658b9b9-15dc-421c-bff2-030bd14c5717
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 9c83242e-810a-46c3-bb0d-243a7aea0dbe
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/insulin-curves-deep-dive.md  | 516 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  96 +++++-
+ progress.md                                 |  42 ++-
+ traceability/gaps.md                        | 129 +++++++
+ traceability/requirements.md                | 115 +++++++
+ 5 files changed, 878 insertions(+), 20 deletions(-)
+
+commit 35f3d43c2d31077cb7b2eed0a7e03a8dfa917cfa
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:49:19 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9658b9b9-15dc-421c-bff2-030bd14c5717
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0c1919f7-991b-43d0-9f74-2cb15f70a1cc
+    Replit-Helium-Checkpoint-Created: true
+
+commit ca72fa0df01c3f1f75a0e42c02dc1f2eeb92dde0
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:40:24 2026 +0000
+
+    Update documentation and terminology for pump communication protocols
+    
+    Adds new files and updates existing ones to detail pump communication protocols, including interface abstractions, command mappings, transport protocols, precision constraints, and identified gaps.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f715fbdf-2d68-4efe-81e7-6ee1227f6403
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4d1024c2-cb5d-4c96-a72d-8038b0197f19
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/pump-communication-deep-dive.md | 644 +++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md    |  87 ++++
+ progress.md                                    |  45 +-
+ traceability/gaps.md                           | 147 ++++++
+ traceability/requirements.md                   | 129 +++++
+ 5 files changed, 1039 insertions(+), 13 deletions(-)
+
+commit 03264dcf5c7c6ff26a53a9ee32d2023c6cf49867
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:31:49 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f715fbdf-2d68-4efe-81e7-6ee1227f6403
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: feda0bba-898e-4d58-9bb8-6011c2bffc91
+    Replit-Helium-Checkpoint-Created: true
+
+commit 73cd15e8369ef3524c43f374704b09b9b0e48248
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:27:47 2026 +0000
+
+    Add comparison of Nightscout API versions v1 and v3
+    
+    Adds a new section to replit.md detailing the comparison between Nightscout API v1 and v3, including authentication, document identity, and sync efficiency differences.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9a8da73-feaf-4f3f-a4ea-2e7fe0e3ac32
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8489d8b3-a956-4e81-91df-8e49e8ebb1f6
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+commit be64ad18ab33f24f96f01402ed396b40bf37055e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:27:06 2026 +0000
+
+    Add comprehensive comparison of Nightscout API v1 and v3
+    
+    Create detailed documentation comparing Nightscout API v1 and v3, including endpoint differences, authentication mechanisms, and sync behaviors, and update associated project files.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9a8da73-feaf-4f3f-a4ea-2e7fe0e3ac32
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 802aa2d9-232c-4e82-9720-b81f4dfd4e94
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/nightscout-api-comparison.md | 504 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  64 ++++
+ progress.md                                 |  73 +++-
+ traceability/gaps.md                        | 123 +++++++
+ 4 files changed, 755 insertions(+), 9 deletions(-)
+
+commit 8bf26b6b56c68b4335e60b52c5fed23d8a0bb49a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:22:04 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a9a8da73-feaf-4f3f-a4ea-2e7fe0e3ac32
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 69e7ce76-7d8f-4530-8d17-7501e3a482db
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0573238aa16215aeada1f77d98ea4808d719dfcd
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:16:54 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9ff39542-4ce0-4a26-acc2-f421743f031f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: c47e940e-c9a8-4835-bf6a-e6452444744e
+    Replit-Helium-Checkpoint-Created: true
+
+commit 5be35f893977009111007ba01d88f488c5acf125
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:16:14 2026 +0000
+
+    Update documentation and requirements for remote command security across multiple systems
+    
+    Refactor and add new markdown files to detail remote command security models, implement new requirements, and update existing documentation regarding cross-system comparisons and security gaps for Trio, Loop, and AAPS.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9ff39542-4ce0-4a26-acc2-f421743f031f
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b3fbb03f-13d7-441f-abd6-8c9a65383a76
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/remote-commands-comparison.md | 660 +++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md  |  80 ++++
+ progress.md                                  |  41 +-
+ traceability/gaps.md                         |  99 +++-
+ traceability/requirements.md                 | 123 +++++
+ 5 files changed, 979 insertions(+), 24 deletions(-)
+
+commit 814566febe17d739c6bb145894ed33f7339babcc
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:07:45 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 9ff39542-4ce0-4a26-acc2-f421743f031f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 83aa0989-6261-474b-a170-a2e17d867a63
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0579308728d3235da4e608dc528eab61db45aa29
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:01:48 2026 +0000
+
+    Add deep dive analysis of CGM data sources and associated documentation
+    
+    Add comprehensive analysis of CGM data sources, updating terminology matrix, requirements, and gaps.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2f959f3e-dace-4a39-b3f5-5e0505996896
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: bf1e1bf2-826e-4c33-a25c-2394792b367c
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+commit 03a869a266c8c1dac4708221bae934a262d8ff25
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 04:00:48 2026 +0000
+
+    Add detailed documentation and requirements for CGM data sources
+    
+    Adds a deep dive document for CGM data sources, updates the terminology matrix and progress tracking, and defines new requirements and gaps related to CGM data provenance and handling.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2f959f3e-dace-4a39-b3f5-5e0505996896
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: eb5b1067-169f-4ece-887b-6fa28c94c327
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/cgm-data-sources-deep-dive.md | 685 +++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md  |  74 +++
+ progress.md                                  |  40 +-
+ traceability/gaps.md                         | 149 ++++++
+ traceability/requirements.md                 | 134 ++++++
+ 5 files changed, 1061 insertions(+), 21 deletions(-)
+
+commit 930419e78bbb11c51b553bb509f63775d26a3702
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 03:54:47 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2f959f3e-dace-4a39-b3f5-5e0505996896
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 547fe25c-adab-4a0f-8dda-17f8b9142ba3
+    Replit-Helium-Checkpoint-Created: true
+
+commit 7fa293221b6e910238f652467cc1a360f943e190
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 02:11:44 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 66c1211f-f000-4350-a6f1-347616ee6524
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 29abb14d-31b4-4791-8ddc-3f41ac90d34f
+    Replit-Helium-Checkpoint-Created: true
+
+commit 436af030e9e660a9a2604aab184d1840d8a4a639
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 02:11:06 2026 +0000
+
+    Update documentation and task list to reflect completed algorithm comparison work
+    
+    Add a detailed comparison of Loop, oref0, AAPS, and Trio dosing algorithms to the documentation, including methodology, carb absorption, and sensitivity adjustments. Update progress.md to mark Algorithm Comparison as complete and adjust task priorities.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 66c1211f-f000-4350-a6f1-347616ee6524
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 0d044390-d5e5-4733-8d4c-129ea309bffb
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/algorithm-comparison-deep-dive.md | 678 +++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md      |  49 ++
+ progress.md                                      |  43 +-
+ 3 files changed, 744 insertions(+), 26 deletions(-)
+
+commit 30a29500037cbff6dc1defa1bb78cc871293b973
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 02:02:59 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 66c1211f-f000-4350-a6f1-347616ee6524
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 520dde48-c978-43ee-9241-a716fffa21df
+    Replit-Helium-Checkpoint-Created: true
+
+commit b32cfd9638658f10335ecbd545f9952130089f50
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:58:50 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ab757b76-6e65-4dbc-ab43-1bcec027dbb1
+    Replit-Helium-Checkpoint-Created: true
+
+commit 14cffc9ddfb17dda1ac9c41cbdb04d23d0d8c1ce
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:58:13 2026 +0000
+
+    Add progress tracker for workspace documentation and development
+    Create a new file, progress.md, to document completed work and outline future development cycles for the AID Alignment Workspace.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 1f53abef-e878-427c-b49f-35c24996a0c3
+    Replit-Helium-Checkpoint-Created: true
+
+ progress.md | 143 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 143 insertions(+)
+
+commit 221945ca818cf005b64c6edef921b0faa41b8285
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:57:00 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b11a6097-eef0-4d31-87df-871b4a0ce1ea
+    Replit-Helium-Checkpoint-Created: true
+
+commit 873c9027e62188d35341d5ad22cda2d982669103
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:50:05 2026 +0000
+
+    Add documentation for glucose data models and analysis
+    
+    Add a new section to `replit.md` detailing the "Entries Collection Deep Dive," including field mappings, key findings, suggested specifications, requirements, and identified gaps for glucose data across various AID systems.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b6c56961-592e-4a97-9556-7867b974a0f0
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+commit 9b191334b217bf748de952f4f37305f800d75b5f
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:49:22 2026 +0000
+
+    Add detailed glucose data models and entry mapping to terminology matrix
+    
+    Adds a new "Glucose Data Models (Deep Dive)" section to the terminology matrix and creates a new `entries-deep-dive.md` document detailing glucose data field mappings across various AID systems.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 010a6ef2-9408-4b91-9881-c40cfb5f579c
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/entries-deep-dive.md         | 551 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  63 ++++
+ 2 files changed, 614 insertions(+)
+
+commit e5dbcb848ccaa164d1084b6e3a0cb2b0467b0e6e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:43:59 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0766adc9-b4e7-4cc6-95d9-a957dadcbf8e
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 64585573-151b-4024-b0b4-db420bd71c82
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0c9e3f59c53f920c5a34cd49c323e9796e20a746
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:31:57 2026 +0000
+
+    Document the deep dive into treatment event data structures and mappings
+    
+    Document comprehensive field-by-field mappings for treatment events, including boluses, carbs, and temp basals across AID systems, and update conformance tests and requirements.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 57902bc5-894e-4d17-9211-09551c0001db
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ef62fe10-88e2-4f6a-890a-40cddf656b21
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+commit 0798e0a25aab6b7a7d657ec392d2474ac228d7b4
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:31:23 2026 +0000
+
+    Update terminology, gaps, and requirements for treatment data synchronization
+    
+    Update terminology matrix, gaps.md, requirements.md, and conformance assertions for treatment data synchronization, addressing AAPS SMB eventType mapping, REQ-046 units, and non-implementable conformance tests.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 57902bc5-894e-4d17-9211-09551c0001db
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 1fe39097-6280-469f-858a-cc47df22692f
+    Replit-Helium-Checkpoint-Created: true
+
+ conformance/assertions/treatment-sync.yaml  | 222 ++++++++++++++
+ docs/10-domain/treatments-deep-dive.md      | 450 ++++++++++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  63 ++++
+ traceability/gaps.md                        | 174 +++++++++++
+ traceability/requirements.md                | 126 ++++++++
+ 5 files changed, 1035 insertions(+)
+
+commit a27ce9f90d4707c040af12ecdcd2026f5dd3ff39
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:21:49 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 57902bc5-894e-4d17-9211-09551c0001db
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: eda25cea-0091-44f0-8bc7-622da40908d2
+    Replit-Helium-Checkpoint-Created: true
+
+commit effea3a4384d2bb7d6d864e49e31eb8843f1325c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:15:24 2026 +0000
+
+    Add new research comparing therapy settings synchronization between systems
+    
+    Add a section to replit.md detailing the findings of a cross-system analysis of profile and therapy settings structures, including format differences, timezone handling, and sync directions, and noting newly identified gaps.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: b65eb487-17d3-49ee-9f84-5e52ea1cc88f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 5008fb76-cd39-4562-b0e6-939e7dca90cc
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+commit df058c803b39f13155dc0bc22a1723b9ad6ee73b
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:14:26 2026 +0000
+
+    Update terminology matrix and comparison document with AAPS and Trio profile settings details
+    
+    Refactor mapping/cross-project/terminology-matrix.md to update AAPS and Trio profile settings representations, including clarifications on ProfileSwitch entity semantics and duration=0 meaning. Add docs/60-research/profile-therapy-settings-comparison.md to detail AAPS and Trio profile/therapy settings structures and their relation to Nightscout.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: b65eb487-17d3-49ee-9f84-5e52ea1cc88f
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 6af55b99-6e15-4db5-93b9-c3d399c11093
+    Replit-Helium-Checkpoint-Created: true
+
+ .../profile-therapy-settings-comparison.md         | 557 +++++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md        |  53 +-
+ 2 files changed, 600 insertions(+), 10 deletions(-)
+
+commit 561ba3b3580c2c67ed8f1199e9e7694cba14008a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:08:55 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: b65eb487-17d3-49ee-9f84-5e52ea1cc88f
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 23af89a3-073a-4c6b-afb3-e9a72c91192c
+    Replit-Helium-Checkpoint-Created: true
+
+commit bc316a71f299ff0e4a0d1235a4d9578d731ed336
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:01:19 2026 +0000
+
+    Add comprehensive documentation for device status structures across systems
+    
+    Update replit.md to include a new deep dive document detailing the DeviceStatus structure across various AID systems, including cross-references and identified gaps.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0fa6b978-8198-42fc-8613-f5723e8725a2
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 19527ef1-dfaf-40f1-92ab-97254a2ec3cf
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+commit 30dbec3f4120ab52140c52f32dd70451a22dd9d7
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 01:00:50 2026 +0000
+
+    Document DeviceStatus differences across Nightscout systems
+    
+    Create a deep dive document detailing the DeviceStatus structure variations between Loop, Trio, and AAPS, including field mapping and structural differences.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0fa6b978-8198-42fc-8613-f5723e8725a2
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 80678d09-9be4-4d36-bfeb-7b37e66b02f1
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/devicestatus-deep-dive.md | 862 +++++++++++++++++++++++++++++++
+ docs/10-domain/nightscout-data-model.md  |  33 +-
+ mapping/aaps/nightscout-sync.md          |   2 +
+ mapping/loop/nightscout-sync.md          |   2 +
+ mapping/trio/nightscout-sync.md          |   2 +
+ 5 files changed, 898 insertions(+), 3 deletions(-)
+
+commit b8a9af5b87c85c689d7ff030dfaf0395ae2fa87d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:54:22 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0fa6b978-8198-42fc-8613-f5723e8725a2
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ad310bae-ba62-4aa7-8f55-3c0150859074
+    Replit-Helium-Checkpoint-Created: true
+
+commit 3bacc9f483746370bc92a6dfc29e84ffd2733b38
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:45:07 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 717a11ef-7c7e-4551-91b3-308b5ae5fc41
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 522541ff-9156-45c5-a853-dbb17b0bd7c8
+    Replit-Helium-Checkpoint-Created: true
+
+commit 85946dba40cc69249fff5aa18e474c3d56c6873e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:44:34 2026 +0000
+
+    Update documentation on AID controller sync patterns
+    
+    Add new sections and files detailing sync patterns, requirements, gaps, and conformance assertions for AID controllers (Trio, Loop, AAPS) with Nightscout.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 717a11ef-7c7e-4551-91b3-308b5ae5fc41
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: ff4501db-2ceb-4a4d-9045-8354030d5ca9
+    Replit-Helium-Checkpoint-Created: true
+
+ conformance/assertions/sync-deduplication.yaml     | 181 ++++++++
+ .../cross-project/aid-controller-sync-patterns.md  | 475 +++++++++++++++++++++
+ replit.md                                          |  18 +-
+ traceability/gaps.md                               |  60 +++
+ traceability/requirements.md                       |  99 +++++
+ 5 files changed, 832 insertions(+), 1 deletion(-)
+
+commit 8cddd1d792fc98d03febf1eb63ebc63fc1545273
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:38:16 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 717a11ef-7c7e-4551-91b3-308b5ae5fc41
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f5c9a5fa-f909-4a29-a646-b7988ec17917
+    Replit-Helium-Checkpoint-Created: true
+
+commit 83dfeae62b4d31491bdbeca25cfe5a28e7042cae
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:05:42 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 07e5075c-24fa-46fb-965a-c3fe67759fd5
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1ff3d58f-6a25-4478-8584-0d1954186b27
+    Replit-Helium-Checkpoint-Created: true
+
+commit 0a53cde75816970631192b2f1c67ea4609367249
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Sat Jan 17 00:05:06 2026 +0000
+
+    Update documentation with detailed server-side processing and API insights
+    
+    Adds new markdown files and updates existing ones to document server-side processing, WebSocket deduplication logic, and API v3 immutable fields based on source code analysis.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 07e5075c-24fa-46fb-965a-c3fe67759fd5
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 4cc2f7d4-46b0-471f-8d38-260575b6d783
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/nightscout-data-model.md            | 143 ++++++++
+ .../cgm-remote-monitor-source-synthesis.md         | 370 +++++++++++++++++++++
+ specs/openapi/nightscout-api3-summary.md           | 227 +++++++++++++
+ 3 files changed, 740 insertions(+)
+
+commit 773fb8a7b49b9ae5f66d2c75930f7c54691e7f36
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:59:22 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 07e5075c-24fa-46fb-965a-c3fe67759fd5
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f250bfe7-4226-440d-976a-308dbacec3c6
+    Replit-Helium-Checkpoint-Created: true
+
+commit 8161d464311f30c517626f0e8861421dfa4c3943
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:50:08 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f057c910-48ce-4cf4-89ce-cf4fb181ec34
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 990cf5f8-dfc0-4515-96dc-33e93989b052
+    Replit-Helium-Checkpoint-Created: true
+
+commit b706ca434339c8d4e289dde60e714db1a139b39a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:49:53 2026 +0000
+
+    Add detailed documentation for Nightguard CGM monitoring app
+    
+    Add comprehensive documentation for Nightguard, including its role, features, API usage, and data models, alongside updates to the cross-project comparison table.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f057c910-48ce-4cf4-89ce-cf4fb181ec34
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b223b955-cc1e-405b-b5b5-1a108bae950b
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/cgm-apps-comparison.md | 153 ++++++---
+ mapping/nightguard/README.md                 | 249 ++++++++++++++
+ mapping/nightguard/alarm-logic.md            | 455 +++++++++++++++++++++++++
+ mapping/nightguard/apple-watch.md            | 391 ++++++++++++++++++++++
+ mapping/nightguard/data-models.md            | 287 ++++++++++++++++
+ mapping/nightguard/nightscout-sync.md        | 392 ++++++++++++++++++++++
+ mapping/nightguard/widgets.md                | 481 +++++++++++++++++++++++++++
+ replit.md                                    |   8 +
+ 8 files changed, 2379 insertions(+), 37 deletions(-)
+
+commit 980bb22727868655cfb0c0c6cf8dfcdb32f1a0eb
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:38:25 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f057c910-48ce-4cf4-89ce-cf4fb181ec34
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 21eaee6c-b1e2-46d6-9010-23359788b53c
+    Replit-Helium-Checkpoint-Created: true
+
+commit c900b9fca1609617a8913d0ceecbaebcb5c4517e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:32:10 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a8e2f3f7-178b-4f21-b0bd-2a8e60add647
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 3ef517f3-f12d-4670-b5a9-69da7a701a6a
+    Replit-Helium-Checkpoint-Created: true
+
+commit b3cb535b0da27946c5f1fe508379f5b3508e96f9
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:31:26 2026 +0000
+
+    Add detailed documentation and terminology mappings for xDrip+
+    
+    Add new files and update existing ones to provide comprehensive documentation and cross-project terminology mappings for the xDrip+ Android application.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a8e2f3f7-178b-4f21-b0bd-2a8e60add647
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b2519a2d-76f6-4f80-80a7-cd37bd49e279
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/README.md                              |  65 +++
+ mapping/cross-project/cgm-apps-comparison.md   | 270 ++++++++++++
+ mapping/cross-project/terminology-matrix.md    | 174 +++++---
+ mapping/xdrip-android/README.md                | 303 +++++++++++++
+ mapping/xdrip-android/broadcast-service.md     | 392 +++++++++++++++++
+ mapping/xdrip-android/calibrations.md          | 431 +++++++++++++++++++
+ mapping/xdrip-android/data-models.md           | 564 +++++++++++++++++++++++++
+ mapping/xdrip-android/data-sources.md          | 326 ++++++++++++++
+ mapping/xdrip-android/external-integrations.md | 399 +++++++++++++++++
+ mapping/xdrip-android/insulin-management.md    | 464 ++++++++++++++++++++
+ mapping/xdrip-android/local-web-server.md      | 431 +++++++++++++++++++
+ mapping/xdrip-android/nightscout-sync.md       | 506 ++++++++++++++++++++++
+ replit.md                                      |   5 +-
+ 13 files changed, 4267 insertions(+), 63 deletions(-)
+
+commit 3722822a33a02ee9a70073bdbafbc18a20f5dd62
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:12:59 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: a8e2f3f7-178b-4f21-b0bd-2a8e60add647
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 214c6799-266b-4310-a4f8-2fcc98c5e635
+    Replit-Helium-Checkpoint-Created: true
+
+commit 3827317dff68de020d37fcbb0b09e4787db492dc
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:07:01 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 190f68bf-1940-4e2d-85a0-8d5681013257
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: df0a8fb3-c9be-4a8e-b719-c67a453f94f9
+    Replit-Helium-Checkpoint-Created: true
+
+commit c9290ac0547be219b1d01e88958474a293ef9c4d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 23:06:45 2026 +0000
+
+    Add documentation for xDrip4iOS Nightscout integration and features
+    
+    Adds comprehensive documentation files detailing xDrip4iOS's Nightscout integration, including data models, sync logic, follower modes, profile handling, and treatment classification.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 190f68bf-1940-4e2d-85a0-8d5681013257
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 405d89f5-ef6a-435e-b586-cf31f2567489
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/xdrip4ios/README.md                   | 267 ++++++++++++++
+ mapping/xdrip4ios/cgm-transmitters.md         | 447 ++++++++++++++++++++++++
+ mapping/xdrip4ios/data-models.md              | 485 ++++++++++++++++++++++++++
+ mapping/xdrip4ios/follower-modes.md           | 414 ++++++++++++++++++++++
+ mapping/xdrip4ios/nightscout-sync.md          | 453 ++++++++++++++++++++++++
+ mapping/xdrip4ios/profile-handling.md         | 339 ++++++++++++++++++
+ mapping/xdrip4ios/treatment-classification.md | 418 ++++++++++++++++++++++
+ 7 files changed, 2823 insertions(+)
+
+commit 2cf6e4df6652d610795fa2fff25de40e200b90c1
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:55:35 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 190f68bf-1940-4e2d-85a0-8d5681013257
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1dde1425-8a7d-4d1c-bc41-dbdd7904a338
+    Replit-Helium-Checkpoint-Created: true
+
+commit 07a33f95e7abea87f9f13d1c1c17c0ca39d3613a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:48:12 2026 +0000
+
+    Add external monitoring applications to the project documentation
+    
+    Update replit.md to include Nightguard, xdrip4ios, and xDrip repositories.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: fb5cb1f9-83ab-479a-b7a0-b39f7576cdba
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f4b331fe-c7af-4d63-baaa-eb1c70683540
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+commit ad15a99ee20c8682c62de8eab9907168fcc2f076
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:47:55 2026 +0000
+
+    Add diabetes management apps to the development workspace
+    
+    Update workspace lock file to include Nightguard, xdrip4ios, and xDrip repositories for diabetes management application development.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: fb5cb1f9-83ab-479a-b7a0-b39f7576cdba
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 13ffdd5f-af57-4a80-99b4-50c8e4a23438
+    Replit-Helium-Checkpoint-Created: true
+
+ workspace.lock.json | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+commit 36db6572952b1055ca59d6bee8d1d17d17d27832
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:42:12 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: fb5cb1f9-83ab-479a-b7a0-b39f7576cdba
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8e3020f6-d138-4903-91b1-95b9641f300b
+    Replit-Helium-Checkpoint-Created: true
+
+commit cff20b70c4acc9645804db21ef742a9263ac9f5d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:39:24 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: eeae81bc-8695-406c-a5d4-e6560af10e83
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f1478905-1d75-4b3e-8de2-df1e0bbec833
+    Replit-Helium-Checkpoint-Created: true
+
+commit 9a04ed98953f0d85379a89cad108fffba3342c7d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:39:05 2026 +0000
+
+    Update documentation and code to reflect the switch from FreeAPS to Trio
+    Update documentation and code to reflect the switch from FreeAPS to Trio, including changes to remote command handling and settings.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: eeae81bc-8695-406c-a5d4-e6560af10e83
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 959df499-0a8a-41df-924e-325960948768
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/trio/README.md          |  69 +++++-
+ mapping/trio/algorithm.md       |   6 +-
+ mapping/trio/carb-math.md       |   6 +-
+ mapping/trio/data-models.md     | 148 +++++++++--
+ mapping/trio/insulin-math.md    |   6 +-
+ mapping/trio/nightscout-sync.md |  40 ++-
+ mapping/trio/overrides.md       | 114 ++++++++-
+ mapping/trio/remote-commands.md | 537 ++++++++++++++++++++++++----------------
+ mapping/trio/safety.md          |   2 +-
+ 9 files changed, 653 insertions(+), 275 deletions(-)
+
+commit e168138ae308a2a9a1c9588c297a48c595fffd08
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:33:12 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: eeae81bc-8695-406c-a5d4-e6560af10e83
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 6688cdb6-63c7-427d-bc73-e96537711f7d
+    Replit-Helium-Checkpoint-Created: true
+
+commit 6b457eba94316211b4828091d8a915e9e437e742
+Author: Ben West <bewest@gmail.com>
+Date:   Fri Jan 16 22:29:31 2026 +0000
+
+    switch to trio dev branch
+
+ workspace.lock.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit c18c90b9b31d40345966ca59e133fdaf4466cacb
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:22:09 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 95a08173-e289-4be8-b468-56bd4a6dfe69
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: bff475e0-a38c-4eeb-8fcd-59ecffd5885b
+    Replit-Helium-Checkpoint-Created: true
+
+commit 137023346956428b23ab9d8e1dace321df4c6001
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:21:53 2026 +0000
+
+    Add comprehensive documentation for the oref0 algorithm and related components
+    
+    Create new markdown files in the mapping/oref0 directory detailing the algorithm, data models, insulin math, carb math, autosens, and safety features of the oref0 project. Update existing cross-project terminology and gaps documentation with oref0-specific information.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 95a08173-e289-4be8-b468-56bd4a6dfe69
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 57960dd1-37bd-4566-91ca-aee022b4ddd0
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md |  82 +++++++
+ mapping/oref0/README.md                     | 166 ++++++++++++++
+ mapping/oref0/algorithm.md                  | 339 ++++++++++++++++++++++++++++
+ mapping/oref0/autosens.md                   | 247 ++++++++++++++++++++
+ mapping/oref0/carb-math.md                  | 219 ++++++++++++++++++
+ mapping/oref0/data-models.md                | 315 ++++++++++++++++++++++++++
+ mapping/oref0/insulin-math.md               | 278 +++++++++++++++++++++++
+ mapping/oref0/safety.md                     | 330 +++++++++++++++++++++++++++
+ traceability/gaps.md                        |  47 ++++
+ 9 files changed, 2023 insertions(+)
+
+commit 563ad5d85bbe22173eacb1dad4a7f1e6a8e889a2
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 22:11:34 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 95a08173-e289-4be8-b468-56bd4a6dfe69
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8ddc5d0d-588f-4a08-bffa-9527455b9a66
+    Replit-Helium-Checkpoint-Created: true
+
+commit 9ba17beb791c1b0f7bac284dfda4f1b58ab37820
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:55:02 2026 +0000
+
+    Update project overview and documentation structure
+    
+    Refactor replit.md to enhance project overview, detailing its components and purpose, and to restructure the documentation hierarchy.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d098431-a878-4be2-92f5-919f40517549
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 837f3ec5-9d9d-4598-b2ac-f496c16f7229
+    Replit-Helium-Checkpoint-Created: true
+
+ replit.md | 276 ++++++++++----------------------------------------------------
+ 1 file changed, 45 insertions(+), 231 deletions(-)
+
+commit 84cc5ae699470ad3f6f92464290f5d272df705c8
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:53:42 2026 +0000
+
+    Add consumer insights from Nightscout Reporter analysis to documentation
+    
+    Create new markdown files in `mapping/nightscout-reporter/` and update `docs/10-domain/nightscout-data-model.md` to detail how Nightscout Reporter consumes and interprets Nightscout data, including data validation, uploader detection, treatment duration units, and calculation models.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d098431-a878-4be2-92f5-919f40517549
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 170a77dc-e607-4574-9e63-38c2a415472f
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/nightscout-data-model.md            |  97 +++-
+ mapping/nightscout-reporter/README.md              | 188 +++++++
+ mapping/nightscout-reporter/calculations.md        | 551 +++++++++++++++++++++
+ mapping/nightscout-reporter/data-models.md         | 496 +++++++++++++++++++
+ mapping/nightscout-reporter/profile-handling.md    | 460 +++++++++++++++++
+ .../treatment-classification.md                    | 313 ++++++++++++
+ mapping/nightscout-reporter/unit-conversion.md     | 297 +++++++++++
+ mapping/nightscout-reporter/uploader-detection.md  | 254 ++++++++++
+ 8 files changed, 2655 insertions(+), 1 deletion(-)
+
+commit 8bd516bb97d741e9f4af6ef0113703c283109ff9
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:43:04 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d098431-a878-4be2-92f5-919f40517549
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 43f23abe-2438-4649-857a-5a88c5c42076
+    Replit-Helium-Checkpoint-Created: true
+
+commit c9dbc7ea1adb1cb22b553f54e1c1371a504a1bbb
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:36:12 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 849c839f-bc25-4462-b83e-a9d4f48d382b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b49e1ae3-a04a-44f1-b5fa-cd99e426a644
+    Replit-Helium-Checkpoint-Created: true
+
+commit 917083fbcb02c08378efed3f89935425dcd60dda
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:35:56 2026 +0000
+
+    Add comprehensive documentation for Trio's behavior and concepts
+    
+    Create detailed documentation for Trio, covering its architecture, algorithm, data models, synchronization, and safety features.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 849c839f-bc25-4462-b83e-a9d4f48d382b
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 60133d73-31a3-4438-9e8b-f1c70ed9365a
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md |  65 ++++
+ mapping/trio/README.md                      | 173 ++++++++++
+ mapping/trio/algorithm.md                   | 484 ++++++++++++++++++++++++++++
+ mapping/trio/carb-math.md                   | 355 ++++++++++++++++++++
+ mapping/trio/data-models.md                 | 448 +++++++++++++++++++++++++
+ mapping/trio/insulin-math.md                | 316 ++++++++++++++++++
+ mapping/trio/nightscout-sync.md             | 409 +++++++++++++++++++++++
+ mapping/trio/overrides.md                   | 330 +++++++++++++++++++
+ mapping/trio/remote-commands.md             | 322 ++++++++++++++++++
+ mapping/trio/safety.md                      | 346 ++++++++++++++++++++
+ replit.md                                   |  22 ++
+ 11 files changed, 3270 insertions(+)
+
+commit 6dcfd7a0c0fa3062059465b48eac8654c9c6ce6a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:23:37 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 849c839f-bc25-4462-b83e-a9d4f48d382b
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 830e4dad-fcee-4170-89fc-c1b3ed2986c8
+    Replit-Helium-Checkpoint-Created: true
+
+commit ebc979d4ced5eb895a11b3b0f0500b03ce3479ba
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:20:40 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 145bec5a-b7b7-4beb-a769-63a355abb800
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: e12410da-4d49-4560-9c8a-4cbcaeceb821
+    Replit-Helium-Checkpoint-Created: true
+
+commit 71e604b76bab53493b9eabc6eb98599d3d815157
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:19:50 2026 +0000
+
+    Add detailed documentation for AndroidAPS behavior and concepts
+    
+    Adds comprehensive documentation for AndroidAPS (AAPS) behavior, including its Nightscout SDK, synchronization mechanisms, data models, algorithm specifics, safety constraints, and profile switch semantics. This includes updates to the cross-project terminology matrix and the replit.md.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 145bec5a-b7b7-4beb-a769-63a355abb800
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 2aa256a2-e676-4f8c-aecd-35616b71d9bd
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/aaps/README.md                      | 178 ++++++++++
+ mapping/aaps/algorithm.md                   | 401 ++++++++++++++++++++++
+ mapping/aaps/carb-math.md                   | 272 +++++++++++++++
+ mapping/aaps/data-models.md                 | 499 ++++++++++++++++++++++++++++
+ mapping/aaps/insulin-math.md                | 274 +++++++++++++++
+ mapping/aaps/nightscout-models.md           | 350 +++++++++++++++++++
+ mapping/aaps/nightscout-sync.md             | 335 +++++++++++++++++++
+ mapping/aaps/profile-switch.md              | 294 ++++++++++++++++
+ mapping/aaps/safety.md                      | 337 +++++++++++++++++++
+ mapping/cross-project/terminology-matrix.md |  75 ++++-
+ replit.md                                   |  22 ++
+ 11 files changed, 3035 insertions(+), 2 deletions(-)
+
+commit eb9763a99cef1d7a6c3589d0e7698c2f1b7638d2
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:06:16 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 145bec5a-b7b7-4beb-a769-63a355abb800
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: aa1cb23e-2bc3-40cc-9459-f5c1b7c2bb35
+    Replit-Helium-Checkpoint-Created: true
+
+commit eeb98a123ee74f99598cdff6f6054d91dfc8e150
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 21:00:33 2026 +0000
+
+    Document Loop's behavior and integrate findings into gap analysis
+    
+    Adds comprehensive documentation for Loop's behavior, including its algorithm, math, data models, and safety features. Updates gap tracking to reflect Loop-specific insights and corrects inaccuracies.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f98a8476-b74d-423a-8629-d03449af0544
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 50901554-122a-45fb-9a71-4baab3cbf442
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/loop/README.md          | 110 ++++++++
+ mapping/loop/algorithm.md       | 311 ++++++++++++++++++++++
+ mapping/loop/carb-math.md       | 348 ++++++++++++++++++++++++
+ mapping/loop/data-models.md     | 409 ++++++++++++++++++++++++++++
+ mapping/loop/dose-math.md       | 343 ++++++++++++++++++++++++
+ mapping/loop/insulin-math.md    | 369 ++++++++++++++++++++++++++
+ mapping/loop/nightscout-sync.md | 574 ++++++++++++++++++++++++++++++++++++++++
+ mapping/loop/overrides.md       | 457 ++++++++++++++++++++++++++++++++
+ mapping/loop/quirks.md          | 386 +++++++++++++++++++++++++++
+ mapping/loop/safety.md          | 332 +++++++++++++++++++++++
+ replit.md                       |  22 ++
+ traceability/gaps.md            |  91 ++++++-
+ 12 files changed, 3748 insertions(+), 4 deletions(-)
+
+commit bf6164c18cf6793538dbd7f49a8e2ebc6adc7f20
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:46:32 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: f98a8476-b74d-423a-8629-d03449af0544
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: e09d2ae8-92fb-4370-b308-a3bb535cf7c1
+    Replit-Helium-Checkpoint-Created: true
+
+commit 8d8956d032ea5f2dff32161af3713edd2c689ef3
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:15:26 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d9fdf75-1c29-42dd-9996-724dd18496fb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b10df172-d79e-47a5-ae60-78fa3f85a332
+    Replit-Helium-Checkpoint-Created: true
+
+commit 5b4355289727830f67ecb693a8a85a33dc7fe7fe
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:15:05 2026 +0000
+
+    Expand documentation and terminology for diabetes automation systems
+    
+    Add new inventory files for AAPS, Loop, oref0, and Trio; update the terminology matrix with algorithm/controller concepts; and refine replit.md with repository details.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d9fdf75-1c29-42dd-9996-724dd18496fb
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 62d5a5eb-84f7-4394-b56a-2ec16ab5f5e6
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/60-research/external-inventories/aaps-docs.md | 149 +++++++++++++
+ docs/60-research/external-inventories/loop-docs.md | 140 ++++++++++++
+ .../60-research/external-inventories/oref0-docs.md | 247 +++++++++++++++++++++
+ docs/60-research/external-inventories/trio-docs.md | 164 ++++++++++++++
+ mapping/cross-project/terminology-matrix.md        | 141 ++++++++++++
+ replit.md                                          |  24 ++
+ workspace.lock.json                                |  14 ++
+ 7 files changed, 879 insertions(+)
+
+commit 929941f179bfde4dc79f6544b14cf3bd132ffa0c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:07:05 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7d9fdf75-1c29-42dd-9996-724dd18496fb
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 88f0b2ab-aeda-408d-8cd2-977ba0e66dd5
+    Replit-Helium-Checkpoint-Created: true
+
+commit 7d382787aa113d57b9bde28dd8d67393a9a283a5
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:02:57 2026 +0000
+
+    Add submodules to the Trio project for development
+    
+    Update workspace.lock.json to include submodules: true for the Trio project.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 62ff2fab-5f9b-466b-8851-cf303c9b8963
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 31520b08-a95e-4f86-977b-cbbd3ceb370f
+    Replit-Helium-Checkpoint-Created: true
+
+ workspace.lock.json | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit 0799cbe1adebbd84e7b4809c7a5bbbca638aec0d
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:00:19 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 62ff2fab-5f9b-466b-8851-cf303c9b8963
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4d211c5b-91df-4467-9544-8e1bee131d84
+    Replit-Helium-Checkpoint-Created: true
+
+commit 6ce7ea2ea1f66ef4ed1ffcbd651a134afd917d40
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 20:00:06 2026 +0000
+
+    Add support for checking out git submodules and update documentation
+    
+    Introduce new Makefile target and Python script to handle git submodules, along with updated documentation in replit.md and Makefile.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 62ff2fab-5f9b-466b-8851-cf303c9b8963
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 28bbe0dd-32a0-40eb-a130-1797997e403e
+    Replit-Helium-Checkpoint-Created: true
+
+ Makefile                     |   8 +-
+ replit.md                    |   9 ++
+ tools/bootstrap.py           |  26 ++++
+ tools/checkout_submodules.py | 298 +++++++++++++++++++++++++++++++++++++++++++
+ workspace.lock.json          |   3 +-
+ 5 files changed, 342 insertions(+), 2 deletions(-)
+
+commit 14b9a24e6f4ee94becdb0fc974dea83ee33eace4
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 19:51:54 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 62ff2fab-5f9b-466b-8851-cf303c9b8963
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b0e6f9bf-1586-43fb-a513-1ce25d17b397
+    Replit-Helium-Checkpoint-Created: true
+
+commit 980aed9f8518f328b55960020b187e560b7a4455
+Author: Ben West <bewest@gmail.com>
+Date:   Fri Jan 16 19:36:06 2026 +0000
+
+    remove letter r init
+
+ r | 1 -
+ 1 file changed, 1 deletion(-)
+
+commit 6b7c3227b37d75958ffca4f46b65407703ed0d47
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 19:05:11 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2c09ed13-60b0-49ee-a4e1-4d15a5f34ade
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 9c700f5f-79bd-4245-ab96-6be080323a37
+    Replit-Helium-Checkpoint-Created: true
+
+commit 1ad47c6931d17722b0b3ad171077a9d70f4a6595
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 19:04:55 2026 +0000
+
+    Add cross-project comparison matrices and update documentation
+    
+    Create `mapping/cross-project/terminology-matrix.md` and update `replit.md` to include Nightscout documentation, external repository inventories, and expanded gap documentation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2c09ed13-60b0-49ee-a4e1-4d15a5f34ade
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 048da3b4-2895-4b24-9638-5f9326f33760
+    Replit-Helium-Checkpoint-Created: true
+
+ mapping/cross-project/terminology-matrix.md | 151 ++++++++++++++++++++++++++++
+ replit.md                                   |  26 ++++-
+ 2 files changed, 176 insertions(+), 1 deletion(-)
+
+commit 3e95e4915357ec6d474e88a2d38b2cc125132fe5
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 19:01:09 2026 +0000
+
+    Add detailed Nightscout documentation and code references
+    
+    Add new documentation files for Nightscout's data model, authority model, and external repository inventories. Update code references and glossary to include Nightscout-specific terms and mappings. Introduce new gap documentation for authorization and data synchronization.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2c09ed13-60b0-49ee-a4e1-4d15a5f34ade
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: a9ee5a5b-078a-4a59-91a4-c0b41cd08ae8
+    Replit-Helium-Checkpoint-Created: true
+
+ docs/10-domain/authority-model.md                  | 230 ++++++++++++++++++
+ docs/10-domain/glossary.md                         |  22 +-
+ docs/10-domain/nightscout-data-model.md            | 256 ++++++++++++++++++++
+ .../cgm-remote-monitor-docs.md                     | 260 +++++++++++++++++++++
+ .../nightscout-connect-docs.md                     |  97 ++++++++
+ .../nightscout-roles-gateway-docs.md               | 193 +++++++++++++++
+ docs/_includes/code-refs.md                        |  30 +++
+ mapping/nightscout/authorization.md                | 148 ++++++++++++
+ mapping/nightscout/data-collections.md             | 189 +++++++++++++++
+ traceability/gaps.md                               |  75 ++++++
+ 10 files changed, 1499 insertions(+), 1 deletion(-)
+
+commit 12637a0ebebc8c48674a3f84d92ade7e0fd1860b
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:52:32 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2c09ed13-60b0-49ee-a4e1-4d15a5f34ade
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: f5e904d6-e587-4e54-9b7d-7bd6962208b8
+    Replit-Helium-Checkpoint-Created: true
+
+commit dd54dacd5642f35d919bc81c315001d7b13ed806
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:47:06 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2990b998-64a1-4bc4-9526-0a7241777400
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: d40f551d-1ae1-4b16-920d-40c52c99b49a
+    Replit-Helium-Checkpoint-Created: true
+
+commit 29c79a61bde98634872adec22b09653db3bfec47
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:46:52 2026 +0000
+
+    Add tooling for validating and testing code with new testing framework
+    
+    Introduce new Python scripts and Makefile targets for fixture validation, conformance testing, and coverage generation. Update documentation and CI workflows to integrate these new tools.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2990b998-64a1-4bc4-9526-0a7241777400
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 3e35181c-b42e-46e1-8201-9682c1188d73
+    Replit-Helium-Checkpoint-Created: true
+
+ Makefile                                 |  42 +++-
+ replit.md                                |  47 ++++-
+ specs/shape/override-instance.shape.json |  50 +++++
+ tools/gen_coverage.py                    | 304 ++++++++++++++++++++++++++++
+ tools/gen_refs.py                        |   0
+ tools/linkcheck.py                       |   0
+ tools/run_conformance.py                 | 331 +++++++++++++++++++++++++++++++
+ tools/validate_fixtures.py               | 276 ++++++++++++++++++++++++++
+ traceability/coverage-matrix.json        |  47 +++++
+ traceability/coverage-matrix.md          |  54 ++---
+ 10 files changed, 1111 insertions(+), 40 deletions(-)
+
+commit 1448950091c87acf24a4171a0446bf650ca7294b
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:41:16 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2990b998-64a1-4bc4-9526-0a7241777400
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 712322d2-a2f7-486e-8a1c-a317497c4d5d
+    Replit-Helium-Checkpoint-Created: true
+
+commit 3cf7a98a545c95b8b4f6fc0b520e41c3473a225c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:40:12 2026 +0000
+
+    Saved your changes before starting work
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 2990b998-64a1-4bc4-9526-0a7241777400
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 1cfcd1ce-0bdd-4943-8b76-6834489fc00d
+
+ ...of-this-right-now-with-small-_1768588803337.txt | 126 +++++++++++++++++++++
+ workspace.lock.json                                |   6 +-
+ 2 files changed, 129 insertions(+), 3 deletions(-)
+
+commit b5eabc39161eacefda48c106d3b2338ac4fbb660
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:22:24 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7519a80c-513a-418d-b70f-a0ffdee221f0
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 303b6b84-add5-48bf-ab5f-889b88e846cc
+    Replit-Helium-Checkpoint-Created: true
+
+commit 6aec3e08f4e4678ee70ec02dd935ed17bc679a50
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:22:07 2026 +0000
+
+    Update workspace documentation and tooling to align AID systems
+    
+    Refactors the project structure, enhances tooling for reference generation and link checking, and updates documentation to reflect new alignment strategies for AID systems.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7519a80c-513a-418d-b70f-a0ffdee221f0
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: b74a373c-f043-49a4-92bf-cd0ec4a0f57b
+    Replit-Helium-Checkpoint-Created: true
+
+ .gitignore                                         |  10 +
+ conformance/assertions/_template.yaml              |  50 ++++
+ conformance/assertions/override-supersede.yaml     |  53 ++++
+ conformance/scenarios/_template.md                 |  65 +++++
+ conformance/scenarios/override-supersede/README.md | 104 ++++++++
+ docs/00-overview/mission.md                        |  42 +++
+ docs/10-domain/glossary.md                         |  85 ++++++
+ docs/90-decisions/_template.md                     |  51 ++++
+ docs/90-decisions/adr-001-override-supersession.md |  87 ++++++
+ docs/_includes/code-refs.md                        |  60 +++++
+ mapping/_template.md                               |  60 +++++
+ mapping/nightscout/override-supersede.md           |  95 +++++++
+ replit.md                                          | 110 +++++---
+ specs/jsonschema/aid-events.schema.json            | 167 ++++++++++++
+ tools/gen_refs.py                                  | 157 +++++++++++
+ tools/linkcheck.py                                 | 293 +++++++++++++++++++++
+ traceability/coverage-matrix.md                    |  44 ++++
+ traceability/gaps.md                               |  74 ++++++
+ traceability/requirements.md                       | 116 ++++++++
+ workspace.lock.json                                |   8 +
+ 20 files changed, 1691 insertions(+), 40 deletions(-)
+
+commit 6b27838d3bcfb4a3d1dd889f0f773b68438b82d4
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:12:29 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7519a80c-513a-418d-b70f-a0ffdee221f0
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b6708ceb-82b7-4aa7-8b0f-91ef380dd07e
+    Replit-Helium-Checkpoint-Created: true
+
+commit ab9130ed7240d087ef1d78ba645a96504f306b78
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 18:02:36 2026 +0000
+
+    Saved your changes before starting work
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 7519a80c-513a-418d-b70f-a0ffdee221f0
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 767af04f-abad-404f-a135-cdbbd91a5f0f
+
+ ...is-is-to-treat-your-workspace_1768586552630.txt | 181 +++++++++++++++++++++
+ 1 file changed, 181 insertions(+)
+
+commit 3ec247c3e03f1bbb8feb3a304b9582640fcb4a9c
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:53:36 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0a040365-f4d4-43ef-8d3d-5aefa7b16ff1
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: a4962f0d-6c4e-4df4-a0d5-8d89af094929
+    Replit-Helium-Checkpoint-Created: true
+
+commit 07fda6cefc917c453aaaef2bef6e0893fca372aa
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:53:23 2026 +0000
+
+    Add Nightscout roles gateway repository to the workspace
+    
+    Add 'nightscout-roles-gateway' to the workspace.lock.json manifest.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0a040365-f4d4-43ef-8d3d-5aefa7b16ff1
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 5587c61d-2ca5-4487-84e3-1385e8f3b630
+    Replit-Helium-Checkpoint-Created: true
+
+ workspace.lock.json | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+commit eab4d4573f77edc4c38891b3189197535d239b7e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:52:59 2026 +0000
+
+    Transitioned from Plan to Build mode
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0a040365-f4d4-43ef-8d3d-5aefa7b16ff1
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0989ec5a-5cde-4d31-872a-cd9cfcefaaf8
+    Replit-Helium-Checkpoint-Created: true
+
+ .replit | 3 +++
+ 1 file changed, 3 insertions(+)
+
+commit a23c426d42214900c6de3cb5e368d251ef129f1a
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:47:19 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0a040365-f4d4-43ef-8d3d-5aefa7b16ff1
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 04ea2620-2227-4891-99ef-0c10a078c647
+    Replit-Helium-Checkpoint-Created: true
+
+ .replit | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+commit b1b362494918f4aa4e4853f2cde0d126fe074b61
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:46:13 2026 +0000
+
+    Add a workspace bootstrap tool to manage multiple development repositories
+    
+    Create a Python script and Makefile for cloning, updating, and managing external repositories within a multi-repo development environment, along with updated README and lockfile configurations.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0a040365-f4d4-43ef-8d3d-5aefa7b16ff1
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: a6b96632-d1be-4724-b1fa-087632e4e43f
+    Replit-Helium-Checkpoint-Created: true
+
+ .gitignore          |  31 +++++
+ .replit             |   1 +
+ Makefile            |  43 ++++++
+ README.md           | 130 +++++++++++++++++++
+ externals/.keep     |   0
+ replit.md           |  57 ++++++++
+ tools/bootstrap.py  | 366 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ workspace.lock.json |  41 ++++++
+ 8 files changed, 669 insertions(+)
+
+commit cd5ae9ac62bc00dae3d43db696d6baf230a6f593
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:43:48 2026 +0000
+
+    Extracted stack files
+
+ .replit | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit 03df1f547e2ecf8bda7e72cc059944f264e0fb9e
+Author: bewest <2492599-bewest@users.noreply.replit.com>
+Date:   Fri Jan 16 17:43:47 2026 +0000
+
+    Initial commit
+
+ ...p-setup-you-can-drop-into-a-w_1768585370041.txt | 184 +++++++++++++++++++++
+ 1 file changed, 184 insertions(+)
+
+commit 986af464e15a1e70525986c47eda5d44a5b28302
+Author: Ben West <bewest@gmail.com>
+Date:   Fri Jan 16 11:34:16 2026 -0800
+
+    Add CI workflow for Python syntax and tests
+
+ .github/workflows/ci.yml | 98 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
+
+commit bdca28cb4a4b86a83886570a3f34efaf8e8ab726
+Author: Ben West <bewest@gmail.com>
+Date:   Fri Jan 16 11:30:24 2026 -0800
+
+    init repo with letter r
+
+ r | 1 +
+ 1 file changed, 1 insertion(+)

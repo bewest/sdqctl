@@ -238,14 +238,15 @@ async def _cycle_async(
     if cli_footers:
         conv.footers = list(cli_footers) + conv.footers
     
-    # Get template variables for prompts (excludes WORKFLOW_NAME to avoid Q-001)
-    template_vars = get_standard_variables(conv.source_path)
-    # Get template variables for output paths (includes WORKFLOW_NAME)
-    output_vars = get_standard_variables(conv.source_path, include_workflow_vars=True)
-
-    # Create session
+    # Create session first (needed for session_id in template vars)
     session_dir = Path(checkpoint_dir) if checkpoint_dir else None
     session = Session(conv, session_dir=session_dir)
+    
+    # Get template variables for prompts (excludes WORKFLOW_NAME to avoid Q-001)
+    # Includes SESSION_ID and STOP_FILE for agent stop signaling (Q-002)
+    template_vars = get_standard_variables(conv.source_path, session_id=session.id)
+    # Get template variables for output paths (includes WORKFLOW_NAME)
+    output_vars = get_standard_variables(conv.source_path, include_workflow_vars=True)
 
     if dry_run:
         console.print(Panel.fit(
