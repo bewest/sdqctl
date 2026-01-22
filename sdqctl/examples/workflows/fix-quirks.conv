@@ -18,6 +18,12 @@ ADAPTER copilot
 MODE implement
 MAX-CYCLES 3
 
+# === Context Management ===
+# Compact after cycle 2 (implementation) to free context for verification
+CONTEXT-LIMIT 70%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE prompts,errors,tool-results
+
 # === Role Clarification ===
 # Explicit implementation intent to override any filename inference
 PROLOGUE You are an implementation assistant. Your job is to EDIT FILES directly.
@@ -77,23 +83,37 @@ Based on your assessment:
 1. Implement the fix using the approach you identified
 2. Make minimal, surgical changes
 3. Add or update tests if the fix is testable
-4. Run `pytest tests/ -v --tb=short` to verify
 
 **Do NOT just describe changes. Edit files directly.**
+
+# Run tests after implementation cycle to verify changes
+RUN-ON-ERROR continue
+RUN-OUTPUT on-error
+RUN-TIMEOUT 2m
+RUN python -m pytest tests/ -v --tb=short -x
+
+# Compact after implementation to free context for verification
+COMPACT
 
 # === Cycle 3: Verify and Document ===
 PROMPT ## Completion
 
+The test results from cycle 2 are shown above.
+
 Summarize the work and update tracking.
 
-**If implementation completed:**
+**If tests passed and implementation completed:**
 1. Update `docs/QUIRKS.md`:
    - Change quirk status to "Fixed" or "Mitigated"
    - Add implementation notes
 2. List files modified
-3. Confirm tests pass
 
-**If blocked:**
+**If tests failed:**
+1. Analyze the failure output above
+2. Fix the issue if straightforward
+3. If complex, document the failure and stop
+
+**If blocked (no implementation attempted):**
 1. Update `docs/QUIRKS.md` with:
    - What was learned
    - What's still missing
@@ -103,11 +123,17 @@ Summarize the work and update tracking.
 **Output:**
 ```
 ### Session Result: Q-XXX
-**Outcome:** Completed | Blocked | Partial
+**Outcome:** Completed | Blocked | Partial | Tests Failed
 **Files changed:** [list]
 **Tests:** Pass | Fail | N/A
-**Next action:** [if blocked, what's needed]
+**Next action:** [if blocked or failed, what's needed]
 ```
+
+# Final test run to confirm everything passes
+RUN-ON-ERROR continue
+RUN-OUTPUT always
+RUN-TIMEOUT 2m
+RUN python -m pytest tests/ -v --tb=short --co -q | head -20
 
 # === Output Configuration ===
 OUTPUT-FORMAT markdown
