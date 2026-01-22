@@ -281,14 +281,33 @@ class TestCycleSessionModes:
 
 ## Next 3 Taskable Areas
 
-### 1. Loop Detector Tuning (Medium Priority - Research)
-The mock adapter fix revealed loop detector may be too aggressive:
-- MIN_RESPONSE_LENGTH = 50 chars triggers on valid short responses
-- Consider: adaptive thresholds based on prompt type?
-- Consider: configurable via workflow directive?
+### 1. Loop Detector Tuning (Medium Priority - Research) ⏳
 
-**Files:** `loop_detector.py`  
-**Effort:** Research needed before implementation
+**Research Findings (2026-01-22):**
+
+The loop detector already supports configuration via constructor:
+- `LoopDetector(min_response_length=100)` - customize threshold
+- `LoopDetector(identical_threshold=2)` - stricter duplicate detection
+
+**Current Issue:**
+- `cycle.py:262` creates detector with hardcoded defaults
+- `MIN_RESPONSE_LENGTH = 50` triggers on valid short responses
+- Mock adapter responses were 45 chars, causing false positives
+
+**Potential Solutions:**
+1. **Workflow directive** - Add `LOOP-THRESHOLD` to .conv format
+2. **CLI option** - Add `--min-response-length` to cycle command  
+3. **Adaptive** - Scale threshold based on prompt complexity
+4. **Skip first N** - Allow short responses in early cycles
+
+**Recommendation:** Option 2 (CLI option) is lowest friction. Add:
+```python
+@click.option("--min-response-length", type=int, default=50, 
+              help="Minimum response length for loop detection")
+```
+
+**Files:** `cycle.py:262`, potentially `loop_detector.py`  
+**Effort:** ~10 lines if CLI option, ~30 lines if workflow directive
 
 ### 2. Fresh Mode Enhancements (Low Priority - Future)
 Potential improvements for fresh mode:
