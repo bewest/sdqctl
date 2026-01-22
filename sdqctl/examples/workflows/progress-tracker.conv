@@ -26,7 +26,6 @@ MAX-CYCLES 3
 # These add consistent framing to every prompt
 PROLOGUE ---
 PROLOGUE ## Session Context
-PROLOGUE Workflow: {{WORKFLOW_NAME}}
 PROLOGUE Branch: {{GIT_BRANCH}} ({{GIT_COMMIT}})
 PROLOGUE Date: {{DATETIME}}
 PROLOGUE Working directory: {{CWD}}
@@ -41,9 +40,9 @@ EPILOGUE - Cite specific file:line references
 
 # === Source Context ===
 # Core implementation files for reference
-CONTEXT @sdqctl/core/conversation.py
-CONTEXT @sdqctl/commands/run.py
-CONTEXT @sdqctl/commands/cycle.py
+# CONTEXT @sdqctl/core/conversation.py
+# CONTEXT @sdqctl/commands/run.py
+# CONTEXT @sdqctl/commands/cycle.py
 
 # === Pre-flight Check ===
 RUN-ON-ERROR continue
