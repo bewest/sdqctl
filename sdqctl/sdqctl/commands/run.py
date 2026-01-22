@@ -350,8 +350,10 @@ async def _run_async(
     if cli_footers:
         conv.footers = list(cli_footers) + conv.footers
     
-    # Get template variables for this workflow
+    # Get template variables for prompts (excludes WORKFLOW_NAME to avoid Q-001)
     template_vars = get_standard_variables(conv.source_path)
+    # Get template variables for output paths (includes WORKFLOW_NAME)
+    output_vars = get_standard_variables(conv.source_path, include_workflow_vars=True)
 
     # Override output
     if output_file:
@@ -766,8 +768,8 @@ async def _run_async(
                 # Use conv.output_file which includes both CLI override and workflow OUTPUT-FILE
                 effective_output = conv.output_file
                 if effective_output:
-                    # Substitute template variables in output path
-                    effective_output = substitute_template_variables(effective_output, template_vars)
+                    # Substitute template variables in output path (use output_vars with WORKFLOW_NAME)
+                    effective_output = substitute_template_variables(effective_output, output_vars)
                     output_path = Path(effective_output)
                     output_path.parent.mkdir(parents=True, exist_ok=True)
                     output_path.write_text(final_output)

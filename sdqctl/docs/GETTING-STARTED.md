@@ -155,7 +155,10 @@ PROMPT Analyzing on {{DATE}} (branch: {{GIT_BRANCH}})
 OUTPUT-FILE reports/audit-{{DATE}}.md
 ```
 
-Available: `{{DATE}}`, `{{DATETIME}}`, `{{GIT_BRANCH}}`, `{{GIT_COMMIT}}`, `{{CWD}}`, `{{WORKFLOW_NAME}}`
+Available: `{{DATE}}`, `{{DATETIME}}`, `{{GIT_BRANCH}}`, `{{GIT_COMMIT}}`, `{{CWD}}`
+
+> **Note:** `{{WORKFLOW_NAME}}` is available in OUTPUT-FILE paths but excluded from prompts
+> by default. Use `{{__WORKFLOW_NAME__}}` for explicit opt-in in prompts.
 
 ---
 

@@ -732,8 +732,10 @@ def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
     Supported variables:
     - DATE: ISO date (YYYY-MM-DD)
     - DATETIME: ISO datetime
-    - WORKFLOW_NAME: Workflow filename (stem)
-    - WORKFLOW_PATH: Full path to workflow
+    - __WORKFLOW_NAME__: Workflow filename (explicit opt-in, Q-001 safe)
+    - __WORKFLOW_PATH__: Full path to workflow (explicit opt-in, Q-001 safe)
+    - WORKFLOW_NAME: Workflow filename (only in output paths, not prompts)
+    - WORKFLOW_PATH: Full path to workflow (only in output paths, not prompts)
     - COMPONENT_PATH: Full path to current component
     - COMPONENT_NAME: Base name of component (without extension)
     - COMPONENT_DIR: Parent directory of component
@@ -743,6 +745,10 @@ def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
     - GIT_BRANCH: Current git branch (if available)
     - GIT_COMMIT: Short commit SHA (if available)
     - CWD: Current working directory
+    
+    Note: WORKFLOW_NAME/WORKFLOW_PATH are excluded from prompts by default to
+    avoid influencing agent behavior. Use __WORKFLOW_NAME__ for explicit opt-in.
+    See Q-001 in docs/QUIRKS.md.
     """
     result = text
     for key, value in variables.items():
@@ -750,10 +756,26 @@ def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
     return result
 
 
-def get_standard_variables(workflow_path: Optional[Path] = None) -> dict[str, str]:
+def get_standard_variables(
+    workflow_path: Optional[Path] = None,
+    include_workflow_vars: bool = False,
+) -> dict[str, str]:
     """Get standard template variables available in all contexts.
     
-    Returns dict with DATE, DATETIME, WORKFLOW_NAME, WORKFLOW_PATH, GIT_BRANCH, GIT_COMMIT, CWD.
+    Returns dict with DATE, DATETIME, GIT_BRANCH, GIT_COMMIT, CWD.
+    
+    Workflow path variables are NOT included by default to avoid influencing
+    agent behavior (see Q-001 in docs/QUIRKS.md). Use include_workflow_vars=True
+    for output paths only, or use the explicit opt-in __WORKFLOW_NAME__ variable.
+    
+    Args:
+        workflow_path: Path to the workflow file
+        include_workflow_vars: If True, include WORKFLOW_NAME and WORKFLOW_PATH
+            (use only for output paths, not agent-visible prompts)
+    
+    Returns:
+        Dict with template variables. Always includes __WORKFLOW_NAME__ and
+        __WORKFLOW_PATH__ for explicit opt-in regardless of include_workflow_vars.
     """
     import subprocess
     from datetime import datetime
@@ -766,8 +788,14 @@ def get_standard_variables(workflow_path: Optional[Path] = None) -> dict[str, st
     }
     
     if workflow_path:
-        variables["WORKFLOW_NAME"] = workflow_path.stem
-        variables["WORKFLOW_PATH"] = str(workflow_path)
+        # Always provide explicit opt-in variables (underscore prefix = explicit)
+        variables["__WORKFLOW_NAME__"] = workflow_path.stem
+        variables["__WORKFLOW_PATH__"] = str(workflow_path)
+        
+        # Only include unprefixed versions if explicitly requested (for output paths)
+        if include_workflow_vars:
+            variables["WORKFLOW_NAME"] = workflow_path.stem
+            variables["WORKFLOW_PATH"] = str(workflow_path)
     
     # Try to get git info (fail silently if not in a git repo)
     try:
@@ -865,6 +893,7 @@ def apply_iteration_context(conv: ConversationFile, component_path: str,
     path_obj = Path(component_path)
     
     # Combine standard variables with component-specific ones
+    # Exclude WORKFLOW_NAME from prompts to avoid Q-001 (agent behavior influenced by filename)
     variables = get_standard_variables(conv.source_path)
     variables.update({
         "COMPONENT_PATH": str(component_path),
@@ -875,29 +904,33 @@ def apply_iteration_context(conv: ConversationFile, component_path: str,
         "ITERATION_TOTAL": str(iteration_total),
     })
     
+    # Get output-specific variables (includes WORKFLOW_NAME for output paths)
+    output_variables = get_standard_variables(conv.source_path, include_workflow_vars=True)
+    output_variables.update(variables)
+    
     # Deep copy to avoid modifying original
     new_conv = deepcopy(conv)
     
-    # Substitute in prompts
+    # Substitute in prompts (no WORKFLOW_NAME - Q-001 fix)
     new_conv.prompts = [substitute_template_variables(p, variables) for p in new_conv.prompts]
     
-    # Substitute in prologues and epilogues
+    # Substitute in prologues and epilogues (no WORKFLOW_NAME - Q-001 fix)
     new_conv.prologues = [substitute_template_variables(p, variables) for p in new_conv.prologues]
     new_conv.epilogues = [substitute_template_variables(e, variables) for e in new_conv.epilogues]
     
-    # Substitute in headers and footers
-    new_conv.headers = [substitute_template_variables(h, variables) for h in new_conv.headers]
-    new_conv.footers = [substitute_template_variables(f, variables) for f in new_conv.footers]
+    # Substitute in headers and footers (output context, includes WORKFLOW_NAME)
+    new_conv.headers = [substitute_template_variables(h, output_variables) for h in new_conv.headers]
+    new_conv.footers = [substitute_template_variables(f, output_variables) for f in new_conv.footers]
     
-    # Substitute in steps
+    # Substitute in steps (no WORKFLOW_NAME - Q-001 fix)
     for step in new_conv.steps:
         step.content = substitute_template_variables(step.content, variables)
     
-    # Substitute in output paths
+    # Substitute in output paths (includes WORKFLOW_NAME)
     if new_conv.output_file:
-        new_conv.output_file = substitute_template_variables(new_conv.output_file, variables)
+        new_conv.output_file = substitute_template_variables(new_conv.output_file, output_variables)
     if new_conv.output_dir:
-        new_conv.output_dir = substitute_template_variables(new_conv.output_dir, variables)
+        new_conv.output_dir = substitute_template_variables(new_conv.output_dir, output_variables)
     
     return new_conv
 

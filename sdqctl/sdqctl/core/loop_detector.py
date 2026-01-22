@@ -3,13 +3,21 @@ Loop detection for AI workflow cycles.
 
 Detects when the AI has entered a repetitive state and the workflow
 should be aborted to avoid wasting tokens.
+
+Supports multiple detection mechanisms:
+1. Reasoning patterns - AI explicitly mentions being in a loop
+2. Identical responses - Same response N times in a row
+3. Minimal responses - Very short responses after first cycle
+4. Stop file - Agent creates a signal file to request automation stop
 """
 
 import hashlib
+import json
 import logging
 import re
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 from .exceptions import LoopDetected, LoopReason
@@ -28,23 +36,26 @@ LOOP_REASONING_PATTERNS = [
 ]
 
 # Minimum response length after first cycle (chars)
-MIN_RESPONSE_LENGTH = 50
+# Lowered to 100 to catch degraded responses faster (Q-002 fix)
+MIN_RESPONSE_LENGTH = 100
 
 # Number of identical responses to trigger detection
-IDENTICAL_RESPONSE_THRESHOLD = 3
+# Lowered to 2 for faster loop detection (Q-002 fix)
+IDENTICAL_RESPONSE_THRESHOLD = 2
 
 
 @dataclass
 class LoopDetector:
     """Detects repetitive loops in AI workflow execution.
     
-    Monitors three signals:
+    Monitors four signals:
     1. Reasoning patterns - AI explicitly mentions being in a loop
     2. Identical responses - Same response N times in a row
     3. Minimal responses - Very short responses after first cycle
+    4. Stop file - Agent creates STOPAUTOMATION-{session_hash}.json
     
     Usage:
-        detector = LoopDetector()
+        detector = LoopDetector(session_id="my-session")
         for cycle in range(max_cycles):
             response = await ai.send(prompt)
             reasoning = get_reasoning()  # From adapter
@@ -55,11 +66,51 @@ class LoopDetector:
     # Configuration
     identical_threshold: int = IDENTICAL_RESPONSE_THRESHOLD
     min_response_length: int = MIN_RESPONSE_LENGTH
+    session_id: Optional[str] = None  # For stop file hash
+    stop_file_dir: Optional[Path] = None  # Directory to check for stop file
     
     # State
     response_hashes: deque = field(default_factory=lambda: deque(maxlen=5))
     response_lengths: list[int] = field(default_factory=list)
     last_reasoning: Optional[str] = None
+    
+    def __post_init__(self):
+        """Initialize derived values."""
+        if self.stop_file_dir is None:
+            self.stop_file_dir = Path.cwd()
+    
+    @property
+    def stop_file_name(self) -> str:
+        """Get the stop file name for this session.
+        
+        Uses a hash of session_id for security (agent must know the ID).
+        """
+        if self.session_id:
+            session_hash = hashlib.sha256(self.session_id.encode()).hexdigest()[:12]
+            return f"STOPAUTOMATION-{session_hash}.json"
+        return "STOPAUTOMATION.json"
+    
+    @property
+    def stop_file_path(self) -> Path:
+        """Full path to the stop file."""
+        return self.stop_file_dir / self.stop_file_name
+    
+    def _check_stop_file(self) -> Optional[dict]:
+        """Check if the agent has created a stop file.
+        
+        Returns the stop file contents if found, None otherwise.
+        """
+        try:
+            if self.stop_file_path.exists():
+                content = self.stop_file_path.read_text()
+                logger.info(f"Stop file found: {self.stop_file_path}")
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError:
+                    return {"reason": content.strip() or "Agent requested stop"}
+        except (OSError, PermissionError) as e:
+            logger.debug(f"Could not check stop file: {e}")
+        return None
     
     def _hash_response(self, response: str) -> str:
         """Create a fast hash of response content.
@@ -155,6 +206,16 @@ class LoopDetector:
                 cycle_number=cycle_number + 1
             )
         
+        # Check 4: Stop file (agent-initiated stop signal)
+        if stop_data := self._check_stop_file():
+            reason = stop_data.get("reason", "Agent requested stop")
+            logger.info(f"Loop detected via stop file: {reason}")
+            return LoopDetected(
+                reason=LoopReason.STOP_FILE,
+                details=f"Agent created stop file: {reason}",
+                cycle_number=cycle_number + 1
+            )
+        
         return None
     
     def reset(self) -> None:
@@ -162,3 +223,17 @@ class LoopDetector:
         self.response_hashes.clear()
         self.response_lengths.clear()
         self.last_reasoning = None
+    
+    def cleanup_stop_file(self) -> bool:
+        """Remove the stop file if it exists.
+        
+        Returns True if file was removed, False otherwise.
+        """
+        try:
+            if self.stop_file_path.exists():
+                self.stop_file_path.unlink()
+                logger.debug(f"Cleaned up stop file: {self.stop_file_path}")
+                return True
+        except (OSError, PermissionError) as e:
+            logger.warning(f"Could not remove stop file: {e}")
+        return False

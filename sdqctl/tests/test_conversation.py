@@ -387,14 +387,26 @@ class TestTemplateVariables:
         assert "CWD" in variables
 
     def test_get_standard_variables_with_workflow_path(self, tmp_path):
-        """Test variables with workflow path."""
+        """Test variables with workflow path.
+        
+        Note: WORKFLOW_NAME is excluded by default to avoid Q-001.
+        Use include_workflow_vars=True for output paths.
+        """
         workflow_file = tmp_path / "test.conv"
         workflow_file.write_text("MODEL gpt-4")
         
+        # Default: WORKFLOW_NAME excluded (Q-001 fix)
         variables = get_standard_variables(workflow_file)
+        assert "WORKFLOW_NAME" not in variables
+        assert "WORKFLOW_PATH" not in variables
+        # But explicit opt-in is always available
+        assert variables["__WORKFLOW_NAME__"] == "test"
+        assert "test.conv" in variables["__WORKFLOW_PATH__"]
         
-        assert variables["WORKFLOW_NAME"] == "test"
-        assert "test.conv" in variables["WORKFLOW_PATH"]
+        # With include_workflow_vars=True: for output paths
+        output_vars = get_standard_variables(workflow_file, include_workflow_vars=True)
+        assert output_vars["WORKFLOW_NAME"] == "test"
+        assert "test.conv" in output_vars["WORKFLOW_PATH"]
 
 
 class TestConversationFileToString:

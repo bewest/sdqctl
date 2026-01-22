@@ -6,11 +6,11 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 ## Quick Reference
 
-| ID | Quirk | Priority | Workaround Available |
-|----|-------|----------|---------------------|
-| [Q-001](#q-001-workflow-filename-influences-agent-behavior) | Workflow filename influences agent behavior | P0 | ✅ Yes |
-| [Q-002](#q-002-sdk-abort-events-not-emitted) | SDK abort events not emitted | P1 | ✅ Yes |
-| [Q-003](#q-003-template-variables-in-examples-encourage-problematic-patterns) | Template variables in examples encourage problematic patterns | P2 | ✅ Yes |
+| ID | Quirk | Priority | Status |
+|----|-------|----------|--------|
+| [Q-001](#q-001-workflow-filename-influences-agent-behavior) | Workflow filename influences agent behavior | P0 | ✅ FIXED |
+| [Q-002](#q-002-sdk-abort-events-not-emitted) | SDK abort events not emitted | P1 | ✅ IMPROVED |
+| [Q-003](#q-003-template-variables-in-examples-encourage-problematic-patterns) | Template variables in examples encourage problematic patterns | P2 | ✅ RESOLVED |
 
 ---
 
@@ -23,7 +23,7 @@ potentially see reasoning/actions taken at the default level.
 
 **Priority:** P0 - High Impact  
 **Discovered:** 2026-01-22  
-**Status:** Documented, workarounds available
+**Status:** ✅ FIXED - `WORKFLOW_NAME` excluded from prompts by default
 
 ### Description
 
@@ -104,20 +104,34 @@ The injection only occurs when `{{VAR}}` syntax is explicitly used. However, the
 
 All of these provide semantic context that influences agent behavior.
 
-### Future Fix Options
+### Fix Applied (2026-01-22)
 
-Let's explicitly take pathnames/filenames out of the injected prompts because
-this was surprising. Instead we can consider a user controlled variable that
-can be overriden using a cli switch somehow in places where the
-pathname/filename was being used as prompt material.  It's ok to consider
-additional directives and breaking changes because we're still early but let's
-consider them proposals for additional review without compelling evidence.
+The `WORKFLOW_NAME` and `WORKFLOW_PATH` variables are now **excluded from prompts by default** to prevent agent behavior being influenced by workflow filenames.
 
-Prior alternatives:
-| Option | Effort | Breaking Change |
-|--------|--------|-----------------|
-| A. Add `MODE-HINT implement` directive | Low | No |
-| C. Document prominently (this document) | Low | No |
+**What changed:**
+- `get_standard_variables()` no longer includes `WORKFLOW_NAME`/`WORKFLOW_PATH` by default
+- Output paths (OUTPUT-FILE, OUTPUT-DIR) still have access via `include_workflow_vars=True`
+- Explicit opt-in variables `{{__WORKFLOW_NAME__}}` and `{{__WORKFLOW_PATH__}}` are always available
+
+**Migration:**
+- If you need the workflow name in prompts, use `{{__WORKFLOW_NAME__}}` (underscore prefix = explicit opt-in)
+- Output paths like `OUTPUT-FILE reports/{{WORKFLOW_NAME}}-{{DATE}}.md` continue to work unchanged
+- No changes needed for typical workflows
+
+**Example:**
+```dockerfile
+# For agent-visible content - use explicit opt-in:
+HEADER # Implementation Session for {{__WORKFLOW_NAME__}}
+
+# For output paths - WORKFLOW_NAME still works:
+OUTPUT-FILE reports/{{WORKFLOW_NAME}}-{{DATE}}.md
+```
+
+### Prior Workarounds (still valid)
+
+1. **Choose implementation-oriented filenames**
+2. **Add explicit role clarification in PROLOGUE**
+3. **Avoid using `{{WORKFLOW_NAME}}` in prompts**
 
 ---
 
@@ -125,7 +139,7 @@ Prior alternatives:
 
 **Priority:** P1 - Medium Impact  
 **Discovered:** 2026-01-22  
-**Status:** Documented, client-side workaround implemented
+**Status:** ✅ IMPROVED - Lowered thresholds + stop file detection
 
 ### Description
 
@@ -178,16 +192,39 @@ if detector.check(response, reasoning):
     raise LoopDetected(detector.reason)
 ```
 
-### Fix desired
-Consider lowering detection thresholds to minimum the minimum that seem  work
-well.  Also consider using detection/escalation metaphor to request the agent
-to create a STOPAUTOMATION.json or similar file that we can positively detect
-and stop.  If we detect its existence during duplication detection mode, we can
-stop.  We can consider making it more secure by making the filename a
-calculated unique value that we can definitely check for "this single unique
-instance", maybe a hash of our session id?
-Let's see how sensitive we can make this detection work so that we don't abuse
-the API and can balance injecting too much into context.
+### Fix Applied (2026-01-22)
+
+**Lowered detection thresholds** for faster loop detection:
+- `identical_threshold`: 3 → 2 (detects duplicate responses faster)
+- `min_response_length`: 50 → 100 (catches degraded responses earlier)
+
+**Added stop file detection** for agent-initiated stops:
+- Agent can create `STOPAUTOMATION-{session_hash}.json` to signal stop
+- Session hash provides security (agent must know the session ID)
+- Stop file contents can include reason: `{"reason": "Detected loop condition"}`
+
+**Usage:**
+```python
+from sdqctl.core.loop_detector import LoopDetector
+
+# With session ID for stop file security
+detector = LoopDetector(session_id="my-session-123")
+
+# Check includes stop file detection
+if result := detector.check(reasoning, response, cycle):
+    if result.reason == LoopReason.STOP_FILE:
+        print("Agent requested stop via file")
+    raise result
+
+# Cleanup after workflow
+detector.cleanup_stop_file()
+```
+
+**Agent instruction example:**
+```
+If you detect you are in a loop or cannot make progress, create a file
+named STOPAUTOMATION-{hash}.json with {"reason": "your explanation"}.
+```
 
 ### See Also
 
@@ -200,78 +237,67 @@ the API and can balance injecting too much into context.
 
 **Priority:** P2 - Low Impact  
 **Discovered:** 2026-01-22  
-**Status:** Documented
+**Status:** ✅ RESOLVED - Q-001 fix + examples updated
 
 ### Description
 
-Example workflows in `examples/workflows/` use `{{WORKFLOW_NAME}}` in headers:
+Example workflows in `examples/workflows/` used `{{WORKFLOW_NAME}}` in headers.
+With Q-001 fix, this is no longer problematic (WORKFLOW_NAME excluded from prompts).
+
+### Fix Applied (2026-01-22)
+
+1. **Q-001 fix resolves the root cause** - `{{WORKFLOW_NAME}}` is now excluded from
+   prompts by default, so even if examples use it, it won't influence agent behavior.
+
+2. **Examples updated** - Changed to use literal descriptions:
+   - `test-discovery.conv`: `HEADER ## Session: {{DATETIME}}`
+   - `verify-with-run.conv`: `HEADER # Verification Report`
+
+### Best Practice
 
 ```dockerfile
-# From test-discovery.conv
-HEADER ## Workflow: {{WORKFLOW_NAME}}
-
-# From verify-with-run.conv
-HEADER # Verification Report - {{WORKFLOW_NAME}}
-```
-
-Users copying these patterns may inadvertently trigger Q-001 (filename influencing behavior).
-
-### Impact
-
-- Users learn patterns that can cause subtle issues
-- Copy-paste workflow creation inherits problematic patterns
-
-### Workaround
-
-When creating new workflows:
-1. Use literal descriptions instead of `{{WORKFLOW_NAME}}` for headers visible to the agent
-2. Reserve `{{WORKFLOW_NAME}}` for output filenames and metadata not parsed by the agent
-3. Choose implementation-oriented filenames from the start
-
-### Recommended Pattern
-
-```dockerfile
-# For headers (visible to agent) - use literals:
+# For headers/prompts - use literal descriptions:
 HEADER # Security Audit Report
-HEADER ## Generated: {{DATETIME}}
+HEADER ## Session: {{DATETIME}}
 
-# For output files (not parsed by agent) - {{WORKFLOW_NAME}} is safe:
+# For output paths - {{WORKFLOW_NAME}} still works:
 OUTPUT-FILE reports/{{WORKFLOW_NAME}}-{{DATE}}.md
+
+# If you need workflow name in prompts - use explicit opt-in:
+PROLOGUE This is the {{__WORKFLOW_NAME__}} workflow.
 ```
 
 ---
 
-Potential desirable fix cross cutting other ideas/components:
-* is there a way to export/import interpreted conversations as plans? in json?
-* for all the variables that exist, is it desirable to be able to accept import/export
-  of entire plan with the variables well defined, or worth the complexity of doing something like a (potentially customized schema) where all variables can come from a file (stdin/file).  This might integrate with tooling nicely.
-* A cross cutting concern here, but out of scope, is potentially having a
-  jsonnet executor in between export/import to apply logic.  This may put a
-  pressure relief or a way to standardize the proposal for how to branch on
-  error/timaeout when RUN directives may fail.
-* Is it possible for arbitrary environment variables to be used?   Should it?
-  What are the risks/impacts?  Deny/accept list, read from .env file, inject
-  from json?
+## Future Considerations
 
+These are documented ideas for future enhancement, not current quirks:
 
-IMPORTANT:
-Let's make sure in accordance with the above fixes that pathnames and other
-filesystem information does not go into prompt materials, or that if it is
-possible, it is explicit with variable like __FILENAME__.
+* **Export/import plans as JSON** - Allow interpreted conversations to be serialized
+* **External variable injection** - Accept variables from file/stdin/env
+* **Jsonnet integration** - Apply logic for branching on RUN failures
+* **Environment variables** - Deny/accept list for env var access
+
+> **Note:** The Q-001 fix addresses the concern about pathnames in prompts.
+> Filesystem paths are now excluded by default, with explicit opt-in via `__` prefix.
 
 ## Template Variables Reference
 
-Variables that may have semantic impact when visible to the agent:
+Variables and their semantic impact when visible to the agent:
 
-| Variable | Source | Semantic Impact |
-|----------|--------|-----------------|
-| `{{WORKFLOW_NAME}}` | Filename stem | **HIGH** - Word choice affects agent role interpretation |
-| `{{WORKFLOW_PATH}}` | Full path | **MEDIUM** - Path may contain project/folder names |
-| `{{COMPONENT_NAME}}` | Component file | LOW - Typically neutral file names |
-| `{{GIT_BRANCH}}` | Git | LOW - Branch names usually technical |
-| `{{CWD}}` | System | LOW - Directory names |
-| `{{DATE}}`, `{{DATETIME}}` | System | NONE |
-| `{{GIT_COMMIT}}` | Git | NONE |
+| Variable | Source | Semantic Impact | Notes |
+|----------|--------|-----------------|-------|
+| `{{WORKFLOW_NAME}}` | Filename stem | **SAFE** | Excluded from prompts by default (Q-001 fix) |
+| `{{WORKFLOW_PATH}}` | Full path | **SAFE** | Excluded from prompts by default (Q-001 fix) |
+| `{{__WORKFLOW_NAME__}}` | Filename stem | **HIGH** | Explicit opt-in - use with caution |
+| `{{__WORKFLOW_PATH__}}` | Full path | **MEDIUM** | Explicit opt-in - use with caution |
+| `{{COMPONENT_NAME}}` | Component file | LOW | Typically neutral file names |
+| `{{GIT_BRANCH}}` | Git | LOW | Branch names usually technical |
+| `{{CWD}}` | System | LOW | Directory names |
+| `{{DATE}}`, `{{DATETIME}}` | System | NONE | Safe to use anywhere |
+| `{{GIT_COMMIT}}` | Git | NONE | Safe to use anywhere |
+
+**Key principle:** Variables with `__` prefix are explicit opt-in and may influence agent behavior.
 
 ---
 

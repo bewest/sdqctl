@@ -238,8 +238,10 @@ async def _cycle_async(
     if cli_footers:
         conv.footers = list(cli_footers) + conv.footers
     
-    # Get template variables for this workflow
+    # Get template variables for prompts (excludes WORKFLOW_NAME to avoid Q-001)
     template_vars = get_standard_variables(conv.source_path)
+    # Get template variables for output paths (includes WORKFLOW_NAME)
+    output_vars = get_standard_variables(conv.source_path, include_workflow_vars=True)
 
     # Create session
     session_dir = Path(checkpoint_dir) if checkpoint_dir else None
@@ -272,8 +274,8 @@ async def _cycle_async(
         console.print("[yellow]Using mock adapter instead[/yellow]")
         ai_adapter = get_adapter("mock")
 
-    # Initialize loop detector
-    loop_detector = LoopDetector()
+    # Initialize loop detector with session ID for stop file detection (Q-002)
+    loop_detector = LoopDetector(session_id=session.id)
     last_reasoning: list[str] = []  # Collect reasoning from callbacks
 
     try:
@@ -469,8 +471,8 @@ async def _cycle_async(
                 console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
                 
                 if conv.output_file:
-                    # Substitute template variables in output path
-                    effective_output = substitute_template_variables(conv.output_file, template_vars)
+                    # Substitute template variables in output path (use output_vars with WORKFLOW_NAME)
+                    effective_output = substitute_template_variables(conv.output_file, output_vars)
                     
                     # Write final summary with header/footer injection
                     output_content = "\n\n---\n\n".join(
@@ -480,7 +482,7 @@ async def _cycle_async(
                     output_content = build_output_with_injection(
                         output_content, conv.headers, conv.footers,
                         conv.source_path.parent if conv.source_path else None,
-                        template_vars
+                        output_vars
                     )
                     Path(effective_output).parent.mkdir(parents=True, exist_ok=True)
                     Path(effective_output).write_text(output_content)

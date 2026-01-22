@@ -27,8 +27,8 @@ RUN python -c "print('Coverage: 73%')"
 
 PROMPT Based on the coverage report, identify areas that need more testing.
 
-# Output formatting
-HEADER # Verification Report - {{WORKFLOW_NAME}}
+# Output formatting - use literal description, not {{WORKFLOW_NAME}} (Q-003 best practice)
+HEADER # Verification Report
 HEADER Generated: {{DATETIME}}
 
 FOOTER ---

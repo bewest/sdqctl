@@ -128,8 +128,7 @@ Review the code quality of the new features:
 
 # === Output Configuration ===
 HEADER # sdqctl Test Discovery Report
-HEADER ## Workflow: {{WORKFLOW_NAME}}
-HEADER **Generated:** {{DATETIME}}
+HEADER ## Session: {{DATETIME}}
 HEADER **Branch:** {{GIT_BRANCH}}
 HEADER ---
 

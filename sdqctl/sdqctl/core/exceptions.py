@@ -24,6 +24,7 @@ class LoopReason(Enum):
     REASONING_PATTERN = "reasoning_pattern"  # AI reasoning mentions loop
     IDENTICAL_RESPONSES = "identical_responses"  # N identical responses
     MINIMAL_RESPONSE = "minimal_response"  # Response too short
+    STOP_FILE = "stop_file"  # Agent created stop signal file (Q-002)
 
 
 @dataclass
