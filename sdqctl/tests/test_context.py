@@ -399,14 +399,16 @@ class TestSessionWithFileRestrictions:
         from sdqctl.core.session import Session
         from sdqctl.core.conversation import ConversationFile, FileRestrictions
         
-        # Create test files
-        (temp_workspace / "allowed.py").write_text("allowed")
-        (temp_workspace / "denied.js").write_text("denied")
+        # Create test files in a unique subdirectory (to avoid CWD matching)
+        test_dir = temp_workspace / "filter_test"
+        test_dir.mkdir()
+        (test_dir / "allowed.py").write_text("allowed")
+        (test_dir / "denied.js").write_text("denied")
         
         # Create conversation with allow pattern (only .py files)
         conv = ConversationFile(
             cwd=str(temp_workspace),
-            context_files=["@*.*"],
+            context_files=["@filter_test/*.*"],
             file_restrictions=FileRestrictions(allow_patterns=["*.py"]),
         )
         

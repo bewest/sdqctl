@@ -117,22 +117,20 @@ class ContextManager:
         full_pattern = base / pattern
 
         # Check if it's a glob pattern
-        if "*" in pattern or "?" in pattern:
-            # Use pathlib glob
+        if "*" in pattern or "?" in pattern or "[" in pattern:
+            # Use Python's glob module for proper pattern matching
+            import glob as glob_module
+            
+            pattern_str = str(full_pattern)
+            
+            # Handle ** recursive patterns
             if "**" in pattern:
-                # Recursive glob
-                parts = pattern.split("**")
-                if len(parts) == 2:
-                    glob_base = base / parts[0].rstrip("/")
-                    sub_pattern = parts[1].lstrip("/")
-                    if glob_base.exists():
-                        return list(glob_base.glob(f"**/{sub_pattern}"))
+                matches = list(glob_module.glob(pattern_str, recursive=True))
             else:
-                parent = full_pattern.parent
-                name_pattern = full_pattern.name
-                if parent.exists():
-                    return [p for p in parent.iterdir() if fnmatch.fnmatch(p.name, name_pattern)]
-            return []
+                # For patterns like mapping/*/README.md, use glob directly
+                matches = list(glob_module.glob(pattern_str))
+            
+            return [Path(m) for m in matches if Path(m).is_file()]
         else:
             # Single file
             if full_pattern.exists() and full_pattern.is_file():

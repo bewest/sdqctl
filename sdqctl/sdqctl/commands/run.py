@@ -290,12 +290,23 @@ async def _run_async(
         progress(f"Running {target_path.name}...")
         
         # Validate mandatory context files before execution
-        missing_files = conv.validate_context_files()
-        if missing_files:
-            patterns = [pattern for pattern, _ in missing_files]
+        # Respect VALIDATION-MODE directive from the workflow file
+        is_lenient = conv.validation_mode == "lenient"
+        errors, warnings = conv.validate_context_files(allow_missing=is_lenient)
+        
+        # Show warnings
+        if warnings and not quiet:
+            console.print(f"[yellow]Warning: Optional/excluded context files not found:[/yellow]")
+            for pattern, resolved in warnings:
+                console.print(f"[yellow]  - {pattern}[/yellow]")
+        
+        # Errors are blocking
+        if errors:
+            patterns = [pattern for pattern, _ in errors]
             console.print(f"[red]Error: Missing mandatory context files:[/red]")
-            for pattern, resolved in missing_files:
+            for pattern, resolved in errors:
                 console.print(f"[red]  - {pattern} (resolved to {resolved})[/red]")
+            console.print(f"[dim]Tip: Use VALIDATION-MODE lenient or --allow-missing to continue[/dim]")
             sys.exit(MissingContextFiles(patterns).exit_code)
     else:
         # Treat as inline prompt

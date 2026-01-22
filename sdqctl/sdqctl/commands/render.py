@@ -82,12 +82,12 @@ def render(
         if epilogue:
             conv.epilogues = list(epilogue) + conv.epilogues
         
-        # Validate context files
-        missing_files = conv.validate_context_files()
-        if missing_files:
-            patterns = [pattern for pattern, _ in missing_files]
+        # Validate context files (render is lenient - only warns)
+        errors, warnings = conv.validate_context_files(allow_missing=True)
+        all_issues = errors + warnings
+        if all_issues:
             console.print(f"[yellow]Warning: Some context files not found:[/yellow]")
-            for pattern, resolved in missing_files:
+            for pattern, resolved in all_issues:
                 console.print(f"[yellow]  - {pattern}[/yellow]")
         
         # Render workflow

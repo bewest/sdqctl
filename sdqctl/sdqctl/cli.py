@@ -349,11 +349,24 @@ done
 
 @cli.command()
 @click.argument("workflow", type=click.Path(exists=True))
-def validate(workflow: str) -> None:
+@click.option("--allow-missing", is_flag=True, help="Warn on missing context files instead of failing")
+@click.option("--exclude", "-e", multiple=True, help="Patterns to exclude from validation (can be repeated)")
+@click.option("--strict", is_flag=True, help="Fail on any issue (overrides VALIDATION-MODE)")
+@click.option("--json", "json_output", is_flag=True, help="Output results as JSON")
+def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, json_output: bool) -> None:
     """Validate a ConversationFile.
     
     Checks syntax and references without executing.
+    
+    \b
+    Examples:
+      sdqctl validate workflow.conv
+      sdqctl validate workflow.conv --allow-missing
+      sdqctl validate workflow.conv --exclude "conformance/**/*.yaml"
+      sdqctl validate workflow.conv -e "*.yaml" -e "mapping/xdrip/*"
     """
+    import json as json_module
+    import sys
     from pathlib import Path
     from rich.console import Console
     from rich.panel import Panel
@@ -367,42 +380,95 @@ def validate(workflow: str) -> None:
         conv = ConversationFile.from_file(Path(workflow))
         session = Session(conv)
         
+        # Determine validation mode
+        # CLI flags override file-level settings
+        is_lenient = allow_missing or (conv.validation_mode == "lenient" and not strict)
+        
         # Validate
-        issues = []
+        errors = []
+        warnings = []
         
         # Check model
         if not conv.model:
-            issues.append("Missing MODEL directive")
+            errors.append("Missing MODEL directive")
         
         # Check prompts
         if not conv.prompts:
-            issues.append("No PROMPT directives found")
+            errors.append("No PROMPT directives found")
         
-        # Check context files
-        for pattern in conv.context_files:
-            files = session.context.resolve_pattern(pattern)
-            if not files:
-                issues.append(f"Context pattern matches no files: {pattern}")
+        # Check context files with new validation logic
+        context_errors, context_warnings = conv.validate_context_files(
+            exclude_patterns=list(exclude),
+            allow_missing=is_lenient,
+        )
+        
+        # Convert context issues to messages
+        for pattern, path in context_errors:
+            errors.append(f"Context pattern matches no files: {pattern}")
+        for pattern, path in context_warnings:
+            warnings.append(f"Context pattern matches no files (optional/excluded): {pattern}")
+        
+        # JSON output
+        if json_output:
+            result = {
+                "valid": len(errors) == 0,
+                "workflow": str(workflow),
+                "model": conv.model,
+                "adapter": conv.adapter,
+                "mode": conv.mode,
+                "validation_mode": "lenient" if is_lenient else "strict",
+                "prompts": len(conv.prompts),
+                "context_patterns": len(conv.context_files) + len(conv.context_files_optional),
+                "context_files_found": session.context.get_status()['files_loaded'],
+                "errors": errors,
+                "warnings": warnings,
+            }
+            console.print_json(json_module.dumps(result))
+            if errors:
+                sys.exit(1)
+            return
         
         # Report
-        if issues:
+        if errors:
             console.print("[red]Validation failed:[/red]")
-            for issue in issues:
-                console.print(f"  - {issue}")
+            for error in errors:
+                console.print(f"  ✗ {error}")
+            if warnings:
+                console.print("\n[yellow]Warnings:[/yellow]")
+                for warning in warnings:
+                    console.print(f"  ⚠ {warning}")
+            sys.exit(1)
         else:
+            # Show warnings if any
+            if warnings:
+                console.print("[yellow]Warnings (non-blocking):[/yellow]")
+                for warning in warnings:
+                    console.print(f"  ⚠ {warning}")
+                console.print()
+            
+            validation_mode_str = f"Validation mode: {'lenient' if is_lenient else 'strict'}"
+            optional_count = len(conv.context_files_optional)
+            exclude_count = len(conv.context_exclude) + len(exclude)
+            
             console.print(Panel.fit(
                 f"Model: {conv.model}\n"
                 f"Adapter: {conv.adapter}\n"
                 f"Mode: {conv.mode}\n"
                 f"Max Cycles: {conv.max_cycles}\n"
                 f"Prompts: {len(conv.prompts)}\n"
-                f"Context patterns: {len(conv.context_files)}\n"
-                f"Context files found: {session.context.get_status()['files_loaded']}",
+                f"Context patterns: {len(conv.context_files)} required, {optional_count} optional\n"
+                f"Context excludes: {exclude_count}\n"
+                f"Context files found: {session.context.get_status()['files_loaded']}\n"
+                f"{validation_mode_str}",
                 title="[green]✓ Valid ConversationFile[/green]"
             ))
     
     except Exception as e:
-        console.print(f"[red]Error parsing workflow: {e}[/red]")
+        if json_output:
+            console.print_json(json_module.dumps({"valid": False, "error": str(e)}))
+        else:
+            console.print(f"[red]Error parsing workflow: {e}[/red]")
+        sys.exit(1)
 
 
 @cli.command()

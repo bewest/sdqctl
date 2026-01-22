@@ -32,8 +32,13 @@ class DirectiveType(Enum):
 
     # Context
     CONTEXT = "CONTEXT"
+    CONTEXT_OPTIONAL = "CONTEXT-OPTIONAL"  # Optional context (warn if missing, don't fail)
+    CONTEXT_EXCLUDE = "CONTEXT-EXCLUDE"  # Patterns to exclude from validation
     CONTEXT_LIMIT = "CONTEXT-LIMIT"
     ON_CONTEXT_LIMIT = "ON-CONTEXT-LIMIT"
+    
+    # Validation mode
+    VALIDATION_MODE = "VALIDATION-MODE"  # strict, lenient, exploratory
 
     # File control (allow/deny patterns)
     ALLOW_FILES = "ALLOW-FILES"
@@ -212,8 +217,13 @@ class ConversationFile:
 
     # Context - context_limit default loaded from config
     context_files: list[str] = field(default_factory=list)
+    context_files_optional: list[str] = field(default_factory=list)  # Optional context patterns
+    context_exclude: list[str] = field(default_factory=list)  # Patterns to exclude from validation
     context_limit: float = field(default_factory=_get_default_context_limit)
     on_context_limit: str = "compact"  # compact, stop, continue
+    
+    # Validation mode (strict, lenient, exploratory)
+    validation_mode: str = "strict"  # strict=fail on missing, lenient=warn only
 
     # File restrictions
     file_restrictions: FileRestrictions = field(default_factory=FileRestrictions)
@@ -329,37 +339,72 @@ class ConversationFile:
         content = path.read_text()
         return cls.parse(content, source_path=path)
 
-    def validate_context_files(self) -> list[tuple[str, Path]]:
+    def validate_context_files(
+        self, 
+        exclude_patterns: list[str] | None = None,
+        allow_missing: bool = False,
+    ) -> tuple[list[tuple[str, Path]], list[tuple[str, Path]]]:
         """Validate that all CONTEXT file references exist.
         
         Resolution order for relative paths:
         1. CWD (current working directory) - intuitive for users
         2. Workflow file directory - for self-contained workflows
         
+        Args:
+            exclude_patterns: Additional patterns to exclude from validation
+            allow_missing: If True, returns warnings instead of errors
+        
         Returns:
-            List of (pattern, resolved_path) tuples for missing files.
-            Empty list if all files exist.
+            Tuple of (errors, warnings) where each is a list of (pattern, resolved_path).
+            Errors are required patterns that are missing.
+            Warnings are optional patterns that are missing or excluded patterns.
         """
+        import fnmatch as fnmatch_module
         import glob as glob_module
         
-        missing = []
+        errors = []
+        warnings = []
         workflow_base = self.source_path.parent if self.source_path else Path.cwd()
         cwd = Path.cwd()
         
-        for context_ref in self.context_files:
+        # Combine file-level and CLI exclusions
+        all_exclusions = list(self.context_exclude)
+        if exclude_patterns:
+            all_exclusions.extend(exclude_patterns)
+        
+        def is_excluded(pattern: str) -> bool:
+            """Check if pattern matches any exclusion."""
+            for excl in all_exclusions:
+                if fnmatch_module.fnmatch(pattern, excl):
+                    return True
+                # Also check without @ prefix
+                if pattern.startswith("@") and fnmatch_module.fnmatch(pattern[1:], excl):
+                    return True
+            return False
+        
+        def validate_pattern(context_ref: str, is_optional: bool = False) -> None:
+            """Validate a single context pattern."""
             # Only check @file references (not inline content)
             if not context_ref.startswith("@"):
-                continue
+                return
             
             pattern = context_ref[1:]  # Remove @ prefix
+            
+            # Check exclusions
+            if is_excluded(context_ref) or is_excluded(pattern):
+                warnings.append((context_ref, Path(pattern)))
+                return
             
             # Absolute paths resolve directly
             if Path(pattern).is_absolute():
                 resolved_pattern = Path(pattern)
                 found = self._check_pattern_exists(resolved_pattern, glob_module)
                 if not found:
-                    missing.append((context_ref, resolved_pattern))
-                continue
+                    if is_optional or allow_missing:
+                        warnings.append((context_ref, resolved_pattern))
+                    else:
+                        errors.append((context_ref, resolved_pattern))
+                return
             
             # Try CWD first, then workflow directory
             cwd_resolved = cwd / pattern
@@ -370,9 +415,20 @@ class ConversationFile:
             
             if not cwd_found and not workflow_found:
                 # Report CWD path since that's what users expect
-                missing.append((context_ref, cwd_resolved))
+                if is_optional or allow_missing:
+                    warnings.append((context_ref, cwd_resolved))
+                else:
+                    errors.append((context_ref, cwd_resolved))
         
-        return missing
+        # Validate required context files
+        for context_ref in self.context_files:
+            validate_pattern(context_ref, is_optional=False)
+        
+        # Validate optional context files (always warnings, never errors)
+        for context_ref in self.context_files_optional:
+            validate_pattern(context_ref, is_optional=True)
+        
+        return errors, warnings
     
     def _check_pattern_exists(self, resolved_pattern: Path, glob_module) -> bool:
         """Check if a pattern (file or glob) resolves to existing files."""
@@ -412,6 +468,8 @@ class ConversationFile:
             lines.append("")
 
         # Context
+        if self.validation_mode != "strict":
+            lines.append(f"VALIDATION-MODE {self.validation_mode}")
         if self.context_limit != 0.8:
             lines.append(f"CONTEXT-LIMIT {int(self.context_limit * 100)}%")
         if self.on_context_limit != "compact":
@@ -419,8 +477,12 @@ class ConversationFile:
 
         for ctx in self.context_files:
             lines.append(f"CONTEXT {ctx}")
+        for ctx in self.context_files_optional:
+            lines.append(f"CONTEXT-OPTIONAL {ctx}")
+        for pattern in self.context_exclude:
+            lines.append(f"CONTEXT-EXCLUDE {pattern}")
 
-        if self.context_files:
+        if self.context_files or self.context_files_optional or self.context_exclude:
             lines.append("")
 
         # Compaction
@@ -519,12 +581,18 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.cwd = directive.value
         case DirectiveType.CONTEXT:
             conv.context_files.append(directive.value)
+        case DirectiveType.CONTEXT_OPTIONAL:
+            conv.context_files_optional.append(directive.value)
+        case DirectiveType.CONTEXT_EXCLUDE:
+            conv.context_exclude.append(directive.value)
         case DirectiveType.CONTEXT_LIMIT:
             # Parse "80%" -> 0.8
             value = directive.value.rstrip("%")
             conv.context_limit = float(value) / 100
         case DirectiveType.ON_CONTEXT_LIMIT:
             conv.on_context_limit = directive.value
+        case DirectiveType.VALIDATION_MODE:
+            conv.validation_mode = directive.value.lower()
         
         # File restrictions
         case DirectiveType.ALLOW_FILES:
