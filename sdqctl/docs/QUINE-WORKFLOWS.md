@@ -4,6 +4,17 @@ A **quine-like workflow** uses sdqctl to improve a codebase iteratively, where e
 
 ---
 
+## Quick Reference: Pitfalls to Avoid
+
+| ⚠️ Issue | ❌ Bad | ✅ Good | Why |
+|----------|--------|---------|-----|
+| **Naming** | `tracker.conv` | `fix-bugs.conv` | Filename affects agent role ([Q-001](QUIRKS.md#q-001-workflow-filename-influences-agent-behavior)) |
+| **Context** | Inject 50KB file | Let agent read on demand | Saves tokens, fresher data |
+| **Scope** | "Fix all 15 issues" | "Select ONE item" | Focus prevents partial work |
+| **Exit** | MAX-CYCLES 100 | MAX-CYCLES 3-5 | Bounded iteration |
+
+---
+
 ## What Makes a Workflow "Quine-Like"?
 
 Traditional workflows are linear: input → process → output.

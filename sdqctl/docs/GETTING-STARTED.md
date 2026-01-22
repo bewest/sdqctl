@@ -57,6 +57,10 @@ PROMPT Identify potential improvements.
 OUTPUT-FORMAT markdown
 ```
 
+> **⚠️ Naming Matters:** Workflow filenames influence agent behavior! Use action verbs 
+> (`fix-`, `implement-`, `audit-`) not passive nouns (`tracker`, `report`).
+> See [QUIRKS.md](QUIRKS.md#q-001-workflow-filename-influences-agent-behavior) for details.
+
 Run it:
 
 ```bash

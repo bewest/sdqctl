@@ -4,22 +4,27 @@
 # Designed to minimize context usage while maintaining focus.
 #
 # Usage:
-#   sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot -n 3
+#   sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot
+#   sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot -n 2  # Fix 2 quirks
+#
+# Terminology:
+#   - CYCLE = one complete pass through all 4 phases (fixes ONE quirk)
+#   - PHASE = each prompt within a cycle (select → execute → verify → triage)
 #
 # Design principles (following QUIRKS.md guidance):
 # 1. Implementation-oriented filename (fix-, not track-)
 # 2. Minimal context injection - agent reads files on demand
 # 3. Explicit role clarification in PROLOGUE
-# 4. Single quirk focus per session
+# 4. Single quirk focus per CYCLE
 # 5. Research blockers handled before implementation
 
 MODEL claude-opus-4.5
 ADAPTER copilot
 MODE implement
-MAX-CYCLES 3
+MAX-CYCLES 1
 
 # === Context Management ===
-# Compact after cycle 2 (implementation) to free context for verification
+# Compact after phase 2 (implementation) to free context for verification
 CONTEXT-LIMIT 70%
 ON-CONTEXT-LIMIT compact
 COMPACT-PRESERVE prompts,errors,tool-results
@@ -38,17 +43,17 @@ PROLOGUE ---
 # === Implementation Reminders ===
 EPILOGUE ---
 EPILOGUE Remember:
-EPILOGUE - ONE quirk per session (do not batch)
+EPILOGUE - ONE quirk per cycle (do not batch)
 EPILOGUE - Research blockers → document and stop
 EPILOGUE - Implementation ready → edit files directly
 EPILOGUE - Test changes before marking complete
 
-# === Cycle 1: Select and Assess ===
-PROMPT ## Quirk Selection
+# === Phase 1: Select and Assess ===
+PROMPT ## Phase 1: Quirk Selection
 
 Review the quirks backlog at `docs/QUIRKS.md`.
 
-**Task:** Select ONE quirk to work on this session.
+**Task:** Select ONE quirk to work on this cycle.
 
 Selection criteria:
 1. P0 quirks before P1/P2
@@ -68,10 +73,10 @@ Selection criteria:
 If the quirk needs research first, state what information is missing.
 If ready to implement, state which fix option you'll use.
 
-# === Cycle 2: Research or Implement ===
-PROMPT ## Execute
+# === Phase 2: Research or Implement ===
+PROMPT ## Phase 2: Execute
 
-Based on your assessment:
+Based on your Phase 1 assessment:
 
 **If research needed:**
 1. Investigate the codebase to gather missing information
@@ -86,7 +91,7 @@ Based on your assessment:
 
 **Do NOT just describe changes. Edit files directly.**
 
-# Run tests after implementation cycle to verify changes
+# Run tests after implementation phase to verify changes
 RUN-ON-ERROR continue
 RUN-OUTPUT on-error
 RUN-TIMEOUT 2m
@@ -95,10 +100,10 @@ RUN python -m pytest tests/ -v --tb=short -x
 # Compact after implementation to free context for verification
 COMPACT
 
-# === Cycle 3: Verify and Document ===
-PROMPT ## Completion
+# === Phase 3: Verify and Document ===
+PROMPT ## Phase 3: Completion
 
-The test results from cycle 2 are shown above.
+The test results from Phase 2 are shown above (if any failures occurred).
 
 Summarize the work and update tracking.
 
@@ -122,11 +127,39 @@ Summarize the work and update tracking.
 
 **Output:**
 ```
-### Session Result: Q-XXX
+### Phase 3 Result: Q-XXX
 **Outcome:** Completed | Blocked | Partial | Tests Failed
 **Files changed:** [list]
 **Tests:** Pass | Fail | N/A
 **Next action:** [if blocked or failed, what's needed]
+```
+
+# === Phase 4: Research and Triage ===
+PROMPT ## Phase 4: Triage
+
+Review the current state of `docs/QUIRKS.md`.
+
+**Check for:**
+1. Are there additional quirks that should be documented based on today's work?
+2. Does any quirk need further human review before implementation?
+3. Are there blockers that require upstream changes (SDK, Copilot, etc.)?
+
+**If additional quirks found:**
+- Add them to QUIRKS.md with appropriate priority
+- Mark as "Needs Research" or "Blocked" if not immediately actionable
+
+**If human review required:**
+- Document specific questions that need human input
+- Do NOT attempt implementation without answers
+
+**Output:**
+```
+### Cycle Complete: Q-XXX
+**Outcome:** Fixed | Mitigated | Blocked | Partial
+**New quirks added:** N (list IDs if any)
+**Ready for next cycle:** [list of actionable quirk IDs]
+**Human review needed:** Yes/No
+**Questions for human:** [if any]
 ```
 
 # Final test run to confirm everything passes
@@ -140,8 +173,10 @@ OUTPUT-FORMAT markdown
 
 # === Notes ===
 # This workflow intentionally:
+# - Uses 4 PHASES per cycle: select → execute → verify → triage
+# - MAX-CYCLES 1 = fix ONE quirk (use -n 2 for two quirks, etc.)
 # - Does NOT inject docs/QUIRKS.md as CONTEXT (agent reads on demand)
 # - Does NOT use {{WORKFLOW_NAME}} in prompts (avoids Q-001)
 # - Uses explicit implementation language in PROLOGUE
-# - Limits to 3 cycles for focus (select → execute → verify)
 # - Stops on blockers rather than working around them
+# - Final phase checks for new quirks and human review needs
