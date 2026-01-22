@@ -155,10 +155,15 @@ Available in PROLOGUE, EPILOGUE, HEADER, FOOTER, PROMPT, and OUTPUT paths:
 | `{{GIT_BRANCH}}` | Current git branch | main |
 | `{{GIT_COMMIT}}` | Short commit SHA | abc1234 |
 | `{{CWD}}` | Current working directory | /home/user/project |
+| `{{SESSION_ID}}` | Unique session identifier | 20260122-213045-abc123 |
+| `{{STOP_FILE}}` | Stop signal filename (for agent) | STOPAUTOMATION-bd7065.json |
 
 > **Note:** `WORKFLOW_NAME` and `WORKFLOW_PATH` are excluded from prompts by default
 > to avoid influencing agent behavior. Use `__WORKFLOW_NAME__` for explicit opt-in.
 > See [docs/QUIRKS.md](docs/QUIRKS.md#q-001-workflow-filename-influences-agent-behavior) for details.
+>
+> **Stop File:** Use `{{STOP_FILE}}` in a PROLOGUE to tell the agent how to signal
+> it needs human review. See [docs/LOOP-STRESS-TEST.md](docs/LOOP-STRESS-TEST.md#4-stop-file-detection) for details.
 
 ### Prompt/Output Injection
 

@@ -397,24 +397,32 @@ We would like the SDK to emit an `abort` event when:
 
 ### Current Workaround
 
-The `LoopDetector` class provides client-side detection:
+The `LoopDetector` class provides client-side detection with four mechanisms:
 
 ```python
 from sdqctl.core.loop_detector import LoopDetector, LoopReason
 
 detector = LoopDetector(
-    identical_threshold=3,      # N identical responses
-    min_response_length=50,     # Chars below = suspicious
-    reasoning_patterns=[r'\bin a loop\b', r'repeated prompt']
+    session_id="my-session",    # Enables stop file detection
+    identical_threshold=2,      # N identical responses (Q-002: lowered from 3)
+    min_response_length=100,    # Chars below = suspicious (Q-002: raised from 50)
 )
 
 # Check after each turn
-if detector.check(response, reasoning):
-    raise LoopDetected(detector.reason)
+if result := detector.check(reasoning, response, cycle_number):
+    raise result  # LoopDetected exception
 ```
 
+**Detection mechanisms:**
+1. `REASONING_PATTERN` - AI mentions "in a loop", "repeated prompt", etc.
+2. `IDENTICAL_RESPONSES` - Same response N times in row
+3. `MINIMAL_RESPONSE` - Response under threshold after first cycle
+4. `STOP_FILE` - Agent creates `STOPAUTOMATION-{hash}.json` (Q-002 feature)
+
+**Agent stop signaling:** Use `{{STOP_FILE}}` template variable in prompts to tell the agent the exact filename to create when it needs to stop.
+
 This is functional but:
-- Requires content parsing (fragile)
+- Requires content parsing (fragile for some mechanisms)
 - May miss cases the SDK sees internally
 - Adds latency vs native signal
 
