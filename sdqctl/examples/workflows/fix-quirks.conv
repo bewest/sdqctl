@@ -169,9 +169,12 @@ RUN-OUTPUT always
 RUN-TIMEOUT 2m
 RUN python -m pytest tests/ -v --tb=short --co -q | head -20
 
+COMPACT
+PROMPT If the tests passed, let's ensure docs are up to date and then check our relevant work into git.
+COMPACT
+
 # === Output Configuration ===
 OUTPUT-FORMAT markdown
-COMPACT
 
 # === Notes ===
 # This workflow intentionally:
