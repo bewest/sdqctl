@@ -101,10 +101,17 @@ All of these provide semantic context that influences agent behavior.
 
 ### Future Fix Options
 
+Let's explicitly take pathnames/filenames out of the injected prompts because
+this was surprising. Instead we can consider a user controlled variable that
+can be overriden using a cli switch somehow in places where the
+pathname/filename was being used as prompt material.  It's ok to consider
+additional directives and breaking changes because we're still early but let's
+consider them proposals for additional review without compelling evidence.
+
+Prior alternatives:
 | Option | Effort | Breaking Change |
 |--------|--------|-----------------|
 | A. Add `MODE-HINT implement` directive | Low | No |
-| B. Allow disabling default context injection | Medium | No |
 | C. Document prominently (this document) | Low | No |
 
 ---
@@ -166,6 +173,17 @@ if detector.check(response, reasoning):
     raise LoopDetected(detector.reason)
 ```
 
+### Fix desired
+Consider lowering detection thresholds to minimum the minimum that seem  work
+well.  Also consider using detection/escalation metaphor to request the agent
+to create a STOPAUTOMATION.json or similar file that we can positively detect
+and stop.  If we detect its existence during duplication detection mode, we can
+stop.  We can consider making it more secure by making the filename a
+calculated unique value that we can definitely check for "this single unique
+instance", maybe a hash of our session id?
+Let's see how sensitive we can make this detection work so that we don't abuse
+the API and can balance injecting too much into context.
+
 ### See Also
 
 - `docs/LOOP-STRESS-TEST.md` - Full stress test methodology and results
@@ -217,6 +235,24 @@ OUTPUT-FILE reports/{{WORKFLOW_NAME}}-{{DATE}}.md
 ```
 
 ---
+
+Potential desirable fix cross cutting other ideas/components:
+* is there a way to export/import interpreted conversations as plans? in json?
+* for all the variables that exist, is it desirable to be able to accept import/export
+  of entire plan with the variables well defined, or worth the complexity of doing something like a (potentially customized schema) where all variables can come from a file (stdin/file).  This might integrate with tooling nicely.
+* A cross cutting concern here, but out of scope, is potentially having a
+  jsonnet executor in between export/import to apply logic.  This may put a
+  pressure relief or a way to standardize the proposal for how to branch on
+  error/timaeout when RUN directives may fail.
+* Is it possible for arbitrary environment variables to be used?   Should it?
+  What are the risks/impacts?  Deny/accept list, read from .env file, inject
+  from json?
+
+
+IMPORTANT:
+Let's make sure in accordance with the above fixes that pathnames and other
+filesystem information does not go into prompt materials, or that if it is
+possible, it is explicit with variable like __FILENAME__.
 
 ## Template Variables Reference
 
