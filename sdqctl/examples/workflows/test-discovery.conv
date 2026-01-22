@@ -8,20 +8,25 @@
 #   sdqctl run examples/workflows/test-discovery.conv --adapter mock --dry-run
 #   sdqctl run examples/workflows/test-discovery.conv --adapter copilot
 #
-# This workflow demonstrates:
-# - PROLOGUE/EPILOGUE for consistent prompt context
-# - HEADER/FOOTER for report formatting  
-# - RUN for executing validation tools
-# - Template variables ({{DATE}}, {{WORKFLOW_NAME}}, etc.)
+# Design principles (following QUIRKS.md Q-001/Q-003 guidance):
+# 1. Explicit role clarification in PROLOGUE
+# 2. Uses "audit" MODE for analysis work
+# 3. Literal descriptions in HEADER (not {{WORKFLOW_NAME}})
+# 4. Safe template variables only ({{DATE}}, {{GIT_BRANCH}}, etc.)
 
 MODEL gpt-4
 ADAPTER copilot
 MODE audit
 MAX-CYCLES 1
 
-# === Prompt Injection ===
-# Add consistent context to every prompt
-PROLOGUE You are analyzing the sdqctl project - a vendor-agnostic AI workflow orchestration tool.
+# === Role Clarification ===
+# Explicit analysis role to ensure focused output
+PROLOGUE You are a test requirements analyst. Your job is to:
+PROLOGUE 1. Identify gaps between documentation and implementation
+PROLOGUE 2. Recommend specific test cases with priorities
+PROLOGUE 3. Cite file:line references for all findings
+PROLOGUE 
+PROLOGUE Project: sdqctl - vendor-agnostic AI workflow orchestration tool
 PROLOGUE Analysis date: {{DATE}}
 PROLOGUE Git branch: {{GIT_BRANCH}} ({{GIT_COMMIT}})
 

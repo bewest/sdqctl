@@ -1,10 +1,25 @@
-# Security Audit Workflow
-# Run: sdqctl run examples/workflows/security-audit.conv
+# security-audit.conv - Security vulnerability analysis
+#
+# Purpose: Audit code for security vulnerabilities with structured findings.
+#
+# Usage:
+#   sdqctl run examples/workflows/security-audit.conv --adapter copilot
+#
+# Design principles (following QUIRKS.md Q-001/Q-003 guidance):
+# 1. Explicit role clarification in PROLOGUE
+# 2. Uses "audit" MODE for review-oriented work
+# 3. Literal descriptions in HEADER (not {{WORKFLOW_NAME}})
 
 MODEL gpt-4
 ADAPTER copilot
 MODE audit
 MAX-CYCLES 1
+
+# === Role Clarification ===
+PROLOGUE You are a security auditor. Your job is to:
+PROLOGUE 1. Identify security vulnerabilities with file:line references
+PROLOGUE 2. Rate findings by severity (Critical, High, Medium, Low)
+PROLOGUE 3. Provide actionable remediation steps
 
 # Context - uncomment and adjust paths for your project
 # CONTEXT @lib/auth/*.js

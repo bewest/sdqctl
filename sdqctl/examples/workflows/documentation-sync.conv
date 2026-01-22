@@ -1,10 +1,25 @@
-# Documentation Sync Verification
-# Run: sdqctl run examples/workflows/documentation-sync.conv
+# documentation-sync.conv - Verify and fix documentation/code alignment
+#
+# Purpose: Audit documentation for accuracy and make corrections.
+#
+# Usage:
+#   sdqctl run examples/workflows/documentation-sync.conv --adapter copilot
+#
+# Design principles (following QUIRKS.md Q-001/Q-003 guidance):
+# 1. Explicit role clarification in PROLOGUE
+# 2. Uses "audit" MODE for review-oriented work
+# 3. Literal descriptions in HEADER (not {{WORKFLOW_NAME}})
 
 MODEL gpt-4
 ADAPTER copilot
 MODE audit
 MAX-CYCLES 1
+
+# === Role Clarification ===
+PROLOGUE You are a documentation auditor. Your job is to:
+PROLOGUE 1. Compare documentation against actual code behavior
+PROLOGUE 2. Identify discrepancies with specific file:line references
+PROLOGUE 3. Suggest precise corrections
 
 # Context - adjust for your project
 # CONTEXT @docs/**/*.md

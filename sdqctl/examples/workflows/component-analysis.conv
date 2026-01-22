@@ -1,18 +1,26 @@
-# Component Iteration Workflow
+# component-analysis.conv - Per-component code quality analysis
 #
-# This workflow demonstrates the new iteration features:
-# - File restrictions (ALLOW-FILES, DENY-FILES)
-# - Template variables ({{COMPONENT_PATH}}, etc.)
-# - Output templating
+# Purpose: Iterate through components and generate individual analysis reports.
 #
 # Usage:
-#   sdqctl apply workflows/component-analysis.conv \
+#   sdqctl apply examples/workflows/component-analysis.conv \
 #     --components "lib/plugins/*.js" \
 #     --progress progress.md
+#
+# Design principles (following QUIRKS.md Q-001/Q-003 guidance):
+# 1. Explicit role clarification in PROLOGUE
+# 2. Uses "audit" MODE for analysis work
+# 3. Component variables ({{COMPONENT_PATH}}) are safe - they refer to target files
 
 MODEL claude-sonnet-4.5
 ADAPTER copilot
 MODE audit
+
+# === Role Clarification ===
+PROLOGUE You are a code quality analyst. Your job is to:
+PROLOGUE 1. Analyze code for maintainability and potential issues
+PROLOGUE 2. Provide severity-rated findings
+PROLOGUE 3. Include specific line references and code examples
 
 # File restrictions - focus only on the component being analyzed
 # These will be overridden by --allow-files CLI if provided

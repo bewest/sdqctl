@@ -324,6 +324,17 @@ With Q-001 fix, this is no longer problematic (WORKFLOW_NAME excluded from promp
    - `test-discovery.conv`: `HEADER ## Session: {{DATETIME}}`
    - `verify-with-run.conv`: `HEADER # Verification Report`
 
+3. **Examples enhanced with PROLOGUE patterns** (follow-up 2026-01-22):
+   - `documentation-sync.conv`: Added explicit auditor role PROLOGUE
+   - `security-audit.conv`: Added explicit security auditor role PROLOGUE
+   - `test-discovery.conv`: Enhanced with explicit analyst role PROLOGUE
+   - `component-analysis.conv`: Added explicit analyst role PROLOGUE
+   
+   All updated examples now follow `fix-quirks.conv` patterns:
+   - Design principles documented in file header comments
+   - Explicit role clarification in PROLOGUE
+   - References to QUIRKS.md Q-001/Q-003 guidance
+
 ### Best Practice
 
 ```dockerfile
