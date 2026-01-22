@@ -2,6 +2,39 @@
 
 **Software Defined Quality Control** - Vendor-agnostic CLI for orchestrating AI-assisted development workflows.
 
+## Motivation
+
+Interactive AI coding assistants like GitHub Copilot CLI excel at **focused, single-spike work**—you enter plan mode, iterate through plan/do cycles, and emerge with a working feature. This corresponds to preparing a ConversationFile and running `sdqctl run`.
+
+But real projects require iterating the **same workflow across many deliverables**: auditing 15 components, migrating 40 files to TypeScript, or verifying traceability across a dozen modules. Manual orchestration means:
+
+- **20+ sessions** with repetitive setup
+- **Manual context management** (when to compact? when to start fresh?)
+- **No repeatability** (can't re-run the same workflow reliably)
+- **No parallelization** (sequential even when independent)
+
+**sdqctl bridges this gap** by orchestrating context windows and compactions across repeatable cycles:
+
+```bash
+# Single focused spike (like interactive plan/do)
+sdqctl run audit.conv
+
+# Same workflow, iterated across components with variable expansion
+sdqctl apply audit.conv --components "lib/plugins/*.js" \
+  --prologue "Component: {{COMPONENT_NAME}}" \
+  --epilogue "Update progress.md with findings"
+
+# Multi-cycle iteration with explicit context control
+sdqctl cycle migration.conv -n 5 --session-mode fresh
+```
+
+The `--prologue` and `--epilogue` options (and their ConversationFile equivalents) enable **trivial iteration over facets or topics** while ensuring the same conversation structure and tool use in a repeatable way. Template variables like `{{COMPONENT_NAME}}`, `{{CYCLE_NUMBER}}`, and `{{DATE}}` make each iteration context-aware.
+
+**Session modes** give explicit control over context lifecycle:
+- `accumulate` — Context grows; compact only at limit (iterative refinement)
+- `compact` — Summarize after each cycle (long workflows, token economy)  
+- `fresh` — New session each cycle, reload files (autonomous editing)
+
 ## Features
 
 - 🔄 **Declarative workflows** - ConversationFile format (.conv) for reproducible AI interactions
