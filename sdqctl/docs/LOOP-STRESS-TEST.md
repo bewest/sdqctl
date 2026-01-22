@@ -103,10 +103,19 @@ python -m tests.integration.test_loop_stress -v stopfile --nonce testelicit01
 
 **Verified Behavior (2026-01-22):**
 
-The stop file mechanism has been **verified working** with the Copilot SDK:
-- Agent successfully receives the stop file instruction
-- Agent creates the file with valid JSON content
-- Detection correctly identifies the file and halts automation
+The stop file mechanism has been **verified working** with the Copilot SDK (claude-sonnet-4-20250514 model via Copilot adapter):
+
+1. **Agent receives instruction** - The stop file instruction is injected on first prompt
+2. **Agent uses `create` tool** - Agent correctly uses the file creation tool
+3. **File contains valid JSON** - Content matches the requested format
+4. **Detection works** - LoopDetector finds and reads the file
+
+Event log from successful test:
+```
+user.message: [STOP FILE CREATION TEST]... Create a stop file... STOPAUTOMATION-testelicit01.json
+tool.execution_start: tool=create
+assistant.message: Created `STOPAUTOMATION-testelicit01.json` with the requested JSON content.
+```
 
 Example verified test output:
 ```
