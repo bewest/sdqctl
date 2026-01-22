@@ -3,9 +3,9 @@ Logging configuration for sdqctl.
 
 Provides centralized logging setup with verbosity levels:
 - 0 (default): WARNING - errors and warnings only
-- 1 (-v):      INFO - key operations
-- 2 (-vv):     DEBUG - detailed tracing
-- 3+ (-vvv):   TRACE - everything including external libs
+- 1 (-v):      INFO - key operations (turns, tools, tokens, intents)
+- 2 (-vv):     DEBUG - detailed info (reasoning, args, context usage)
+- 3+ (-vvv):   TRACE - everything (deltas, raw events, partial results)
 """
 
 import logging

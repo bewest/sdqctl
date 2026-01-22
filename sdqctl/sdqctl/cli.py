@@ -48,9 +48,9 @@ def cli(ctx: click.Context, verbose: int, quiet: bool) -> None:
 
     \b
     Verbosity:
-      -v       INFO level (key operations)
-      -vv      DEBUG level (detailed tracing)
-      -vvv     TRACE level (everything)
+      -v       INFO level (turns, tools, tokens, intents)
+      -vv      DEBUG level (reasoning, args, context usage)
+      -vvv     TRACE level (deltas, raw events, partial results)
       -q       Quiet mode (errors only)
 
     \b

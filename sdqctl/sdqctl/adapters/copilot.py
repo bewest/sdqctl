@@ -21,6 +21,47 @@ CopilotClient = None
 # Get logger for this module
 logger = logging.getLogger("sdqctl.adapters.copilot")
 
+# Custom TRACE level
+TRACE = 5
+
+
+def _format_data(data: Any, include_fields: list[str] | None = None) -> str:
+    """Format SDK Data object for logging, filtering out None values.
+    
+    Args:
+        data: SDK event data object
+        include_fields: If provided, only include these fields. Otherwise include all non-None.
+        
+    Returns:
+        Compact string representation with only meaningful values
+    """
+    if data is None:
+        return "None"
+    
+    # Try to extract meaningful fields
+    result = {}
+    try:
+        # Get all attributes that don't start with underscore
+        for attr in dir(data):
+            if attr.startswith("_"):
+                continue
+            if callable(getattr(data, attr, None)):
+                continue
+            if include_fields and attr not in include_fields:
+                continue
+            val = getattr(data, attr, None)
+            if val is not None:
+                result[attr] = val
+    except Exception:
+        return str(data)[:200]
+    
+    if not result:
+        return "{}"
+    
+    # Format compactly
+    parts = [f"{k}={v}" for k, v in result.items()]
+    return ", ".join(parts)
+
 
 def _ensure_copilot_sdk():
     """Ensure copilot SDK is available."""
@@ -297,7 +338,9 @@ class CopilotAdapter(AdapterBase):
                     logger.debug(f"Model: {model}")
 
             elif event_type == "session.info":
-                logger.debug(f"Session info: {data}")
+                # TRACE level - raw session info is rarely needed
+                if logger.isEnabledFor(TRACE):
+                    logger.log(TRACE, f"Session info: {_format_data(data)}")
 
             elif event_type == "session.error":
                 error = getattr(data, "error", None) or getattr(data, "message", str(data))
@@ -363,7 +406,16 @@ class CopilotAdapter(AdapterBase):
                 logger.info(f"Tokens: {input_tokens} in / {output_tokens} out")
 
             elif event_type == "session.usage_info":
-                logger.debug(f"Usage info: {data}")
+                # Extract only meaningful usage fields
+                current_tokens = getattr(data, "current_tokens", None)
+                token_limit = getattr(data, "token_limit", None)
+                messages_length = getattr(data, "messages_length", None)
+                if current_tokens is not None:
+                    pct = int(100 * current_tokens / token_limit) if token_limit else 0
+                    logger.debug(f"Context: {int(current_tokens):,}/{int(token_limit):,} tokens ({pct}%), {int(messages_length or 0)} messages")
+                elif logger.isEnabledFor(TRACE):
+                    # Full data only at TRACE
+                    logger.log(TRACE, f"Usage info: {_format_data(data)}")
 
             # Tool events
             elif event_type == "tool.execution_start":
@@ -412,7 +464,9 @@ class CopilotAdapter(AdapterBase):
                 logger.info(f"  {status_icon} {tool_name}{duration_str}")
 
             elif event_type == "tool.execution_partial_result":
-                logger.debug(f"Tool partial result")
+                # TRACE level - partial results are very frequent
+                if logger.isEnabledFor(TRACE):
+                    logger.log(TRACE, "Tool partial result")
 
             elif event_type == "tool.user_requested":
                 tool_name = getattr(data, "name", None) or "unknown"
@@ -449,9 +503,10 @@ class CopilotAdapter(AdapterBase):
             elif event_type == "session.idle":
                 done.set()
 
-            # Unknown events - log at debug for forward compatibility
+            # Unknown events - log at TRACE for forward compatibility
             elif event_type != "unknown":
-                logger.debug(f"Event: {event_type}")
+                if logger.isEnabledFor(TRACE):
+                    logger.log(TRACE, f"Event: {event_type} - {_format_data(data)}")
 
         copilot_session.on(on_event)
 
