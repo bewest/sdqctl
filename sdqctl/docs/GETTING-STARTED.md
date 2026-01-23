@@ -118,10 +118,15 @@ This is useful for:
 - One-off prompts
 - Priming before committing to cycles
 
+> **⚠️ Note**: `run` does not process CHECKPOINT directives. If your workflow uses 
+> CHECKPOINT for resumability, use `cycle` instead. The `run` command is lightweight 
+> and stateless; `cycle` provides full checkpoint/resume support.
+
 **`cycle`** — Multiple iterations, good for:
 - Tasks that need refinement
 - Work that exceeds one context window
 - Self-improving workflows
+- **Workflows with CHECKPOINT directives**
 
 **Session modes** control context across cycles:
 ```bash

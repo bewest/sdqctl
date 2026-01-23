@@ -425,3 +425,85 @@ PROMPT Review the focus document at reports/auth-improvements.md.
 - **[Getting Started](GETTING-STARTED.md)** — Basics of sdqctl
 
 See `examples/workflows/progress-tracker.conv` for a complete working example.
+
+---
+
+## Lessons Learned
+
+Documented insights from real sdqctl usage sessions.
+
+### Lesson #28: Sequential Workflows Combine Well
+
+Running multiple focused workflows in sequence often completes faster than a single large workflow:
+
+```bash
+# Three focused workflows: 20 min total (faster than predicted 30-40 min)
+sdqctl run 01-design.conv --adapter copilot && \
+sdqctl run 02-implement.conv --adapter copilot && \
+sdqctl run 03-verify.conv --adapter copilot
+```
+
+**Why it works**:
+- Context fully resets between workflows
+- No degradation from accumulated context
+- Each workflow optimized for one deliverable type
+
+**When to use**: Deliverables are independent and don't need shared context.
+
+**When NOT to use**: Later phases depend on earlier phase analysis (use single workflow with COMPACT instead).
+
+### Lesson #29: ELIDE + RUN Synergy Pattern
+
+The most efficient pattern for running tests and analyzing results:
+
+```dockerfile
+# Phase 2: Implement
+PROMPT Implement the feature.
+RUN pytest tests/ -v --tb=short
+COMPACT
+
+# Phase 3: Analyze (merged with test output)
+ELIDE
+PROMPT The test results are shown above. Fix any failures.
+```
+
+**What happens**:
+1. RUN executes tests, output captured
+2. COMPACT frees context (keeps errors/tool-results via COMPACT-PRESERVE)
+3. ELIDE merges test output with Phase 3 prompt
+4. Agent sees failures in context without full code
+
+### Lesson #30: Over-Delivery is Common
+
+Structured workflows with clear specifications tend to produce **more output than predicted**:
+
+| Predicted | Actual | Factor |
+|-----------|--------|--------|
+| ~300 lines | 2,229 lines | 7x |
+| ~100 line help.py | 946 lines | 9x |
+
+**Why it happens**:
+- Agent has full spec from @-referenced proposal files
+- No human interruption to say "that's enough"
+- MODE implement encourages completeness
+- PROLOGUE "edit files directly" prevents analysis paralysis
+
+**If you want minimal output**: Scope prompts explicitly ("implement only the core function, no extras") or use MODE audit for analysis-only tasks.
+
+### Lesson #31: CHECKPOINT Requires `cycle`
+
+The CHECKPOINT directive is **only processed by `sdqctl cycle`**, not `sdqctl run`.
+
+```dockerfile
+PROMPT Do some work.
+CHECKPOINT phase-1    # ← Ignored by 'run', saved by 'cycle'
+PROMPT Continue work.
+```
+
+If your workflow needs resumability, use `cycle`:
+```bash
+sdqctl cycle workflow.conv --adapter copilot  # ✅ Checkpoints work
+sdqctl run workflow.conv --adapter copilot    # ❌ Checkpoints ignored
+```
+
+See [GETTING-STARTED.md](GETTING-STARTED.md#run-vs-cycle-vs-apply) for full comparison.

@@ -148,6 +148,35 @@ Earlier terminology for synthesis cycles. A true quine is a program that outputs
 
 ---
 
+## Disambiguation
+
+### run (command) vs RUN (directive)
+
+These share a name but are **completely unrelated**:
+
+**`sdqctl run`** — CLI command that executes a workflow with an AI agent.
+- Sends prompts to the configured adapter (copilot, openai, etc.)
+- "Yields control" to the agent for the conversation duration
+- Example: `sdqctl run workflow.conv --adapter copilot`
+
+**`RUN`** — Directive in `.conv` files that executes shell commands locally.
+- Runs before/after prompts, captures output for context
+- No AI involved; pure subprocess execution
+- Example: `RUN pytest tests/ -v`
+
+```dockerfile
+# This workflow uses BOTH:
+PROMPT Analyze the test output.
+RUN pytest tests/ -v          # ← RUN directive: executes shell command
+ELIDE
+PROMPT Fix any failures.
+
+# Execute with:
+# sdqctl run my-workflow.conv  # ← run command: sends to AI
+```
+
+---
+
 ## See Also
 
 - [Synthesis Cycles](SYNTHESIS-CYCLES.md) — Iterative AI-driven workflows

@@ -375,3 +375,38 @@ Larger context windows don't mean you should fill them. Quality can degrade even
 4. **Monitor with -v** - Watch context percentage grow
 5. **Use CONTEXT-LIMIT** - Automatic compaction trigger
 6. **Match session mode to task** - Fresh for edits, accumulate for analysis
+
+---
+
+## Throughput Expectations
+
+When using well-structured workflows with strategic COMPACTs:
+
+| Metric | Typical Range | Notes |
+|--------|---------------|-------|
+| Lines per workflow | 500-2,000 | Implementation workflows produce more |
+| Throughput | 50-150 lines/min | Depends on task complexity |
+| Duration per phase | 3-5 min | 4-phase workflows ~15-20 min total |
+
+### Factors Affecting Throughput
+
+**Faster**:
+- Clear specifications in PROLOGUE/EPILOGUE
+- Strategic COMPACTs between phases
+- Focused single-deliverable workflows
+- Pattern files via `@` context (agent follows existing style)
+
+**Slower**:
+- Large context file injection
+- Exploratory/research tasks
+- Complex multi-file implementations
+- Frequent tool use (many file reads)
+
+### Real-World Example
+
+From the CLI ergonomics session (2026-01-23):
+- **Predicted**: 300 lines in 30-40 min
+- **Actual**: 2,229 lines in 20 min (~110 lines/min)
+- **Key factors**: 4-phase structure, COMPACT at phase boundaries, clear proposal spec
+
+See: [reports/cli-ergonomics-experience-2026-01-23.md](../reports/cli-ergonomics-experience-2026-01-23.md)

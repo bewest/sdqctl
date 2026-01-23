@@ -181,13 +181,13 @@ Structured workflows with clear specs tend to produce comprehensive implementati
 
 ### Immediate (P1)
 - [ ] Test help command works
-- [ ] Add CHECKPOINT note to run vs cycle docs
-- [ ] Add run vs RUN clarification to GLOSSARY.md
+- [x] Add CHECKPOINT note to run vs cycle docs
+- [x] Add run vs RUN clarification to GLOSSARY.md
 
 ### Soon (P2)
-- [ ] Document sequential workflow pattern
-- [ ] Add throughput expectations
-- [ ] Add lessons #28-30 to SYNTHESIS-CYCLES.md
+- [x] Document sequential workflow pattern
+- [x] Add throughput expectations
+- [x] Add lessons #28-31 to SYNTHESIS-CYCLES.md
 
 ### Later (P3)
 - [ ] Decide on Q1 (run + CHECKPOINT warning)
