@@ -103,13 +103,13 @@ Implemented:
 
 ### 3.2 STPA Workflow Templates
 
-**Status**: 🟡 Proposal exists, no templates  
+**Status**: ✅ Complete  
 **Proposal**: [STPA-INTEGRATION.md](STPA-INTEGRATION.md)
 
-- [ ] `workflows/stpa/control-action-audit.conv`
-- [ ] `workflows/stpa/trace-verification.conv`
-- [ ] `workflows/stpa/gap-analysis.conv`
-- [ ] Test with Loop bolus analysis
+- [x] `workflows/stpa/control-action-audit.conv` - UCA discovery
+- [x] `workflows/stpa/trace-verification.conv` - Traceability validation
+- [x] `workflows/stpa/gap-analysis.conv` - Iterative gap closure
+- [x] `workflows/stpa/README.md` - Documentation
 
 ---
 

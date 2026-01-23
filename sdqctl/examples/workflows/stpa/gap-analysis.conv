@@ -1,0 +1,113 @@
+# gap-analysis.conv - STPA gap analysis and remediation planning
+#
+# Usage:
+#   sdqctl run examples/workflows/stpa/gap-analysis.conv
+#   sdqctl cycle examples/workflows/stpa/gap-analysis.conv -n 5 --session-mode fresh
+#
+# Analyzes gaps in STPA coverage and generates remediation plans.
+# Use synthesis cycles to iteratively close gaps.
+
+MODEL gpt-4
+ADAPTER copilot
+MODE full
+MAX-CYCLES 3
+
+# Load existing gap tracking
+CONTEXT-OPTIONAL @traceability/stpa/gaps.md
+CONTEXT-OPTIONAL @traceability/stpa/unsafe-control-actions.md
+CONTEXT-OPTIONAL @traceability/stpa/safety-constraints.md
+
+# Load progress from previous cycles
+PROLOGUE @progress.md
+
+PROMPT ## STPA Gap Analysis - Cycle {{CYCLE_NUMBER}}/{{CYCLE_TOTAL}}
+
+Review the current state of STPA gaps and plan remediation.
+
+### Current Gaps
+
+Review `gaps.md` and the progress file for current status.
+
+### Analysis Tasks
+
+1. **Prioritize Open Gaps**
+   - Class C severity UCAs without constraints → Critical
+   - Missing requirements for safety constraints → High
+   - Missing tests for safety specs → Medium
+   
+2. **Generate Remediation Artifacts**
+   
+   For the **highest priority gap** not yet addressed:
+   
+   a) If missing safety constraint:
+      ```yaml
+      safety_constraint:
+        id: SC-XXX-NNNa
+        uca_ref: UCA-XXX-NNN
+        constraint: "The system shall..."
+        rationale: "To prevent..."
+        verification_method: inspection | test | analysis
+      ```
+   
+   b) If missing requirement:
+      ```yaml
+      requirement:
+        id: REQ-NNN
+        title: "Requirement title"
+        description: "The system shall..."
+        safety_constraint_ref: SC-XXX-NNNa
+        acceptance_criteria:
+          - "Criterion 1"
+          - "Criterion 2"
+        priority: must | should | may
+      ```
+   
+   c) If missing specification:
+      ```yaml
+      specification:
+        id: SPEC-NNN
+        requirement_ref: REQ-NNN
+        title: "Specification title"
+        behavior: "Detailed behavior description"
+        inputs: []
+        outputs: []
+        error_handling: "What happens on error"
+      ```
+   
+   d) If missing test:
+      ```yaml
+      test:
+        id: TEST-SPEC-NNN-001
+        spec_ref: SPEC-NNN
+        description: "Test description"
+        preconditions: []
+        steps: []
+        expected_result: "What should happen"
+        status: todo | implemented | passing
+      ```
+
+3. **Update Progress**
+   
+   At the end of each cycle, update progress.md with:
+   - Gaps addressed this cycle
+   - Artifacts generated
+   - Remaining gaps count
+   - Next priority items
+
+### Synthesis Cycle Pattern
+
+This workflow uses **synthesis cycles** to incrementally close gaps:
+
+- Cycle 1: Analyze gaps, prioritize, address top 1-2
+- Cycle 2: Review progress, address next priorities
+- Cycle 3+: Continue until gaps closed or manual review needed
+
+EPILOGUE Update progress.md with this cycle's results.
+
+HEADER # STPA Gap Analysis Report
+HEADER Generated: {{DATETIME}}
+HEADER Cycle: {{CYCLE_NUMBER}}/{{CYCLE_TOTAL}}
+HEADER ---
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE reports/stpa/gap-analysis-{{DATE}}.md

@@ -1,0 +1,88 @@
+# control-action-audit.conv - STPA control action analysis
+#
+# Usage:
+#   sdqctl run examples/workflows/stpa/control-action-audit.conv \
+#     --prologue "PROJECT: loop" \
+#     --prologue "CONTROL_ACTION: bolus"
+#
+#   sdqctl apply examples/workflows/stpa/control-action-audit.conv \
+#     --components "externals/*/LoopCore/*.swift"
+#
+# Analyzes code for unsafe control actions using STPA 4-question framework.
+# Outputs YAML-formatted UCA entries for traceability tracking.
+
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 1
+
+# Context: STPA framework documentation (if available)
+CONTEXT-OPTIONAL @traceability/stpa/control-structure.md
+CONTEXT-OPTIONAL @traceability/stpa/unsafe-control-actions.md
+CONTEXT-OPTIONAL @docs/GLOSSARY.md
+
+PROMPT ## STPA Control Action Audit
+
+Analyze the code context for potential **Unsafe Control Actions (UCAs)**.
+
+### STPA 4-Question Framework
+
+For each control action identified in the code, evaluate:
+
+1. **Not Provided** — Could the action NOT be provided when needed?
+   - Example: Bolus not delivered when glucose is high
+   
+2. **Provided Incorrectly** — Could the action be provided when NOT needed?
+   - Example: Bolus delivered when glucose is already low
+   
+3. **Wrong Timing** — Could timing be wrong (too early/late)?
+   - Example: Bolus delayed due to communication lag
+   
+4. **Wrong Duration** — Could duration/magnitude be wrong?
+   - Example: Bolus amount calculated from stale CGM data
+
+### Output Format
+
+For each potential UCA discovered, output in YAML format:
+
+```yaml
+ucas:
+  - id: UCA-{{COMPONENT_NAME}}-001
+    type: not_provided | provided_incorrectly | wrong_timing | wrong_duration
+    control_action: "Description of the control action"
+    hazard: "What could go wrong"
+    scenario: "Specific conditions leading to hazard"
+    severity: Class-A | Class-B | Class-C  # IEC 62304
+    causal_factors:
+      - "CF-001: Root cause description"
+    mitigations:
+      - "Existing safeguard or proposed fix"
+    code_references:
+      - file: "path/to/file.swift"
+        line: 123
+        snippet: "relevant code"
+    related_gaps: []  # Link to GAP-XXX if applicable
+    status: new | reviewed | mitigated
+```
+
+### Severity Classification (IEC 62304)
+
+- **Class C**: Could result in death or serious injury
+- **Class B**: Could result in non-serious injury  
+- **Class A**: No injury possible
+
+### Analysis Guidelines
+
+1. Focus on **control flow paths** that affect insulin delivery
+2. Identify **boundary conditions** and edge cases
+3. Note any **missing validation** or guard clauses
+4. Check for **race conditions** or timing dependencies
+5. Verify **error handling** for sensor/pump failures
+
+HEADER # STPA Control Action Audit
+HEADER Generated: {{DATETIME}}
+HEADER Component: {{COMPONENT_NAME}}
+HEADER ---
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE reports/stpa/uca-{{COMPONENT_NAME}}-{{DATE}}.md

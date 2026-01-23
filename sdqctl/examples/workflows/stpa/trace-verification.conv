@@ -1,0 +1,97 @@
+# trace-verification.conv - Verify STPA traceability links
+#
+# Usage:
+#   sdqctl run examples/workflows/stpa/trace-verification.conv
+#   sdqctl cycle examples/workflows/stpa/trace-verification.conv -n 3
+#
+# Verifies that UCAs are properly linked to requirements, specs, and tests.
+# Identifies gaps in the traceability chain.
+
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
+MAX-CYCLES 1
+
+# Load STPA artifacts
+CONTEXT-OPTIONAL @traceability/stpa/unsafe-control-actions.md
+CONTEXT-OPTIONAL @traceability/stpa/control-structure.md
+CONTEXT-OPTIONAL @traceability/stpa/safety-constraints.md
+
+# Load requirements and specs
+CONTEXT-OPTIONAL @requirements/*.md
+CONTEXT-OPTIONAL @specs/*.md
+
+PROMPT ## STPA Traceability Verification
+
+Verify that all STPA artifacts are properly linked in the traceability chain:
+
+```
+UCA → Safety Constraint → Requirement → Specification → Test → Code
+```
+
+### Verification Tasks
+
+1. **UCA → Safety Constraint Coverage**
+   - Does each UCA have at least one safety constraint?
+   - Are safety constraints specific and testable?
+   
+2. **Safety Constraint → Requirement Links**
+   - Is each safety constraint captured as a requirement?
+   - Are REQ-XXX IDs properly formatted?
+
+3. **Requirement → Specification Links**  
+   - Does each safety requirement have a specification?
+   - Are SPEC-XXX IDs assigned?
+
+4. **Specification → Test Links**
+   - Does each safety specification have tests?
+   - Are tests implemented (not TODO)?
+
+5. **Bidirectional Traceability**
+   - Can we trace from test back to UCA?
+   - Are there orphan artifacts?
+
+### Output: Traceability Matrix
+
+| UCA | Safety Constraint | Requirement | Spec | Test | Status |
+|-----|-------------------|-------------|------|------|--------|
+| UCA-BOLUS-001 | SC-BOLUS-001a | REQ-020 | SPEC-020 | test_bolus_validation | ✅ |
+| UCA-BOLUS-002 | SC-BOLUS-002a | REQ-021 | - | - | ⚠️ No spec |
+| UCA-CGM-001 | - | - | - | - | ❌ No constraint |
+
+### Gap Summary
+
+List all gaps found:
+
+```yaml
+gaps:
+  - id: GAP-STPA-001
+    type: missing_constraint | missing_requirement | missing_spec | missing_test
+    uca_id: UCA-XXX-NNN
+    description: "What is missing"
+    priority: high | medium | low
+    recommended_action: "What to do"
+```
+
+### Metrics
+
+- UCAs with safety constraints: X/Y (Z%)
+- Safety constraints with requirements: X/Y (Z%)
+- Requirements with specifications: X/Y (Z%)
+- Specifications with tests: X/Y (Z%)
+- **Overall trace coverage**: X%
+
+HEADER # STPA Traceability Verification Report
+HEADER Generated: {{DATETIME}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Recommended Actions
+FOOTER Address gaps in priority order:
+FOOTER 1. UCAs without safety constraints (uncontrolled hazards)
+FOOTER 2. Constraints without requirements (undocumented safety)
+FOOTER 3. Requirements without specs (unspecified behavior)
+FOOTER 4. Specs without tests (unverified claims)
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE reports/stpa/trace-verification-{{DATE}}.md
