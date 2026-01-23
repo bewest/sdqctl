@@ -3,14 +3,79 @@
 > **Status**: Draft / Discussion  
 > **Date**: 2026-01-23  
 > **Author**: sdqctl development  
-> **Scope**: STPA hazard analysis automation, FDA traceability support
+> **Scope**: STPA hazard analysis automation, regulatory traceability support  
 > **Related**: [rag-nightscout STPA-TRACEABILITY-FRAMEWORK.md](https://github.com/bewest/rag-nightscout-ecosystem-alignment/docs/sdqctl-proposals/STPA-TRACEABILITY-FRAMEWORK.md)
 
 ---
 
 ## Summary
 
-This proposal extends sdqctl's capabilities to support STPA (Systems-Theoretic Process Analysis) workflows for FDA-compatible hazard analysis and traceability. It defines how sdqctl can automate UCA (Unsafe Control Action) cataloging, trace verification, and safety constraint validation.
+This proposal extends sdqctl's capabilities to support STPA (Systems-Theoretic Process Analysis) workflows for regulatory-compatible hazard analysis and traceability. It defines how sdqctl can automate UCA (Unsafe Control Action) cataloging, trace verification, and safety constraint validation.
+
+---
+
+## Regulatory Standards Context
+
+Medical device software typically must satisfy **multiple regulatory frameworks simultaneously**. The two foundational international standards are:
+
+### ISO 14971 — Risk Management
+
+Governs the **risk management process** for medical devices:
+- Hazard identification and risk analysis
+- Risk evaluation and control
+- Residual risk acceptability
+- Risk-benefit analysis
+
+**sdqctl relevance**: STPA workflows produce hazard analysis artifacts that feed into ISO 14971 risk management files.
+
+### IEC 62304 — Software Lifecycle
+
+Governs **software development processes** for medical devices:
+- Software safety classification (Class A, B, C)
+- Software development planning
+- Requirements analysis and traceability
+- Verification and validation
+
+**sdqctl relevance**: Traceability pipelines (REQ → SPEC → TEST → CODE → VERIFY) directly support IEC 62304 documentation requirements. Software classification (Class A/B/C) determines the rigor required.
+
+### Multi-Jurisdiction Applicability
+
+| Jurisdiction | Primary Regulation | Recognizes ISO 14971 | Recognizes IEC 62304 |
+|--------------|-------------------|---------------------|---------------------|
+| **USA (FDA)** | 21 CFR 820, 21 CFR Part 11 | Yes (consensus std) | Yes (consensus std) |
+| **EU** | MDR 2017/745 | Yes (harmonized) | Yes (harmonized) |
+| **Canada** | CMDR, SOR/98-282 | Yes | Yes |
+| **Japan** | MHLW Ordinance 169 | Yes | Yes |
+
+**Key insight**: Building sdqctl workflows around ISO 14971 + IEC 62304 provides a foundation that satisfies regulators globally, not just FDA.
+
+### How the Standards Work Together
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Medical Device Development                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ISO 14971 (Risk)              IEC 62304 (Lifecycle)                   │
+│   ┌─────────────────┐           ┌─────────────────────────┐             │
+│   │ Hazard Analysis │ ────────▶ │ Software Classification │             │
+│   │ (STPA/UCAs)     │           │ (Class A/B/C)           │             │
+│   └────────┬────────┘           └───────────┬─────────────┘             │
+│            │                                │                           │
+│            │ informs rigor                  │ determines process        │
+│            ▼                                ▼                           │
+│   ┌─────────────────┐           ┌─────────────────────────┐             │
+│   │ Risk Controls   │ ◀──────── │ REQ → SPEC → TEST → CODE│             │
+│   │ (mitigations)   │           │ (traceability pipeline) │             │
+│   └─────────────────┘           └─────────────────────────┘             │
+│                                                                         │
+│   sdqctl automates:                                                     │
+│   • UCA discovery (STPA workflows)                                      │
+│   • Traceability validation (VERIFY directives)                         │
+│   • Documentation synthesis (trace synthesis cycles)                    │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -201,6 +266,7 @@ INCLUDE verification/stpa-checks.conv
 2. **Validation**: Trace completeness checked automatically
 3. **CI-ready**: JSON output parseable by CI systems
 4. **Reusable**: Same patterns work for all 16 external projects
+5. **Multi-jurisdiction**: Artifacts satisfy ISO 14971 + IEC 62304 (recognized globally)
 
 ---
 
@@ -215,7 +281,14 @@ INCLUDE verification/stpa-checks.conv
 
 ## References
 
+### sdqctl Proposals
 - [STPA-TRACEABILITY-FRAMEWORK.md](../../rag-nightscout-ecosystem-alignment/docs/sdqctl-proposals/STPA-TRACEABILITY-FRAMEWORK.md) - Main STPA proposal
 - [VERIFICATION-DIRECTIVES.md](./VERIFICATION-DIRECTIVES.md) - Verification directive proposal
 - [RUN-BRANCHING.md](./RUN-BRANCHING.md) - Conditional branching proposal
 - [PIPELINE-ARCHITECTURE.md](./PIPELINE-ARCHITECTURE.md) - External transformation proposal
+
+### Regulatory Standards
+- **ISO 14971:2019** — Medical devices — Application of risk management to medical devices
+- **IEC 62304:2006+AMD1:2015** — Medical device software — Software life cycle processes
+- **FDA 21 CFR 820** — Quality System Regulation
+- **EU MDR 2017/745** — Regulation on medical devices
