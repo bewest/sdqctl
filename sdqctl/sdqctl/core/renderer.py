@@ -397,6 +397,7 @@ def format_rendered_json(rendered: RenderedWorkflow, plan_mode: bool = False) ->
     if plan_mode:
         # Plan mode: show references, omit expanded content
         return {
+            "schema_version": "1.0",
             "workflow": str(rendered.workflow_path) if rendered.workflow_path else None,
             "workflow_name": rendered.workflow_name,
             "mode": "plan",
@@ -432,6 +433,7 @@ def format_rendered_json(rendered: RenderedWorkflow, plan_mode: bool = False) ->
     else:
         # Full mode: include all expanded content
         return {
+            "schema_version": "1.0",
             "workflow": str(rendered.workflow_path) if rendered.workflow_path else None,
             "workflow_name": rendered.workflow_name,
             "mode": "full",

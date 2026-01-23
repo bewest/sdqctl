@@ -454,6 +454,28 @@ sdqctl cycle workflow.conv --checkpoint-dir ./checkpoints
 sdqctl cycle workflow.conv -n 3 --render-only  # Preview all cycles
 ```
 
+#### Pipeline Input (`--from-json`)
+
+Execute workflow from pre-rendered JSON, enabling external transformation:
+
+```bash
+# Round-trip: render, transform, execute
+sdqctl render cycle workflow.conv --json \
+  | jq '.cycles[0].prompts[0].resolved += " (modified)"' \
+  | sdqctl cycle --from-json -
+
+# Load from file
+sdqctl cycle --from-json rendered.json
+
+# Dry run to validate
+sdqctl cycle --from-json - --dry-run < workflow.json
+```
+
+This enables powerful composition patterns:
+- Conditional workflow selection based on external state
+- Dynamic prompt modification via jq/jsonnet
+- CI/CD pipeline integration
+
 #### Session Modes
 
 The `--session-mode` option controls how context is managed across cycles:

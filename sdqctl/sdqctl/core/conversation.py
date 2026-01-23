@@ -359,6 +359,58 @@ class ConversationFile:
         content = path.read_text()
         return cls.parse(content, source_path=path)
 
+    @classmethod
+    def from_rendered_json(cls, data: dict) -> "ConversationFile":
+        """Reconstruct ConversationFile from rendered JSON.
+        
+        Uses resolved prompts directly (no re-expansion needed).
+        This enables external transformation pipelines:
+        
+            sdqctl render cycle foo.conv --json | transform.py | sdqctl cycle --from-json -
+        
+        Args:
+            data: Dict from format_rendered_json output
+            
+        Returns:
+            ConversationFile with prompts pre-resolved
+        """
+        # Validate schema version
+        schema_version = data.get("schema_version", "1.0")
+        major_version = int(schema_version.split(".")[0])
+        if major_version > 1:
+            raise ValueError(f"Unsupported schema version: {schema_version} (max supported: 1.x)")
+        
+        conv = cls()
+        conv.adapter = data.get("adapter", "copilot")
+        conv.model = data.get("model", "gpt-4")
+        conv.max_cycles = data.get("max_cycles", 1)
+        
+        # Extract prompts from first cycle (for single-cycle execution)
+        # Multi-cycle support would need additional handling
+        cycles = data.get("cycles", [])
+        if cycles:
+            first_cycle = cycles[0]
+            for prompt_data in first_cycle.get("prompts", []):
+                # Use resolved (fully expanded) prompt if available
+                resolved = prompt_data.get("resolved", prompt_data.get("raw", ""))
+                conv.prompts.append(resolved)
+                conv.steps.append(ConversationStep(type="prompt", content=resolved))
+        
+        # Store preloaded context for injection (content already expanded)
+        conv._preloaded_context = []
+        if cycles:
+            for cf in cycles[0].get("context_files", []):
+                if "content" in cf:
+                    conv._preloaded_context.append({
+                        "path": cf.get("path", ""),
+                        "content": cf.get("content", ""),
+                    })
+        
+        # Store template variables for reference
+        conv._template_variables = data.get("template_variables", {})
+        
+        return conv
+
     def validate_context_files(
         self, 
         exclude_patterns: list[str] | None = None,

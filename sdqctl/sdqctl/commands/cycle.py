@@ -52,7 +52,9 @@ SESSION_MODES = {
 
 
 @click.command("cycle")
-@click.argument("workflow", type=click.Path(exists=True))
+@click.argument("workflow", type=click.Path(exists=True), required=False)
+@click.option("--from-json", "from_json", type=click.Path(), 
+              help="Read workflow from JSON file or - for stdin")
 @click.option("--max-cycles", "-n", type=int, default=None, help="Override max cycles")
 @click.option("--session-mode", "-s", type=click.Choice(["accumulate", "compact", "fresh"]), 
               default="accumulate", help="Session handling: accumulate (grow context), compact (summarize each cycle), fresh (new session each cycle)")
@@ -75,7 +77,8 @@ SESSION_MODES = {
 @click.pass_context
 def cycle(
     ctx: click.Context,
-    workflow: str,
+    workflow: Optional[str],
+    from_json: Optional[str],
     max_cycles: Optional[int],
     session_mode: str,
     adapter: Optional[str],
@@ -95,6 +98,12 @@ def cycle(
     stop_file_nonce: Optional[str],
 ) -> None:
     """Run multi-cycle workflow with compaction."""
+    # Validate: need either workflow or --from-json
+    if not workflow and not from_json:
+        raise click.UsageError("Either WORKFLOW argument or --from-json is required")
+    if workflow and from_json:
+        raise click.UsageError("Cannot use both WORKFLOW argument and --from-json")
+    
     # Handle --render-only by delegating to render logic
     if render_only:
         import json
@@ -167,6 +176,34 @@ def cycle(
                 console.print(output_content)
         return
     
+    # Handle --from-json input
+    if from_json:
+        import json as json_module
+        import sys
+        
+        if from_json == "-":
+            json_data = json_module.load(sys.stdin)
+        else:
+            json_data = json_module.loads(Path(from_json).read_text())
+        
+        # Validate schema version
+        schema_version = json_data.get("schema_version", "1.0")
+        major_version = int(schema_version.split(".")[0])
+        if major_version > 1:
+            raise click.UsageError(f"Unsupported schema version: {schema_version} (max: 1.x)")
+        
+        # Get verbosity and show_prompt from context
+        verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
+        show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+        
+        run_async(_cycle_from_json_async(
+            json_data, max_cycles, session_mode, adapter, model, checkpoint_dir,
+            prologue, epilogue, header, footer,
+            output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
+            verbosity=verbosity, show_prompt=show_prompt_flag
+        ))
+        return
+    
     # Get verbosity and show_prompt from context
     verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
     show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
@@ -177,6 +214,180 @@ def cycle(
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag
     ))
+
+
+async def _cycle_from_json_async(
+    json_data: dict,
+    max_cycles_override: Optional[int],
+    session_mode: str,
+    adapter_name: Optional[str],
+    model: Optional[str],
+    checkpoint_dir: Optional[str],
+    cli_prologues: tuple[str, ...],
+    cli_epilogues: tuple[str, ...],
+    cli_headers: tuple[str, ...],
+    cli_footers: tuple[str, ...],
+    output_file: Optional[str],
+    event_log_path: Optional[str],
+    json_output: bool,
+    dry_run: bool,
+    no_stop_file_prologue: bool = False,
+    stop_file_nonce: Optional[str] = None,
+    verbosity: int = 0,
+    show_prompt: bool = False,
+) -> None:
+    """Execute workflow from pre-rendered JSON.
+    
+    Enables external transformation pipelines:
+        sdqctl render cycle foo.conv --json | transform.py | sdqctl cycle --from-json -
+    """
+    from ..core.conversation import (
+        build_prompt_with_injection,
+        build_output_with_injection,
+        get_standard_variables,
+        substitute_template_variables,
+    )
+    from ..core.loop_detector import LoopDetector
+    import time
+    
+    # Initialize prompt writer for stderr output
+    prompt_writer = PromptWriter(enabled=show_prompt)
+    
+    cycle_start = time.time()
+    workflow_name = json_data.get("workflow_name", "json-workflow")
+    
+    # Extract configuration from JSON
+    conv = ConversationFile.from_rendered_json(json_data)
+    
+    # Override with CLI options if provided
+    if adapter_name:
+        conv.adapter = adapter_name
+    if model:
+        conv.model = model
+    
+    # Apply CLI prologues/epilogues
+    if cli_prologues:
+        conv.prologues = list(cli_prologues) + conv.prologues
+    if cli_epilogues:
+        conv.epilogues = list(cli_epilogues) + conv.epilogues
+    if cli_headers:
+        conv.headers = list(cli_headers)
+    if cli_footers:
+        conv.footers = list(cli_footers)
+    
+    max_cycles = max_cycles_override or json_data.get("max_cycles", conv.max_cycles) or 1
+    
+    progress_print(f"Running from JSON ({max_cycles} cycle(s), session={session_mode})...")
+    
+    if dry_run:
+        console.print(f"[dim]Would execute {len(conv.prompts)} prompt(s) for {max_cycles} cycle(s)[/dim]")
+        console.print(f"[dim]Adapter: {conv.adapter}, Model: {conv.model}[/dim]")
+        return
+    
+    # Get adapter
+    try:
+        ai_adapter = get_adapter(conv.adapter)
+    except ValueError as e:
+        console.print(f"[red]Adapter error: {e}[/red]")
+        return
+    
+    # Create adapter config
+    adapter_config = AdapterConfig(
+        model=conv.model,
+        event_log_path=event_log_path,
+        debug_intents=conv.debug_intents,
+    )
+    
+    # Initialize session
+    session = Session(workflow=workflow_name)
+    
+    # Stop file handling
+    stop_file_nonce_value = stop_file_nonce or generate_nonce()
+    loop_detector = LoopDetector(
+        max_cycles=max_cycles,
+        stop_file_nonce=stop_file_nonce_value,
+    )
+    
+    # Create adapter session
+    adapter_session = await ai_adapter.create_session(adapter_config)
+    
+    try:
+        responses = []
+        
+        for cycle_num in range(1, max_cycles + 1):
+            progress_print(f"  Cycle {cycle_num}/{max_cycles}")
+            
+            # Check for stop file
+            if loop_detector.check_stop_file():
+                console.print(f"[yellow]Stop file detected, exiting[/yellow]")
+                break
+            
+            # Build prompts for this cycle
+            template_vars = json_data.get("template_variables", {}).copy()
+            template_vars["CYCLE_NUMBER"] = str(cycle_num)
+            template_vars["CYCLE_TOTAL"] = str(max_cycles)
+            template_vars["STOP_FILE"] = f"STOPAUTOMATION-{stop_file_nonce_value}.json"
+            
+            for prompt_idx, prompt_text in enumerate(conv.prompts):
+                # Substitute any remaining template variables
+                final_prompt = substitute_template_variables(prompt_text, template_vars)
+                
+                # Add stop file instruction to first prompt
+                if prompt_idx == 0 and cycle_num == 1 and not no_stop_file_prologue:
+                    stop_instruction = get_stop_file_instruction(stop_file_nonce_value)
+                    final_prompt = f"{stop_instruction}\n\n{final_prompt}"
+                
+                # Show prompt if enabled
+                prompt_writer.write_prompt(
+                    final_prompt, 
+                    cycle=cycle_num,
+                    total_cycles=max_cycles,
+                    prompt_num=prompt_idx + 1,
+                    total_prompts=len(conv.prompts)
+                )
+                
+                # Execute prompt
+                response = await ai_adapter.run(
+                    adapter_session,
+                    final_prompt,
+                    stream=verbosity >= 2,
+                )
+                responses.append(response)
+                
+                # Add to session
+                session.add_message("user", final_prompt)
+                session.add_message("assistant", response)
+            
+            # Handle session mode
+            if session_mode == "compact" and cycle_num < max_cycles:
+                progress_print(f"    Compacting...")
+                await ai_adapter.compact(adapter_session)
+            elif session_mode == "fresh" and cycle_num < max_cycles:
+                progress_print(f"    Fresh session...")
+                adapter_session = await ai_adapter.create_session(adapter_config)
+        
+        # Output
+        session.state.status = "completed"
+        total_elapsed = time.time() - cycle_start
+        
+        raw_output = "\n\n---\n\n".join(responses)
+        final_output = build_output_with_injection(
+            raw_output, conv.headers, conv.footers,
+            base_path=Path.cwd(),
+            variables=template_vars
+        )
+        
+        if output_file:
+            Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_file).write_text(final_output)
+            console.print(f"[green]Output written to {output_file}[/green]")
+        else:
+            console.print(final_output)
+        
+        progress_print(f"  Completed in {total_elapsed:.1f}s")
+        
+    finally:
+        await ai_adapter.close_session(adapter_session)
 
 
 async def _cycle_async(

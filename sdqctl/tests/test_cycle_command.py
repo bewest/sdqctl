@@ -35,11 +35,17 @@ class TestCycleCommandBasic:
         assert result.exit_code == 0
         assert "Cycle Configuration" in result.output
 
-    def test_cycle_requires_workflow(self, cli_runner):
-        """Test cycle requires workflow argument."""
+    def test_cycle_requires_workflow_or_from_json(self, cli_runner):
+        """Test cycle requires either workflow argument or --from-json."""
         result = cli_runner.invoke(cli, ["cycle"])
         assert result.exit_code != 0
-        assert "Missing argument" in result.output or "required" in result.output.lower()
+        assert "required" in result.output.lower() or "WORKFLOW" in result.output
+
+    def test_cycle_from_json_help(self, cli_runner):
+        """Test cycle --help shows --from-json option."""
+        result = cli_runner.invoke(cli, ["cycle", "--help"])
+        assert result.exit_code == 0
+        assert "--from-json" in result.output
 
 
 class TestCycleExecution:

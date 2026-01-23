@@ -85,17 +85,19 @@ Versioning policy: major.minor where major = breaking changes.
 
 ### 3.1 `--from-json` Flag
 
-**Status**: 🟡 Designed, not implemented  
+**Status**: ✅ Complete  
 **Proposal**: [PIPELINE-ARCHITECTURE.md](PIPELINE-ARCHITECTURE.md)
 
 ```bash
 sdqctl render cycle foo.conv --json | transform.py | sdqctl cycle --from-json -
 ```
 
-- [ ] Parse JSON from stdin
-- [ ] Apply template variable overrides
-- [ ] Execute workflow
-- [ ] Handle validation errors gracefully
+Implemented:
+- [x] Parse JSON from stdin or file
+- [x] `ConversationFile.from_rendered_json()` method
+- [x] Schema version validation
+- [x] Execute workflow from pre-rendered prompts
+- [x] Tests and documentation
 
 ---
 

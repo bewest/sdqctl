@@ -571,6 +571,88 @@ class TestConversationFileFromFile:
         assert conv.model == "gpt-4"
 
 
+class TestConversationFileFromRenderedJson:
+    """Tests for loading from rendered JSON."""
+
+    def test_from_rendered_json_basic(self):
+        """Test basic JSON loading."""
+        json_data = {
+            "schema_version": "1.0",
+            "workflow": "test.conv",
+            "workflow_name": "test",
+            "mode": "full",
+            "session_mode": "accumulate",
+            "adapter": "mock",
+            "model": "gpt-4-turbo",
+            "max_cycles": 3,
+            "template_variables": {"DATE": "2026-01-23"},
+            "cycles": [{
+                "number": 1,
+                "variables": {"CYCLE_NUMBER": "1"},
+                "context_files": [],
+                "prompts": [{
+                    "index": 1,
+                    "raw": "Analyze the code",
+                    "prologues": [],
+                    "epilogues": [],
+                    "resolved": "Full prompt text here",
+                }],
+            }],
+        }
+        
+        conv = ConversationFile.from_rendered_json(json_data)
+        
+        assert conv.adapter == "mock"
+        assert conv.model == "gpt-4-turbo"
+        assert conv.max_cycles == 3
+        assert len(conv.prompts) == 1
+        assert conv.prompts[0] == "Full prompt text here"
+
+    def test_from_rendered_json_with_context(self):
+        """Test JSON with context files."""
+        json_data = {
+            "schema_version": "1.0",
+            "adapter": "copilot",
+            "model": "gpt-4",
+            "max_cycles": 1,
+            "cycles": [{
+                "number": 1,
+                "context_files": [
+                    {"path": "lib/auth.js", "content": "// auth code", "tokens_estimate": 100},
+                    {"path": "test.js", "content": "// test code", "tokens_estimate": 50},
+                ],
+                "prompts": [
+                    {"resolved": "Analyze this code", "raw": "Analyze"},
+                ],
+            }],
+        }
+        
+        conv = ConversationFile.from_rendered_json(json_data)
+        
+        assert len(conv._preloaded_context) == 2
+        assert conv._preloaded_context[0]["path"] == "lib/auth.js"
+
+    def test_from_rendered_json_schema_version_check(self):
+        """Test schema version validation."""
+        json_data = {
+            "schema_version": "2.0",  # Unsupported major version
+            "adapter": "mock",
+        }
+        
+        with pytest.raises(ValueError, match="Unsupported schema version"):
+            ConversationFile.from_rendered_json(json_data)
+
+    def test_from_rendered_json_defaults(self):
+        """Test defaults when fields missing."""
+        json_data = {"cycles": []}
+        
+        conv = ConversationFile.from_rendered_json(json_data)
+        
+        assert conv.adapter == "copilot"
+        assert conv.model == "gpt-4"
+        assert conv.max_cycles == 1
+
+
 class TestConversationDefaults:
     """Test default values when directives not specified."""
 
