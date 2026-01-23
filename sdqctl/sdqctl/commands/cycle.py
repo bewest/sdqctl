@@ -32,7 +32,7 @@ from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from ..core.conversation import ConversationFile
 from ..core.exceptions import ExitCode, LoopDetected, LoopReason, MissingContextFiles
-from ..core.logging import get_logger
+from ..core.logging import get_logger, WorkflowContext, set_workflow_context
 from ..core.loop_detector import LoopDetector, generate_nonce, get_stop_file_instruction
 from ..core.progress import progress as progress_print, WorkflowProgress
 from ..core.session import Session
@@ -570,6 +570,16 @@ async def _cycle_async(
             session.state.status = "running"
             all_responses = []
             
+            # Set workflow context for enhanced logging
+            workflow_name = conv.source_path.stem if conv.source_path else "workflow"
+            workflow_ctx = WorkflowContext(
+                workflow_name=workflow_name,
+                workflow_path=str(conv.source_path) if conv.source_path else None,
+                total_cycles=conv.max_cycles,
+                total_prompts=len(conv.prompts),
+            )
+            set_workflow_context(workflow_ctx)
+            
             # Initialize enhanced workflow progress tracker
             workflow_progress = WorkflowProgress(
                 name=str(conv.source_path or workflow_path),
@@ -592,6 +602,10 @@ async def _cycle_async(
                 # Run cycles
                 for cycle_num in range(conv.max_cycles):
                     session.state.cycle_number = cycle_num
+                    
+                    # Update workflow context for logging
+                    workflow_ctx.cycle = cycle_num + 1
+                    
                     progress.update(
                         cycle_task,
                         description=f"Cycle {cycle_num + 1}/{conv.max_cycles}",
@@ -676,6 +690,9 @@ async def _cycle_async(
                         if step_type == "prompt":
                             prompt = step_content
                             session.state.prompt_index = prompt_idx
+                            
+                            # Update workflow context for logging
+                            workflow_ctx.prompt = prompt_idx + 1
                             
                             # Get context usage percentage
                             ctx_status = session.context.get_status()
@@ -895,4 +912,6 @@ async def _cycle_async(
         raise
 
     finally:
+        # Clear workflow context
+        set_workflow_context(None)
         await ai_adapter.stop()

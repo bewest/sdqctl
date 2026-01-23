@@ -150,6 +150,41 @@ wp.prompt_complete(cycle=1, prompt=1, duration=3.2, context_pct=31.0)
 wp.done()
 ```
 
+#### `WorkflowContext` and `WorkflowLoggerAdapter`
+
+Enhanced logging with workflow context for better observability:
+
+```python
+from sdqctl.core.logging import WorkflowContext, WorkflowLoggerAdapter, get_workflow_logger
+
+# Create a workflow-aware logger
+logger = get_workflow_logger(
+    "sdqctl.adapters.copilot",
+    workflow_name="fix-quirks",
+    cycle=1,
+    total_cycles=3
+)
+
+# Log messages include workflow context
+logger.info("Turn started")  # Logs: [fix-quirks:1/3] Turn started
+
+# Update context as workflow progresses
+logger.update_context(prompt=2, total_prompts=4)
+logger.info("Sending prompt")  # Logs: [fix-quirks:1/3:P2/4] Sending prompt
+```
+
+The workflow context is also available globally for formatters:
+
+```python
+from sdqctl.core.logging import set_workflow_context, WorkflowContext
+
+# Set global context (used by WorkflowContextFormatter)
+ctx = WorkflowContext(workflow_name="proposal-dev", cycle=2, total_cycles=5)
+set_workflow_context(ctx)
+
+# All sdqctl loggers will include the prefix at DEBUG/TRACE levels
+```
+
 ### TTY Detection
 
 ```python

@@ -512,6 +512,7 @@ class CopilotAdapter(AdapterBase):
                 tool_name = _get_tool_name(data)
                 tool_call_id = _get_field(data, "tool_call_id", "id")
                 success = _get_field(data, "success", default=True)
+                result = _get_field(data, "result", "output", default=None)
                 
                 # Calculate duration if we tracked this tool
                 duration_str = ""
@@ -528,7 +529,21 @@ class CopilotAdapter(AdapterBase):
                     stats.tool_calls_failed += 1
                     status_icon = "✗"
                 
-                logger.info(f"  {status_icon} {tool_name}{duration_str}")
+                # Format result summary for better observability
+                result_summary = ""
+                if result and logger.isEnabledFor(logging.DEBUG):
+                    result_str = str(result)
+                    if len(result_str) > 100:
+                        # Count lines for file listings
+                        lines = result_str.count('\n')
+                        if lines > 5:
+                            result_summary = f" → {lines} lines"
+                        else:
+                            result_summary = f" → {len(result_str)} chars"
+                    elif result_str and result_str != "None":
+                        result_summary = f" → {result_str[:50]}..."
+                
+                logger.info(f"  {status_icon} {tool_name}{duration_str}{result_summary}")
 
             elif event_type == "tool.execution_partial_result":
                 # TRACE level - partial results are very frequent
