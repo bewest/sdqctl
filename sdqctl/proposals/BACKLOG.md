@@ -16,7 +16,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | Command | Purpose | Subcommands | Status |
 |---------|---------|-------------|--------|
 | `render` | Preview prompts (no AI) | `run`, `cycle`, `apply`, `file` | ✅ Complete |
-| `verify` | Static verification | `refs`, `all` | ✅ Complete (1 verifier) |
+| `verify` | Static verification | `refs`, `links`, `traceability`, `all` | ✅ Complete (3 verifiers) |
 | `validate` | Syntax checking | - | ✅ Complete |
 | `show` | Display parsed workflow | - | ✅ Complete |
 | `status` | Session/system info | `--adapters`, `--sessions` | ✅ Complete |
@@ -90,12 +90,12 @@ All 7 proposed tooling commands are **fully implemented**:
 | `VERIFY-ON-ERROR` directive | Phase 3-4 | ✅ Implemented | None |
 | `VERIFY-OUTPUT` directive | Phase 3-4 | ✅ Implemented | None |
 | `VERIFY-LIMIT` directive | Phase 3-4 | ✅ Implemented | None |
-| `links` verifier | Phase 1 | ❌ Not implemented | **Future work** |
-| `terminology` verifier | Phase 1 | ❌ Not implemented | **Future work** |
-| `traceability` verifier | Phase 1 | ❌ Not implemented | **Future work** |
-| `assertions` verifier | Phase 1 | ❌ Not implemented | **Future work** |
+| `links` verifier | Phase 1 | ✅ `verifiers/links.py` | None |
+| `terminology` verifier | Phase 1 | ❌ Not implemented | Future work |
+| `traceability` verifier | Phase 1 | ✅ `verifiers/traceability.py` | None |
+| `assertions` verifier | Phase 1 | ❌ Not implemented | Future work |
 
-**Currently available verifiers**: Only `refs` in `sdqctl/verifiers/`
+**Currently available verifiers**: `refs`, `links`, `traceability` in `sdqctl/verifiers/`
 
 ### PIPELINE-ARCHITECTURE.md
 
@@ -104,7 +104,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | `--from-json` flag | Phase 2 | ✅ `commands/cycle.py` | None |
 | `from_rendered_json()` | Phase 3 | ✅ `core/conversation.py` | None |
 | `schema_version` field | Phase 1 | ✅ `core/renderer.py` | None |
-| Schema docs | Phase 1 | ❌ No `docs/PIPELINE-SCHEMA.md` | Documentation gap |
+| Schema docs | Phase 1 | ✅ `docs/PIPELINE-SCHEMA.md` | None |
 | `--trust-input` flag | Security | ❌ Not implemented | Low priority |
 
 ### STPA-INTEGRATION.md
