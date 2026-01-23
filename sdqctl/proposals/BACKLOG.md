@@ -50,7 +50,7 @@ All 7 proposed tooling commands are **fully implemented**:
 ### Key Findings
 
 1. **All tooling commands implemented** - No missing CLI commands
-2. **Verifier infrastructure complete** - Only `refs` verifier exists, but extension is straightforward
+2. **Verifier infrastructure complete** - 3 verifiers: `refs`, `links`, `traceability`
 3. **Help system exceeds proposal** - 11 commands + 6 topics (proposal specified nested `guidance`)
 4. **ON-FAILURE blocks deferred** - RUN-RETRY covers common retry patterns
 
