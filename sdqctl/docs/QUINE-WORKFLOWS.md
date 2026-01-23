@@ -12,6 +12,7 @@ A **quine-like workflow** uses sdqctl to improve a codebase iteratively, where e
 | **Context** | Inject 50KB file | Let agent read on demand | Saves tokens, fresher data |
 | **Scope** | "Fix all 15 issues" | "Select ONE item" | Focus prevents partial work |
 | **Exit** | MAX-CYCLES 100 | MAX-CYCLES 3-5 | Bounded iteration |
+| **Turns** | Separate RUN + PROMPT | Use `ELIDE` to merge | Fewer agent turns, less token waste |
 
 ---
 
@@ -334,6 +335,44 @@ edit-and-verify.conv         # Clear implementation intent
 ```
 
 **See [QUIRKS.md](QUIRKS.md#q-001-workflow-filename-influences-agent-behavior)** for full details on this surprising behavior.
+
+---
+
+## Efficiency Tips
+
+### Use ELIDE to Reduce Agent Turns
+
+The `ELIDE` directive merges adjacent elements into a single prompt, eliminating unnecessary agent turns. This is particularly useful in quine workflows where you run tests and then ask the agent to fix failures:
+
+❌ **Without ELIDE** — 3 agent turns (wasteful):
+```dockerfile
+PROMPT Run the tests and analyze results.
+RUN pytest -v
+PROMPT Fix any failing tests.
+```
+
+✅ **With ELIDE** — 1 agent turn (efficient):
+```dockerfile
+PROMPT Run the tests and analyze results.
+RUN pytest -v
+ELIDE
+PROMPT Fix any failing tests.
+```
+
+The agent receives a single merged prompt containing the test output and fix instructions together, reducing token waste from intermediate "I see the output" responses.
+
+### Chain ELIDEs for Multi-Step Verification
+
+```dockerfile
+PROMPT Review the build and test output below.
+ELIDE
+RUN npm run build
+ELIDE
+RUN npm test
+ELIDE
+PROMPT Fix any errors found in the build or tests.
+# All merged into a single prompt
+```
 
 ---
 

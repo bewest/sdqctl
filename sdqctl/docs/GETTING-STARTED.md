@@ -79,13 +79,24 @@ sdqctl run my-audit.conv --adapter copilot
 The `render` command shows fully-resolved prompts without calling AI:
 
 ```bash
-sdqctl render my-audit.conv
+# Render for run command (single execution)
+sdqctl render run my-audit.conv
+
+# Render for cycle command (multi-cycle)
+sdqctl render cycle my-audit.conv -n 3
+
+# Quick overview: show @file references without expanding
+sdqctl render run my-audit.conv --plan
+
+# Output to file
+sdqctl render run my-audit.conv -o rendered.md
 ```
 
 This is useful for:
 - Debugging template issues
 - Reviewing prompts before expensive AI calls
 - Using sdqctl as a prompt templating engine
+- CI/CD validation of workflow content
 
 ---
 
@@ -110,6 +121,13 @@ This is useful for:
 - Tasks that need refinement
 - Work that exceeds one context window
 - Self-improving workflows
+
+**Session modes** control context across cycles:
+```bash
+sdqctl cycle workflow.conv -n 5 --session-mode fresh      # New session each cycle
+sdqctl cycle workflow.conv -n 5 --session-mode accumulate # Context grows (default)
+sdqctl cycle workflow.conv -n 10 --session-mode compact   # Summarize between cycles
+```
 
 **`apply`** — Iterate over components, good for:
 - Auditing multiple files
@@ -193,6 +211,16 @@ OUTPUT-FILE report.md          # Save output
 | `PROLOGUE` | Prepend to first prompt of cycle |
 | `EPILOGUE` | Append to last prompt of cycle |
 | `PAUSE` | Checkpoint for human review |
+| `COMPACT` | Trigger context compaction |
+| `ELIDE` | Merge adjacent elements into single prompt |
+
+> **Efficiency Tip:** Use `ELIDE` to combine test output with fix instructions:
+> ```dockerfile
+> RUN pytest -v
+> ELIDE
+> PROMPT Fix any failing tests above.
+> ```
+> This sends one merged prompt instead of multiple agent turns.
 
 ### Template Variables
 
@@ -203,10 +231,14 @@ PROMPT Analyzing on {{DATE}} (branch: {{GIT_BRANCH}})
 OUTPUT-FILE reports/audit-{{DATE}}.md
 ```
 
-Available: `{{DATE}}`, `{{DATETIME}}`, `{{GIT_BRANCH}}`, `{{GIT_COMMIT}}`, `{{CWD}}`
+Available: `{{DATE}}`, `{{DATETIME}}`, `{{GIT_BRANCH}}`, `{{GIT_COMMIT}}`, `{{CWD}}`, `{{STOP_FILE}}`
 
 > **Note:** `{{WORKFLOW_NAME}}` is available in OUTPUT-FILE paths but excluded from prompts
 > by default. Use `{{__WORKFLOW_NAME__}}` for explicit opt-in in prompts.
+>
+> **Stop File:** The `{{STOP_FILE}}` variable provides the filename an agent can create to
+> request human review. Stop file instructions are injected automatically by default.
+> See [LOOP-STRESS-TEST.md](LOOP-STRESS-TEST.md#4-stop-file-detection) for details.
 
 ---
 
@@ -290,11 +322,13 @@ See `examples/workflows/` for ready-to-use templates.
 # Run workflow
 sdqctl run workflow.conv --adapter copilot
 
-# Preview prompts
-sdqctl render workflow.conv
+# Preview prompts (use subcommand: run, cycle, or apply)
+sdqctl render run workflow.conv
+sdqctl render cycle workflow.conv -n 3
 
-# Multi-cycle
+# Multi-cycle with session mode
 sdqctl cycle workflow.conv -n 3
+sdqctl cycle workflow.conv -n 5 --session-mode fresh  # New session each cycle
 
 # Batch apply
 sdqctl apply workflow.conv --components "lib/*.py"

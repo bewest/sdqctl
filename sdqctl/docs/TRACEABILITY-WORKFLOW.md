@@ -167,6 +167,14 @@ PROMPT Ensure all implemented tests pass.
 RUN python -m pytest tests/test_generated.py -v
 ```
 
+> **Tip:** Use `ELIDE` to merge RUN output with the follow-up PROMPT for more efficient workflows:
+> ```dockerfile
+> RUN python -m pytest tests/test_generated.py -v
+> ELIDE
+> PROMPT Fix any failing tests shown above.
+> ```
+> See [QUINE-WORKFLOWS.md](QUINE-WORKFLOWS.md#use-elide-to-reduce-agent-turns) for details.
+
 ---
 
 ## Phase 5: Verification Loop
