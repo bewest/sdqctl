@@ -178,6 +178,73 @@ Potential additions based on usage patterns:
 | `TIMEOUT` | Global workflow timeout | Long-running protection |
 | `RETRY-LIMIT` | Global retry cap | Token budget control |
 | `COMPACT-IF-NEEDED` | Conditional compaction | Skip compaction below threshold (see [Q-012](../docs/QUIRKS.md#q-012-compact-directive-is-unconditional)) |
+| `INCLUDE-HELP` | Inject help topic into prompt | Agent workflow authoring (see below) |
+
+### Help System: Agent Accessibility Gap
+
+> **Discovered:** 2026-01-23  
+> **Status:** Documented - future enhancement
+
+#### Current State
+
+Help content is stored inline in Python code (`sdqctl/commands/help.py`):
+- `TOPICS` dict: 6 topics (directives, adapters, workflow, variables, context, examples)
+- `COMMAND_HELP` dict: 11 commands
+- `get_overview()` function: returns markdown overview
+
+**Programmatic access exists** but is Python-only:
+```python
+from sdqctl.commands.help import TOPICS, COMMAND_HELP, get_overview
+TOPICS["directives"]  # Returns full directive reference as markdown
+```
+
+#### Gap: No Help Directive
+
+Agents authoring workflows must manually copy/paste documentation into PROLOGUE:
+```dockerfile
+# Current workaround - manual injection
+PROLOGUE """
+You are implementing an sdqctl workflow. Available directives:
+- CONTEXT: Include file patterns
+- PROMPT: Send prompt to AI
+- RUN: Execute shell command
+...
+"""
+```
+
+#### Proposed Enhancement: `INCLUDE-HELP` Directive
+
+```dockerfile
+# Proposed - automatic injection
+INCLUDE-HELP directives          # Inject full directive reference
+INCLUDE-HELP workflow            # Inject format guide
+INCLUDE-HELP variables context   # Inject multiple topics
+```
+
+**Implementation sketch:**
+```python
+# In conversation.py DirectiveType enum:
+INCLUDE_HELP = "INCLUDE-HELP"
+
+# In parser:
+case DirectiveType.INCLUDE_HELP:
+    topics = directive.value.split()
+    for topic in topics:
+        if topic in TOPICS:
+            conv.prologues.append(TOPICS[topic])
+```
+
+#### Alternative: Agent-Optimized Help Format
+
+Current help is human-optimized (tables, examples). Could add LLM-optimized variants:
+- Structured examples with input→output pairs
+- Common anti-patterns to avoid
+- Decision trees for directive selection
+- JSON-LD or structured data format
+
+#### Priority
+
+**P3 (Low)** - PROLOGUE workaround is adequate. Consider when building meta-workflows that synthesize other workflows.
 
 ### Compaction Policy: Known Gaps
 
