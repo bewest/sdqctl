@@ -78,6 +78,60 @@ sdqctl flow workflows/*.conv --parallel 4
 sdqctl status
 ```
 
+## Verbosity & Output Control
+
+sdqctl provides fine-grained control over output:
+
+### Verbosity Levels (`-v`)
+
+```bash
+sdqctl run workflow.conv        # Default: final result only
+sdqctl -v run workflow.conv     # Progress with context %
+sdqctl -vv run workflow.conv    # Streaming agent responses
+sdqctl -vvv run workflow.conv   # Full debug (tool calls, reasoning)
+sdqctl -q run workflow.conv     # Quiet mode (errors only)
+```
+
+### Show Prompts (`-P` / `--show-prompt`)
+
+See the exact prompts being sent to the AI (on stderr):
+
+```bash
+# Show prompts in terminal
+sdqctl -P run workflow.conv
+
+# Capture prompts to file while running
+sdqctl -P run workflow.conv 2> prompts.log
+
+# Full debugging: prompts + streaming response
+sdqctl -vv -P cycle workflow.conv
+```
+
+Prompts are displayed with context:
+```
+[Cycle 2/5, Prompt 3/4] (ctx: 45%)
+────────────────────────────────────────────────
+You are analyzing a codebase for security issues.
+...
+────────────────────────────────────────────────
+```
+
+### Stream Separation
+
+Output follows Unix conventions for pipeable workflows:
+- **stdout**: Progress, agent responses (pipeable)
+- **stderr**: Prompts (with `-P`), logs, errors
+
+```bash
+# Pipe agent output, see prompts on terminal
+sdqctl -P run workflow.conv > results.md
+
+# Capture both separately
+sdqctl -P run workflow.conv > results.md 2> prompts.log
+```
+
+See [docs/IO-ARCHITECTURE.md](docs/IO-ARCHITECTURE.md) for full details.
+
 ## ConversationFile Format
 
 ConversationFiles (`.conv`) are declarative workflow definitions:

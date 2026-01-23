@@ -32,8 +32,9 @@ from .core.progress import set_quiet
 @click.version_option(version=__version__, prog_name="sdqctl")
 @click.option("-v", "--verbose", count=True, help="Increase verbosity (-v, -vv, -vvv)")
 @click.option("-q", "--quiet", is_flag=True, help="Suppress output except errors")
+@click.option("-P", "--show-prompt", is_flag=True, help="Show expanded prompts on stderr")
 @click.pass_context
-def cli(ctx: click.Context, verbose: int, quiet: bool) -> None:
+def cli(ctx: click.Context, verbose: int, quiet: bool, show_prompt: bool) -> None:
     """sdqctl - Software Defined Quality Control
 
     Vendor-agnostic CLI for orchestrating AI-assisted development workflows.
@@ -47,17 +48,23 @@ def cli(ctx: click.Context, verbose: int, quiet: bool) -> None:
       status   Show session and system status
 
     \b
-    Verbosity:
-      -v       INFO level (turns, tools, tokens, intents)
-      -vv      DEBUG level (reasoning, args, context usage)
-      -vvv     TRACE level (deltas, raw events, partial results)
+    Verbosity (agent output):
+      -v       INFO level (progress with context %)
+      -vv      DEBUG level (streaming responses)
+      -vvv     TRACE level (tool calls, reasoning)
       -q       Quiet mode (errors only)
+
+    \b
+    Prompt display:
+      -P       Show expanded prompts on stderr (can redirect separately)
 
     \b
     Examples:
       sdqctl run "Audit authentication module"
       sdqctl run workflow.conv --adapter copilot
       sdqctl -vv run workflow.conv  # with debug output
+      sdqctl -P run workflow.conv   # show prompts on stderr
+      sdqctl -P run workflow.conv 2>prompts.log  # capture prompts
       sdqctl cycle workflow.conv --max-cycles 5
       sdqctl flow workflows/*.conv --parallel 4
       sdqctl apply workflow.conv --components "lib/*.js" --progress progress.md
@@ -65,6 +72,7 @@ def cli(ctx: click.Context, verbose: int, quiet: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["verbosity"] = verbose
     ctx.obj["quiet"] = quiet
+    ctx.obj["show_prompt"] = show_prompt
     setup_logging(verbose, quiet)
     set_quiet(quiet)
 

@@ -1,13 +1,109 @@
-"""Output formatting utilities."""
+"""Output formatting utilities.
 
+Provides TTY-aware console output for sdqctl:
+- stdout console: for progress and agent responses
+- stderr console: for prompts (via --show-prompt / -P)
+
+TTY detection (git-style):
+- When stdout is a TTY: Rich formatting, colors, progress updates
+- When stdout redirected: Plain text, no colors, no progress overwrites
+"""
+
+import sys
 import json
-from typing import Any
+from typing import Any, Optional
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.rule import Rule
 
-console = Console()
+# TTY detection for git-style behavior
+_stdout_is_tty = sys.stdout.isatty()
+_stderr_is_tty = sys.stderr.isatty()
+
+# Main console (stdout) - for progress and agent responses
+console = Console(
+    force_terminal=_stdout_is_tty,
+    no_color=not _stdout_is_tty,
+)
+
+# Stderr console - for prompts and diagnostics
+stderr_console = Console(
+    file=sys.stderr,
+    force_terminal=_stderr_is_tty,
+    no_color=not _stderr_is_tty,
+)
+
+
+def is_stdout_tty() -> bool:
+    """Check if stdout is a TTY (for conditional formatting)."""
+    return _stdout_is_tty
+
+
+def is_stderr_tty() -> bool:
+    """Check if stderr is a TTY (for conditional formatting)."""
+    return _stderr_is_tty
+
+
+class PromptWriter:
+    """Write expanded prompts to stderr with cycle/step context.
+    
+    Used when --show-prompt / -P flag is enabled.
+    
+    Usage:
+        writer = PromptWriter(enabled=ctx.obj.get("show_prompt", False))
+        writer.write_prompt(prompt_text, cycle=1, total_cycles=3, 
+                           prompt_idx=2, total_prompts=4, context_pct=31.5)
+    """
+    
+    def __init__(self, enabled: bool = False):
+        self.enabled = enabled
+        self.console = stderr_console
+    
+    def write_prompt(
+        self,
+        prompt: str,
+        cycle: int = 1,
+        total_cycles: int = 1,
+        prompt_idx: int = 1,
+        total_prompts: int = 1,
+        context_pct: Optional[float] = None,
+    ) -> None:
+        """Write a prompt to stderr with context information.
+        
+        Args:
+            prompt: The fully expanded prompt text
+            cycle: Current cycle number (1-indexed)
+            total_cycles: Total number of cycles
+            prompt_idx: Current prompt index (1-indexed)
+            total_prompts: Total number of prompts
+            context_pct: Context window usage percentage (optional)
+        """
+        if not self.enabled:
+            return
+        
+        # Build header
+        if total_cycles > 1:
+            header = f"[Cycle {cycle}/{total_cycles}, Prompt {prompt_idx}/{total_prompts}]"
+        else:
+            header = f"[Prompt {prompt_idx}/{total_prompts}]"
+        
+        if context_pct is not None:
+            header += f" (ctx: {context_pct:.0f}%)"
+        
+        # Output with formatting if TTY, plain if redirected
+        if _stderr_is_tty:
+            self.console.print()
+            self.console.print(Rule(header, style="dim"))
+            self.console.print(prompt)
+            self.console.print(Rule(style="dim"))
+        else:
+            # Plain text for redirection/logging
+            separator = "─" * 60
+            self.console.print(f"\n{header} {separator}")
+            self.console.print(prompt)
+            self.console.print(separator)
 
 
 def format_output(data: Any, format: str = "markdown", title: str = None) -> str:

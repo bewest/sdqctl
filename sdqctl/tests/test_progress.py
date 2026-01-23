@@ -313,3 +313,125 @@ class TestProgressTrackerIntegration:
         
         captured = capsys.readouterr()
         assert captured.out == ""
+
+
+class TestWorkflowProgress:
+    """Tests for the enhanced WorkflowProgress class."""
+    
+    def test_workflow_progress_init(self):
+        """Test WorkflowProgress initialization."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=3, total_prompts=4, verbosity=1)
+        assert wp.name == "test.conv"
+        assert wp.total_cycles == 3
+        assert wp.total_prompts == 4
+        assert wp.verbosity == 1
+    
+    def test_workflow_progress_start(self, capsys):
+        """Test WorkflowProgress start message."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("workflow.conv", total_cycles=2, total_prompts=3)
+        wp.start()
+        
+        captured = capsys.readouterr()
+        assert "Running workflow.conv..." in captured.out
+    
+    def test_workflow_progress_prompt_sending(self, capsys):
+        """Test prompt sending progress with context %."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=2, total_prompts=3)
+        wp.prompt_sending(cycle=1, prompt=2, context_pct=45.5)
+        
+        captured = capsys.readouterr()
+        assert "Cycle 1/2" in captured.out
+        assert "Prompt 2/3" in captured.out
+        assert "ctx: 46%" in captured.out  # Rounded
+    
+    def test_workflow_progress_single_cycle_format(self, capsys):
+        """Test single cycle mode omits cycle number."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=1, total_prompts=2)
+        wp.prompt_sending(cycle=1, prompt=1, context_pct=10.0)
+        
+        captured = capsys.readouterr()
+        # Should NOT show "Cycle 1/1" for single-cycle workflows
+        assert "Cycle" not in captured.out
+        assert "Prompt 1/2" in captured.out
+    
+    def test_workflow_progress_prompt_complete(self, capsys):
+        """Test prompt completion with duration and context."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=1, total_prompts=2)
+        wp.prompt_complete(cycle=1, prompt=1, duration=3.25, context_pct=35.0)
+        
+        captured = capsys.readouterr()
+        assert "Complete" in captured.out
+        assert "3.2s" in captured.out or "3.3s" in captured.out
+        assert "ctx: 35%" in captured.out
+    
+    def test_workflow_progress_cycle_complete(self, capsys):
+        """Test cycle completion message."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=3, total_prompts=2)
+        wp.cycle_complete(cycle=2, compacted=True)
+        
+        captured = capsys.readouterr()
+        assert "Cycle 2/3" in captured.out
+        assert "Complete" in captured.out
+        assert "compacted" in captured.out
+    
+    def test_workflow_progress_verbose_preview(self, capsys):
+        """Test prompt preview shown at verbose level."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=1, total_prompts=1, verbosity=1)
+        wp.prompt_sending(cycle=1, prompt=1, context_pct=20.0, preview="Analyze the code")
+        
+        captured = capsys.readouterr()
+        assert "Analyze the code" in captured.out
+    
+    def test_workflow_progress_done(self, capsys):
+        """Test workflow completion message."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        wp = WorkflowProgress("test.conv", total_cycles=1, total_prompts=1)
+        wp.start()
+        time.sleep(0.05)
+        wp.done()
+        
+        captured = capsys.readouterr()
+        assert "Done in" in captured.out
+    
+    def test_workflow_progress_quiet_suppresses_all(self, capsys):
+        """Test quiet mode suppresses WorkflowProgress output."""
+        from sdqctl.core.progress import WorkflowProgress
+        
+        set_quiet(True)
+        
+        wp = WorkflowProgress("test.conv", total_cycles=2, total_prompts=3)
+        wp.start()
+        wp.prompt_sending(cycle=1, prompt=1, context_pct=10.0)
+        wp.prompt_complete(cycle=1, prompt=1, duration=1.0, context_pct=20.0)
+        wp.cycle_complete(cycle=1)
+        wp.done()
+        
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+
+class TestTTYDetection:
+    """Tests for TTY detection in progress module."""
+    
+    def test_is_tty_function_exists(self):
+        """Test is_tty function is available."""
+        from sdqctl.core.progress import is_tty
+        
+        # Should return a boolean
+        result = is_tty()
+        assert isinstance(result, bool)

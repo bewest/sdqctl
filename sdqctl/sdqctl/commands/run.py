@@ -28,8 +28,9 @@ from ..core.conversation import ConversationFile, FileRestrictions, substitute_t
 from ..core.exceptions import MissingContextFiles
 from ..core.logging import get_logger
 from ..core.loop_detector import get_stop_file_instruction
-from ..core.progress import progress, ProgressTracker
+from ..core.progress import progress, ProgressTracker, WorkflowProgress
 from ..core.session import Session
+from ..utils.output import PromptWriter
 
 logger = get_logger(__name__)
 
@@ -169,7 +170,9 @@ console = Console()
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
 @click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
+@click.pass_context
 def run(
+    ctx: click.Context,
     target: str,
     adapter: Optional[str],
     model: Optional[str],
@@ -253,11 +256,16 @@ def run(
                 console.print(output_content)
         return
     
+    # Get verbosity and show_prompt from context
+    verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
+    show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+    
     run_async(_run_async(
         target, adapter, model, context, 
         allow_files, deny_files, allow_dir, deny_dir,
         prologue, epilogue, header, footer,
-        output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce
+        output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
+        verbosity=verbosity, show_prompt=show_prompt_flag
     ))
 
 
@@ -280,6 +288,8 @@ async def _run_async(
     dry_run: bool,
     no_stop_file_prologue: bool = False,
     stop_file_nonce: Optional[str] = None,
+    verbosity: int = 0,
+    show_prompt: bool = False,
 ) -> None:
     """Async implementation of run command."""
     from ..core.conversation import (
@@ -288,6 +298,9 @@ async def _run_async(
         get_standard_variables,
     )
     from ..core.loop_detector import generate_nonce
+    
+    # Initialize prompt writer for stderr output
+    prompt_writer = PromptWriter(enabled=show_prompt)
     
     import time
     start_time = time.time()
@@ -473,6 +486,14 @@ async def _run_async(
             total_prompts = len(conv.prompts)
             first_prompt = True
             
+            # Initialize workflow progress tracker
+            workflow_progress = WorkflowProgress(
+                name=str(conv.source_path or target),
+                total_cycles=1,  # run command is single cycle
+                total_prompts=total_prompts,
+                verbosity=verbosity,
+            )
+            
             steps_to_process = conv.steps if conv.steps else [
                 {"type": "prompt", "content": p} for p in conv.prompts
             ]
@@ -486,8 +507,18 @@ async def _run_async(
                     prompt_count += 1
                     step_start = time.time()
                     
+                    # Get context usage percentage
+                    ctx_status = session.context.get_status()
+                    context_pct = ctx_status.get("usage_percent", 0)
+                    
                     logger.info(f"Sending prompt {prompt_count}/{total_prompts}...")
-                    progress(f"  Step {prompt_count}/{total_prompts}: Sending prompt...")
+                    
+                    # Use enhanced progress with context %
+                    workflow_progress.prompt_sending(
+                        cycle=1, prompt=prompt_count, 
+                        context_pct=context_pct,
+                        preview=prompt[:50] if verbosity >= 1 else None
+                    )
 
                     # Build prompt with prologue/epilogue injection
                     base_path = conv.source_path.parent if conv.source_path else Path.cwd()
@@ -514,6 +545,16 @@ async def _run_async(
                     
                     if first_prompt:
                         first_prompt = False
+                    
+                    # Write prompt to stderr if --show-prompt / -P enabled
+                    prompt_writer.write_prompt(
+                        full_prompt,
+                        cycle=1,
+                        total_cycles=1,
+                        prompt_idx=prompt_count,
+                        total_prompts=total_prompts,
+                        context_pct=context_pct,
+                    )
 
                     # Stream response
                     logger.debug("Awaiting response...")
@@ -528,7 +569,17 @@ async def _run_async(
                         console.print()  # Newline after streaming
 
                     step_elapsed = time.time() - step_start
-                    progress(f"  Step {prompt_count}/{total_prompts}: Response received ({step_elapsed:.1f}s)")
+                    
+                    # Update context usage after response
+                    ctx_status = session.context.get_status()
+                    new_context_pct = ctx_status.get("usage_percent", 0)
+                    
+                    # Use enhanced progress completion
+                    workflow_progress.prompt_complete(
+                        cycle=1, prompt=prompt_count,
+                        duration=step_elapsed,
+                        context_pct=new_context_pct,
+                    )
 
                     responses.append(response)
                     session.add_message("user", prompt)

@@ -34,8 +34,9 @@ from ..core.conversation import ConversationFile
 from ..core.exceptions import ExitCode, LoopDetected, LoopReason, MissingContextFiles
 from ..core.logging import get_logger
 from ..core.loop_detector import LoopDetector, generate_nonce, get_stop_file_instruction
-from ..core.progress import progress as progress_print
+from ..core.progress import progress as progress_print, WorkflowProgress
 from ..core.session import Session
+from ..utils.output import PromptWriter
 from .utils import run_async
 
 logger = get_logger(__name__)
@@ -69,7 +70,9 @@ SESSION_MODES = {
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
 @click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
+@click.pass_context
 def cycle(
+    ctx: click.Context,
     workflow: str,
     max_cycles: Optional[int],
     session_mode: str,
@@ -152,10 +155,15 @@ def cycle(
                 console.print(output_content)
         return
     
+    # Get verbosity and show_prompt from context
+    verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
+    show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+    
     run_async(_cycle_async(
         workflow, max_cycles, session_mode, adapter, model, checkpoint_dir,
         prologue, epilogue, header, footer,
-        output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce
+        output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
+        verbosity=verbosity, show_prompt=show_prompt_flag
     ))
 
 
@@ -176,6 +184,8 @@ async def _cycle_async(
     dry_run: bool,
     no_stop_file_prologue: bool = False,
     stop_file_nonce: Optional[str] = None,
+    verbosity: int = 0,
+    show_prompt: bool = False,
 ) -> None:
     """Execute multi-cycle workflow with session management.
     
@@ -190,6 +200,9 @@ async def _cycle_async(
     - fresh: Create new adapter session each cycle. Reloads CONTEXT files
       from disk, so file changes made during cycle N are visible in N+1.
     """
+    # Initialize prompt writer for stderr output
+    prompt_writer = PromptWriter(enabled=show_prompt)
+    
     from ..core.conversation import (
         build_prompt_with_injection,
         build_output_with_injection,
@@ -333,6 +346,14 @@ async def _cycle_async(
         try:
             session.state.status = "running"
             all_responses = []
+            
+            # Initialize enhanced workflow progress tracker
+            workflow_progress = WorkflowProgress(
+                name=str(conv.source_path or workflow_path),
+                total_cycles=conv.max_cycles,
+                total_prompts=len(conv.prompts),
+                verbosity=verbosity,
+            )
 
             with Progress(
                 SpinnerColumn(),
@@ -432,6 +453,10 @@ async def _cycle_async(
                         if step_type == "prompt":
                             prompt = step_content
                             session.state.prompt_index = prompt_idx
+                            
+                            # Get context usage percentage
+                            ctx_status = session.context.get_status()
+                            context_pct = ctx_status.get("usage_percent", 0)
 
                             # Build prompt with prologue/epilogue injection
                             is_first = (prompt_idx == 0)
@@ -463,9 +488,23 @@ async def _cycle_async(
                             if session_mode == "accumulate" and cycle_num > 0 and prompt_idx == 0 and conv.on_context_limit_prompt:
                                 full_prompt = f"{conv.on_context_limit_prompt}\n\n{full_prompt}"
 
-                            if logger.isEnabledFor(10):  # DEBUG level
-                                console.print(f"\n[dim]Prompt {prompt_idx + 1}/{len(conv.prompts)}:[/dim]")
-                                console.print(f"[dim]{prompt[:100]}...[/dim]" if len(prompt) > 100 else f"[dim]{prompt}[/dim]")
+                            # Enhanced progress with context %
+                            workflow_progress.prompt_sending(
+                                cycle=cycle_num + 1,
+                                prompt=prompt_idx + 1,
+                                context_pct=context_pct,
+                                preview=prompt[:50] if verbosity >= 1 else None
+                            )
+                            
+                            # Write prompt to stderr if --show-prompt / -P enabled
+                            prompt_writer.write_prompt(
+                                full_prompt,
+                                cycle=cycle_num + 1,
+                                total_cycles=conv.max_cycles,
+                                prompt_idx=prompt_idx + 1,
+                                total_prompts=total_prompts,
+                                context_pct=context_pct,
+                            )
 
                             # Clear reasoning collector before send
                             last_reasoning.clear()
@@ -477,6 +516,17 @@ async def _cycle_async(
                                 adapter_session, 
                                 full_prompt,
                                 on_reasoning=collect_reasoning
+                            )
+                            
+                            # Update context usage after response
+                            ctx_status = session.context.get_status()
+                            new_context_pct = ctx_status.get("usage_percent", 0)
+                            
+                            # Enhanced progress completion
+                            workflow_progress.prompt_complete(
+                                cycle=cycle_num + 1,
+                                prompt=prompt_idx + 1,
+                                context_pct=new_context_pct,
                             )
                             
                             # Check for loop after each response

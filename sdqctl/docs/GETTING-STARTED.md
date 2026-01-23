@@ -118,6 +118,54 @@ This is useful for:
 
 ---
 
+## Verbosity & Debugging
+
+### See What's Happening
+
+Use `-v` flags to control output verbosity:
+
+```bash
+sdqctl run my-audit.conv              # Default: just results
+sdqctl -v run my-audit.conv           # Progress with context %
+sdqctl -vv run my-audit.conv          # Stream agent responses
+sdqctl -vvv run my-audit.conv         # Full debug output
+```
+
+### See What Prompts Are Sent
+
+Use `-P` (`--show-prompt`) to display expanded prompts on stderr:
+
+```bash
+# See prompts in terminal
+sdqctl -P run my-audit.conv
+
+# Capture prompts to file while running
+sdqctl -P run my-audit.conv 2> prompts.log
+
+# Full debugging: prompts + streaming
+sdqctl -vv -P cycle my-audit.conv -n 3
+```
+
+Output shows cycle/prompt position and context usage:
+```
+[Cycle 2/3, Prompt 1/2] (ctx: 45%)
+────────────────────────────────────────────────
+Your prompt content here...
+────────────────────────────────────────────────
+```
+
+### Quiet Mode
+
+For scripts and CI/CD, use `-q` for errors only:
+
+```bash
+sdqctl -q run my-audit.conv --json > results.json
+```
+
+See [IO-ARCHITECTURE.md](IO-ARCHITECTURE.md) for full details.
+
+---
+
 ## ConversationFile Anatomy
 
 ```dockerfile
