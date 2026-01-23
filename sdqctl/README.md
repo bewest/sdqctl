@@ -180,7 +180,11 @@ OUTPUT-FILE security-report.md
 | `ALLOW-SHELL` | Enable shell features like pipes (true/false) |
 | `PAUSE` | Checkpoint and exit for human review |
 | `CHECKPOINT-AFTER` | When to checkpoint (each-cycle, each-prompt) |
+| `COMPACT` | Trigger compaction (with optional preserve list) |
 | `COMPACT-PRESERVE` | What to preserve during compaction |
+| `COMPACT-PROLOGUE` | Content before compacted summary |
+| `COMPACT-EPILOGUE` | Content after compacted summary |
+| `ELIDE` | Merge adjacent elements into single prompt |
 | `HEADER` | Prepend to output (inline or @file) |
 | `FOOTER` | Append to output (inline or @file) |
 | `OUTPUT-FORMAT` | Output format (markdown, json) |

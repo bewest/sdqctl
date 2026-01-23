@@ -145,6 +145,37 @@ PROMPT Fresh context analysis.
         new_conv_steps = [s for s in conv.steps if s.type == "new_conversation"]
         assert len(new_conv_steps) == 1
 
+    def test_parse_compact_prologue_epilogue(self):
+        """Test parsing COMPACT-PROLOGUE and COMPACT-EPILOGUE directives."""
+        content = """MODEL gpt-4
+ADAPTER mock
+COMPACT-PROLOGUE This conversation has been compacted. Previous context:
+COMPACT-EPILOGUE Continue from the summary above.
+PROMPT Analyze the code.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert conv.compact_prologue == "This conversation has been compacted. Previous context:"
+        assert conv.compact_epilogue == "Continue from the summary above."
+
+    def test_parse_elide_directive(self):
+        """Test parsing ELIDE directive creates elide step."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Analyze test results.
+ELIDE
+PROMPT Fix any errors found.
+"""
+        conv = ConversationFile.parse(content)
+        
+        elide_steps = [s for s in conv.steps if s.type == "elide"]
+        assert len(elide_steps) == 1
+        
+        # Should have 2 prompts and 1 elide
+        assert len(conv.prompts) == 2
+        step_types = [s.type for s in conv.steps]
+        assert step_types == ["prompt", "elide", "prompt"]
+
     def test_parse_output_directives(self, complex_conv_content):
         """Test parsing OUTPUT, OUTPUT-FORMAT, OUTPUT-FILE, OUTPUT-DIR."""
         conv = ConversationFile.parse(complex_conv_content)

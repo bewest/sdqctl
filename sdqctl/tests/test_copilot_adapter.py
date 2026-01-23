@@ -979,3 +979,114 @@ class TestModelChangeEvent:
         
         stats = adapter.get_session_stats(session)
         assert stats.model == "claude-opus-4"
+
+
+
+
+class TestCompactWithSessionReset:
+    """Test compact_with_session_reset method for client-side compaction."""
+
+    @pytest.mark.asyncio
+    async def test_compact_with_session_reset_creates_new_session(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test that compact_with_session_reset creates a new session."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        # Create initial session
+        config = AdapterConfig(model="gpt-4")
+        old_session = await adapter.create_session(config)
+        old_session_id = old_session.id
+        
+        # Mock send to return summary via proper event structure
+        async def simulate_compact(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+            
+            # Turn start
+            event = MagicMock()
+            event.type = MockEventType("assistant.turn_start")
+            handler(event)
+            
+            # Full message with summary
+            event = MagicMock()
+            event.type = MockEventType("assistant.message")
+            event.data = MagicMock(content="Summary of previous conversation.")
+            handler(event)
+            
+            # Idle to complete
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+        
+        mock_copilot_session.send = simulate_compact
+        mock_copilot_session.get_messages = AsyncMock(return_value=[
+            MagicMock(role="user", content="test"),
+            MagicMock(role="assistant", content="response"),
+        ])
+        
+        # Perform compact with session reset
+        new_session, result = await adapter.compact_with_session_reset(
+            old_session,
+            config,
+            preserve=["findings"],
+            compaction_prologue="COMPACT-PROLOGUE: Previous context:",
+            compaction_epilogue="Continue from above.",
+        )
+        
+        # Verify a new session was created
+        assert new_session.id != old_session_id
+        assert result.summary == "Summary of previous conversation."
+        
+    @pytest.mark.asyncio
+    async def test_compact_with_session_reset_default_prologue_epilogue(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test that default prologue/epilogue is used when not specified."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        config = AdapterConfig(model="gpt-4")
+        old_session = await adapter.create_session(config)
+        
+        # Track what was sent to sessions
+        sent_prompts = []
+        
+        async def capture_send(prompt_dict, *args, **kwargs):
+            # prompt_dict is {"prompt": "actual prompt text"}
+            sent_prompts.append(prompt_dict.get("prompt", str(prompt_dict)))
+            handler = mock_copilot_session._event_handler
+            
+            event = MagicMock()
+            event.type = MockEventType("assistant.turn_start")
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("assistant.message")
+            event.data = MagicMock(content="Summarized content")
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+        
+        mock_copilot_session.send = capture_send
+        mock_copilot_session.get_messages = AsyncMock(return_value=[])
+        
+        new_session, result = await adapter.compact_with_session_reset(
+            old_session,
+            config,
+            preserve=["key decisions"],
+            # No prologue/epilogue specified - should use defaults
+        )
+        
+        # Check that default texts are in the context sent to new session
+        # First send is /compact, second is to new session with context
+        assert len(sent_prompts) >= 2
+        context_prompt = sent_prompts[-1]
+        assert "compacted" in context_prompt.lower() or "summary" in context_prompt.lower()
+        assert "Continue" in context_prompt

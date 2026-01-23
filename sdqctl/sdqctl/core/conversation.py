@@ -58,7 +58,12 @@ class DirectiveType(Enum):
     COMPACT = "COMPACT"
     COMPACT_PRESERVE = "COMPACT-PRESERVE"
     COMPACT_SUMMARY = "COMPACT-SUMMARY"
+    COMPACT_PROLOGUE = "COMPACT-PROLOGUE"  # Content injected before compacted summary
+    COMPACT_EPILOGUE = "COMPACT-EPILOGUE"  # Content injected after compacted summary
     NEW_CONVERSATION = "NEW-CONVERSATION"
+    
+    # Elision (merge adjacent elements into single prompt)
+    ELIDE = "ELIDE"  # Merge element above with element below
 
     # Checkpointing
     CHECKPOINT = "CHECKPOINT"
@@ -247,6 +252,8 @@ class ConversationFile:
     # Compaction
     compact_preserve: list[str] = field(default_factory=list)
     compact_summary: Optional[str] = None
+    compact_prologue: Optional[str] = None  # Content before compacted summary
+    compact_epilogue: Optional[str] = None  # Content after compacted summary
 
     # Checkpointing
     checkpoint_after: Optional[str] = None  # each-cycle, each-prompt, never
@@ -643,6 +650,14 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.compact_preserve = [x.strip() for x in directive.value.split(",")]
         case DirectiveType.COMPACT_SUMMARY:
             conv.compact_summary = directive.value
+        case DirectiveType.COMPACT_PROLOGUE:
+            conv.compact_prologue = directive.value
+        case DirectiveType.COMPACT_EPILOGUE:
+            conv.compact_epilogue = directive.value
+        
+        # Elision - merge adjacent elements
+        case DirectiveType.ELIDE:
+            conv.steps.append(ConversationStep(type="elide", content=directive.value))
         
         case DirectiveType.CHECKPOINT_AFTER:
             conv.checkpoint_after = directive.value

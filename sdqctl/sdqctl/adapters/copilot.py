@@ -743,6 +743,103 @@ class CopilotAdapter(AdapterBase):
         # Fall back to base implementation (sends summarization prompt)
         return await super().compact(session, preserve, summary_prompt)
 
+    async def compact_with_session_reset(
+        self,
+        session: AdapterSession,
+        config: AdapterConfig,
+        preserve: list[str],
+        compaction_prologue: Optional[str] = None,
+        compaction_epilogue: Optional[str] = None,
+        prologues: Optional[list[str]] = None,
+        epilogues: Optional[list[str]] = None,
+    ) -> tuple[AdapterSession, CompactionResult]:
+        """Compact by getting summary and creating a new session.
+        
+        This implements client-side compaction:
+        1. Get summary via /compact
+        2. Destroy current session
+        3. Create new session with compacted context injected
+        
+        The new session receives context in this order:
+        - epilogues (from .conv file)
+        - compaction_prologue (from COMPACT-PROLOGUE)
+        - compacted summary
+        - compaction_epilogue (from COMPACT-EPILOGUE)
+        
+        Args:
+            session: Current session to compact
+            config: Config for new session
+            preserve: Items to preserve in summary
+            compaction_prologue: Content before summary (COMPACT-PROLOGUE)
+            compaction_epilogue: Content after summary (COMPACT-EPILOGUE)
+            prologues: Regular prologues to inject
+            epilogues: Regular epilogues to inject
+            
+        Returns:
+            Tuple of (new_session, compaction_result)
+        """
+        tokens_before, _ = await self.get_context_usage(session)
+        
+        # Get summary via /compact
+        preserve_hint = ""
+        if preserve:
+            preserve_hint = f"Preserve: {', '.join(preserve)}. "
+        
+        compact_prompt = f"/compact {preserve_hint}Summarize this conversation for continuation.".strip()
+        
+        try:
+            summary = await self.send(session, compact_prompt)
+        except Exception as e:
+            logger.warning(f"/compact failed: {e}, using fallback summarization")
+            summary = await self.send(session, f"Summarize this conversation. {preserve_hint}")
+        
+        logger.info(f"🗜️ Compaction: got summary ({len(summary)} chars)")
+        
+        # Destroy old session
+        await self.destroy_session(session)
+        
+        # Create new session
+        new_session = await self.create_session(config)
+        
+        # Build compacted context
+        context_parts = []
+        
+        # Add epilogues first (workflow-level context)
+        if epilogues:
+            for epilogue in epilogues:
+                context_parts.append(epilogue)
+        
+        # Add compaction prologue
+        if compaction_prologue:
+            context_parts.append(compaction_prologue)
+        else:
+            context_parts.append("This conversation has been compacted. Summary of previous context:")
+        
+        # Add the summary
+        context_parts.append(summary)
+        
+        # Add compaction epilogue
+        if compaction_epilogue:
+            context_parts.append(compaction_epilogue)
+        else:
+            context_parts.append("Continue from the context above.")
+        
+        compacted_context = "\n\n".join(context_parts)
+        
+        # Send compacted context to establish new session
+        await self.send(new_session, compacted_context)
+        
+        tokens_after, _ = await self.get_context_usage(new_session)
+        
+        logger.info(f"🗜️ Compaction complete: {tokens_before} → {tokens_after} tokens (new session)")
+        
+        return new_session, CompactionResult(
+            preserved_content=compacted_context,
+            summary=summary,
+            tokens_before=tokens_before,
+            tokens_after=tokens_after,
+        )
+
     def supports_tools(self) -> bool:
         """Copilot SDK supports tools."""
         return True

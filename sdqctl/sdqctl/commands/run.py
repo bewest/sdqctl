@@ -168,6 +168,8 @@ console = Console()
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
+@click.option("--min-compaction-density", type=int, default=0,
+              help="Skip compaction if context usage below this % (e.g., 30 = skip if < 30% full)")
 @click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
 @click.pass_context
@@ -190,6 +192,7 @@ def run(
     json_output: bool,
     dry_run: bool,
     render_only: bool,
+    min_compaction_density: int,
     no_stop_file_prologue: bool,
     stop_file_nonce: Optional[str],
 ) -> None:

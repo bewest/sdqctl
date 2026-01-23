@@ -543,3 +543,75 @@ For now, the most reliable approach is **fresh session mode** for long workflows
 - Start new session each cycle
 - Inject summary from previous session as context
 - Reload CONTEXT files from disk (picks up any changes)
+
+---
+
+## Implemented: Client-Side Compaction (2026-01-23)
+
+Since the SDK's `/compact` command doesn't reduce context, we implemented **client-side compaction with session reset**. This approach:
+
+1. Uses `/compact` to generate a summary
+2. Destroys the current session
+3. Creates a new session with the summary injected as context
+4. Continues with remaining workflow prompts
+
+### New Directives
+
+```dockerfile
+# Content injected before the compacted summary
+COMPACT-PROLOGUE This conversation has been compacted. Previous context:
+
+# Content injected after the compacted summary
+COMPACT-EPILOGUE Continue from the summary above.
+```
+
+### New CLI Option
+
+```bash
+# Skip compaction if context usage is below threshold
+sdqctl run workflow.conv --min-compaction-density 30
+# This skips compaction if context is less than 30% full
+```
+
+### Session Structure After Compaction
+
+When a `COMPACT` directive triggers:
+1. Current session is summarized via `/compact`
+2. Old session is destroyed
+3. New session receives:
+   ```
+   [COMPACT-PROLOGUE or default text]
+   
+   [Summary from /compact]
+   
+   [COMPACT-EPILOGUE or default text]
+   ```
+4. Workflow continues with remaining prompts
+
+### Implementation
+
+```python
+# In CopilotAdapter
+async def compact_with_session_reset(
+    self,
+    session: AdapterSession,
+    config: AdapterConfig,
+    preserve: list[str],
+    compaction_prologue: Optional[str] = None,
+    compaction_epilogue: Optional[str] = None,
+) -> tuple[AdapterSession, CompactionResult]:
+    # 1. Get summary
+    summary = await self.send(session, "/compact ...")
+    
+    # 2. Destroy old session
+    await self.destroy_session(session)
+    
+    # 3. Create new session with compacted context
+    new_session = await self.create_session(config)
+    compacted_context = f"{prologue}\n\n{summary}\n\n{epilogue}"
+    await self.send(new_session, compacted_context)
+    
+    return new_session, CompactionResult(...)
+```
+
+This achieves actual token reduction by starting fresh while preserving context through the summary.
