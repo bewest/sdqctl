@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-23  
+> **Last Updated**: 2026-01-23 (Session complete)  
 > **Purpose**: Track open design questions, implementation work, and future proposals
 
 ---
@@ -158,6 +158,16 @@ UCAs that span multiple projects (e.g., Nightscout ↔ Loop sync issues)
 ---
 
 ## Completed
+
+### Session 2026-01-23
+
+- [x] **Feature Interaction Matrix** - Resolved all blocking design decisions (COMPACT+VERIFY, RUN-BRANCH+CHECKPOINT)
+- [x] **RUN-RETRY directive** - AI-assisted retry on command failure (commit 3f75074)
+- [x] **--from-json flag** - Pipeline input for cycle command (commit 90242c5)
+- [x] **Schema versioning** - Added schema_version to JSON output
+- [x] Design decisions documented: ON-FAILURE strategy, VERIFY execution model
+
+### Earlier
 
 - [x] Terminology update: "quine" → "synthesis cycles" (commit 5e57ee3)
 - [x] Regulatory context: ISO 14971 + IEC 62304 (commit 93be572)
