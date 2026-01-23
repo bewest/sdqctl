@@ -134,6 +134,31 @@ From workflow analysis:
 
 The `test-discovery.conv` workflow pre-loads 6 files via CONTEXT, consuming context before the agent even starts. The hint-based workflows reserve that capacity for tool results.
 
+### Precise Extraction with REFCAT
+
+When you need specific sections rather than entire files, use `sdqctl refcat`:
+
+```bash
+# Extract only the function you need (lines 182-194)
+sdqctl refcat @sdqctl/core/context.py#L182-L194
+
+# Find and extract by pattern
+sdqctl refcat @lib/auth.py#/def authenticate/
+```
+
+Output includes metadata for agent disambiguation:
+
+```markdown
+## From: sdqctl/core/context.py:182-194 (relative to /home/user/project)
+```python
+182 |     def get_context_content(self) -> str:
+183 |         """Get formatted context content..."""
+...
+```
+```
+
+This is more token-efficient than CONTEXT for large files where you only need specific sections.
+
 ---
 
 ## Session Modes

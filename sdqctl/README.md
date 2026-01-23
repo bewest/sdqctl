@@ -640,6 +640,56 @@ ELIDE
 PROMPT Fix any traceability gaps found above.
 ```
 
+### `sdqctl refcat`
+
+Extract file content with line-level precision for context injection:
+
+```bash
+# Extract specific lines
+sdqctl refcat @path/file.py#L10-L50
+
+# Single line
+sdqctl refcat @path/file.py#L42
+
+# Line to end of file
+sdqctl refcat @path/file.py#L100-
+
+# Pattern search (first match)
+sdqctl refcat @path/file.py#/def my_func/
+
+# Multiple refs
+sdqctl refcat @file1.py#L10 @file2.py#L20-L30
+
+# JSON output for scripting
+sdqctl refcat @file.py#L10-L50 --json
+
+# Validate refs without output
+sdqctl refcat @file.py#L10-L50 --validate-only
+
+# Without line numbers
+sdqctl refcat @file.py#L10-L50 --no-line-numbers
+```
+
+Output format includes file origin and line numbers:
+
+```markdown
+## From: sdqctl/core/context.py:182-194 (relative to /home/user/project)
+```python
+182 |     def get_context_content(self) -> str:
+183 |         """Get formatted context content..."""
+...
+```
+```
+
+For cross-repository workflows, use aliases:
+
+```bash
+# With alias (defined in ~/.sdqctl/aliases.yaml)
+sdqctl refcat loop:LoopKit/Sources/Algorithm.swift#L100-L200
+```
+
+See `proposals/REFCAT-DESIGN.md` for full specification.
+
 ### `sdqctl status`
 
 Show session and system status:
@@ -689,6 +739,7 @@ ruff check sdqctl/
 
 ### Recently Completed
 
+- ✅ **REFCAT Command** - Extract file content with line ranges (`@file.py#L10-L50`) for precise context injection
 - ✅ **VERIFY Directive** - Static verification during workflows ([docs](#verify-directive-in-workflow-verification))
 - ✅ **STPA Workflow Templates** - Safety analysis workflows (`examples/workflows/stpa/`)
 - ✅ **Hook Event Logging** - Track hook.start/hook.end events
