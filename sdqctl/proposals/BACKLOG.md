@@ -174,7 +174,13 @@ UCAs that span multiple projects (e.g., Nightscout ↔ Loop sync issues)
 
 ## Completed
 
-### Session 2026-01-23 (continued)
+### Session 2026-01-23 (Phase 3-4)
+
+- [x] **VERIFY directive parsing** - Phase 3 complete (commit 52ec86c)
+- [x] **VERIFY execution integration** - Phase 4 complete (commit 3e29120)
+- [x] VERIFY directive: all 4 phases COMPLETE, 19 tests total
+
+### Session 2026-01-23 (Phase 1-2)
 
 - [x] **STPA workflow templates** - 3 workflows + README (commit 1f9fc31)
 - [x] **Verify CLI commands** - `sdqctl verify refs`, `sdqctl verify all` (commit 816a7db)
