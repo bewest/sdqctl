@@ -186,6 +186,10 @@ OUTPUT-FILE security-report.md
 | `COMPACT-PROLOGUE` | Content before compacted summary |
 | `COMPACT-EPILOGUE` | Content after compacted summary |
 | `ELIDE` | Merge adjacent elements into single prompt |
+| `VERIFY` | Run static verification (refs, traceability) |
+| `VERIFY-ON-ERROR` | Behavior on verification failure (stop, continue) |
+| `VERIFY-OUTPUT` | When to include output (always, on-error, never) |
+| `VERIFY-LIMIT` | Max verification output chars |
 | `HEADER` | Prepend to output (inline or @file) |
 | `FOOTER` | Append to output (inline or @file) |
 | `OUTPUT-FORMAT` | Output format (markdown, json) |
@@ -584,6 +588,46 @@ Status indicators:
 - ⏳ Pending - Waiting to be processed
 - ❌ Failed - Processing failed
 
+### `sdqctl verify`
+
+Static verification suite for workflows and references:
+
+```bash
+# Verify @-references resolve to files
+sdqctl verify refs
+
+# Run all verifications
+sdqctl verify all
+
+# JSON output for scripting
+sdqctl verify refs --json
+
+# Verify specific directory
+sdqctl verify refs -p examples/workflows/
+```
+
+#### VERIFY Directive (In-Workflow Verification)
+
+Run verifications during workflow execution:
+
+```dockerfile
+# Verify all @-references before proceeding
+VERIFY refs
+
+# Control error handling
+VERIFY-ON-ERROR continue
+VERIFY refs
+
+# Only include output on failure
+VERIFY-OUTPUT on-error
+VERIFY refs
+
+# Combine with ELIDE to fix issues
+VERIFY refs
+ELIDE
+PROMPT Fix any missing references found above.
+```
+
 ### `sdqctl status`
 
 Show session and system status:
@@ -620,6 +664,8 @@ ruff check sdqctl/
 
 ### Recently Completed
 
+- ✅ **VERIFY Directive** - Static verification during workflows ([docs](#verify-directive-in-workflow-verification))
+- ✅ **STPA Workflow Templates** - Safety analysis workflows (`examples/workflows/stpa/`)
 - ✅ **Hook Event Logging** - Track hook.start/hook.end events
 - ✅ **Model Change Tracking** - Log session.model_change events
 - ✅ **Session Handoff Logging** - Track session.handoff events

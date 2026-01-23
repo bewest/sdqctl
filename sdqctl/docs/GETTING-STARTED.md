@@ -108,6 +108,7 @@ This is useful for:
 | `cycle` | Multi-cycle iteration with state | Iterative refinement, long tasks |
 | `apply` | Apply workflow to multiple components | Batch processing |
 | `render` | Preview prompts without AI calls | Debugging, validation |
+| `verify` | Static verification suite | Pre-flight checks |
 | `status` | Show session/adapter status | Troubleshooting |
 
 ### run vs cycle vs apply
@@ -213,6 +214,7 @@ OUTPUT-FILE report.md          # Save output
 | `PAUSE` | Checkpoint for human review |
 | `COMPACT` | Trigger context compaction |
 | `ELIDE` | Merge adjacent elements into single prompt |
+| `VERIFY` | Run static verification (refs, etc.) |
 
 > **Efficiency Tip:** Use `ELIDE` to combine test output with fix instructions:
 > ```dockerfile
@@ -313,7 +315,8 @@ Once comfortable with `run`, explore:
 4. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
 5. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
 
-See `examples/workflows/` for ready-to-use templates.
+See `examples/workflows/` for ready-to-use templates, including:
+- `examples/workflows/stpa/` — STPA safety analysis workflows
 
 ---
 
@@ -333,6 +336,10 @@ sdqctl cycle workflow.conv -n 5 --session-mode fresh  # New session each cycle
 
 # Batch apply
 sdqctl apply workflow.conv --components "lib/*.py"
+
+# Static verification
+sdqctl verify refs
+sdqctl verify all --json
 
 # Check status
 sdqctl status --adapters
