@@ -1,4 +1,4 @@
-# Example workflow demonstrating RUN, PROLOGUE, EPILOGUE, HEADER, FOOTER
+# Example workflow demonstrating RUN, PROLOGUE, EPILOGUE, HEADER, FOOTER, ELIDE
 # Run with: sdqctl run examples/workflows/verify-with-run.conv
 
 MODEL gpt-4
@@ -17,14 +17,14 @@ EPILOGUE Remember to cite specific file locations.
 RUN-ON-ERROR continue
 RUN-OUTPUT always
 
-# Execute verification tool
+# Execute verification tool and analyze in one prompt (using ELIDE)
 RUN python -c "print('Verification result: 5 issues found')"
-
+ELIDE
 PROMPT Analyze the verification output above and categorize the issues by severity.
 
-# Run another tool
+# Run coverage tool and analyze in one prompt (using ELIDE)
 RUN python -c "print('Coverage: 73%')"
-
+ELIDE
 PROMPT Based on the coverage report, identify areas that need more testing.
 
 # Output formatting - use literal description, not {{WORKFLOW_NAME}} (Q-003 best practice)
