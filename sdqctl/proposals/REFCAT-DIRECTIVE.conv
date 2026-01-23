@@ -128,12 +128,31 @@ PROMPT |
   
   ### 2.3 Error Handling
   
-  | Condition | Behavior |
-  |-----------|----------|
-  | File not found | Error (REFCAT) or warning (REFCAT-OPTIONAL) |
-  | Lines out of range | Clamp to file bounds, add note |
-  | Pattern not found | Error with suggestion |
-  | Alias unknown | Error listing known aliases |
+  **CRITICAL: Fail-fast semantics**
+  
+  REFCAT refs MUST be validated before the session starts (during `sdqctl validate`).
+  If any REFCAT ref cannot resolve, the workflow should NOT start.
+  
+  | Condition | Validate Phase | Runtime Phase |
+  |-----------|----------------|---------------|
+  | File not found | ❌ Fail validation | ❌ Quit session |
+  | Lines out of range | ⚠️ Warning | Clamp to file bounds, add note |
+  | Pattern not found | N/A (runtime only) | ❌ Quit session |
+  | Alias unknown | ❌ Fail validation | ❌ Quit session |
+  
+  **Rationale**: Like CONTEXT, missing REFCAT files indicate a broken workflow.
+  Unlike CONTEXT-OPTIONAL, REFCAT has no optional variant - if you specify a ref,
+  you need it. Use CONTEXT-OPTIONAL for truly optional file inclusion.
+  
+  **Validation integration**:
+  ```bash
+  # sdqctl validate should check REFCAT refs
+  sdqctl validate workflow.conv
+  # Error: REFCAT ref not found: @missing/file.py#L10-L50
+  
+  # --allow-missing skips REFCAT validation (for cross-repo workflows)
+  sdqctl validate workflow.conv --allow-missing
+  ```
   
   Write the design to `proposals/REFCAT-DESIGN.md`.
 
