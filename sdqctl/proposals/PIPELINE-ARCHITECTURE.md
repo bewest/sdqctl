@@ -36,7 +36,7 @@ sdqctl supports multiple patterns for adaptive workflows. Each serves a differen
 
 | Pattern | Timing | Who Decides | Complexity | Best For |
 |---------|--------|-------------|------------|----------|
-| **Quine workflows** | Cross-session | AI (via state files) | Low | Incremental progress |
+| **Synthesis cycles** | Cross-session | AI (via state files) | Low | Incremental progress |
 | **RUN branching** | Runtime | ConversationFile | Medium | Error recovery, retries |
 | **External pipeline** | Pre-execution | External tool | High | Workflow composition |
 | **ELIDE chains** | Single turn | N/A (efficiency) | Low | Token optimization |
@@ -47,7 +47,7 @@ sdqctl supports multiple patterns for adaptive workflows. Each serves a differen
 Need to adapt workflow behavior?
 │
 ├─ Based on previous session results?
-│   └─ Use QUINE PATTERN (state files + prompts)
+│   └─ Use SYNTHESIS CYCLE (state files + prompts)
 │
 ├─ Based on command failure at runtime?
 │   └─ Use RUN BRANCHING (ON-FAILURE, RUN-RETRY)

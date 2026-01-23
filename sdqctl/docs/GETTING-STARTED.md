@@ -308,7 +308,7 @@ sdqctl run security-audit.conv --adapter copilot
 Once comfortable with `run`, explore:
 
 1. **[Context Management](CONTEXT-MANAGEMENT.md)** — Optimal context window strategies
-2. **[Quine Workflows](QUINE-WORKFLOWS.md)** — Self-improving iteration patterns
+2. **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration patterns
 3. **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Requirements → code → verification
 4. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
 5. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds

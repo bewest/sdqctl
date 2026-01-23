@@ -421,7 +421,7 @@ OUTPUT-FILE reports/doc-verification.md
 ## Next Steps
 
 - **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Go forward: requirements → code
-- **[Quine Workflows](QUINE-WORKFLOWS.md)** — Self-improving iterations
+- **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iterations
 - **[Getting Started](GETTING-STARTED.md)** — sdqctl basics
 
 See `examples/workflows/test-discovery.conv` for code analysis patterns.

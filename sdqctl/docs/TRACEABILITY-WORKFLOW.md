@@ -173,7 +173,7 @@ RUN python -m pytest tests/test_generated.py -v
 > ELIDE
 > PROMPT Fix any failing tests shown above.
 > ```
-> See [QUINE-WORKFLOWS.md](QUINE-WORKFLOWS.md#use-elide-to-reduce-agent-turns) for details.
+> See [SYNTHESIS-CYCLES.md](SYNTHESIS-CYCLES.md#use-elide-to-reduce-agent-turns) for details.
 
 ---
 
@@ -349,7 +349,7 @@ Each phase outputs to files that the next phase references.
 ## Next Steps
 
 - **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Go backwards: code → docs → requirements
-- **[Quine Workflows](QUINE-WORKFLOWS.md)** — Self-improving iteration loops
+- **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration loops
 - **[Getting Started](GETTING-STARTED.md)** — sdqctl basics
 
 See `examples/workflows/test-discovery.conv` for a working traceability example.

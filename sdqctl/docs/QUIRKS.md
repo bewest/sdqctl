@@ -492,5 +492,5 @@ When you discover a new quirk:
 ## See Also
 
 - [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) - SDK gaps and integration details
-- [QUINE-WORKFLOWS.md](QUINE-WORKFLOWS.md) - Anti-patterns for workflows
+- [SYNTHESIS-CYCLES.md](SYNTHESIS-CYCLES.md) - Anti-patterns for workflows
 - [LOOP-STRESS-TEST.md](LOOP-STRESS-TEST.md) - Loop detection testing methodology

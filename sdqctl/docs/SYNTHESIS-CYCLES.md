@@ -1,6 +1,8 @@
-# Quine Workflows: Self-Improving Iterations
+# Synthesis Cycles: Iterative AI-Driven Workflows
 
-A **quine-like workflow** uses sdqctl to improve a codebase iteratively, where each cycle's output becomes input for the next. The workflow analyzes, implements, documents, and queues the next priorities — creating a self-sustaining improvement loop.
+A **synthesis cycle** uses sdqctl to improve a codebase iteratively, where each cycle's output becomes input for the next. The workflow analyzes, implements, documents, and queues the next priorities — creating a self-sustaining improvement loop.
+
+> **Note**: This pattern was previously called "quine-like workflows". See [GLOSSARY.md](GLOSSARY.md#quine-like-deprecated) for why we changed the terminology.
 
 ---
 
@@ -16,17 +18,17 @@ A **quine-like workflow** uses sdqctl to improve a codebase iteratively, where e
 
 ---
 
-## What Makes a Workflow "Quine-Like"?
+## What Makes a Synthesis Cycle?
 
 Traditional workflows are linear: input → process → output.
 
-Quine workflows are circular:
+Synthesis cycles are circular:
 1. **Analyze** current state and select work
 2. **Implement** the selected improvement
 3. **Document** progress and lessons
 4. **Queue** next priorities for the next cycle
 
-The key insight: **the output of cycle N becomes the context for cycle N+1**.
+The key insight: **the output of cycle N becomes the context for cycle N+1** (this is the [State Relay Pattern](GLOSSARY.md#state-relay-pattern)).
 
 ---
 
@@ -342,7 +344,7 @@ edit-and-verify.conv         # Clear implementation intent
 
 ### Use ELIDE to Reduce Agent Turns
 
-The `ELIDE` directive merges adjacent elements into a single prompt, eliminating unnecessary agent turns. This is particularly useful in quine workflows where you run tests and then ask the agent to fix failures:
+The `ELIDE` directive merges adjacent elements into a single prompt, eliminating unnecessary agent turns. This is particularly useful in synthesis cycles where you run tests and then ask the agent to fix failures:
 
 ❌ **Without ELIDE** — 3 agent turns (wasteful):
 ```dockerfile
@@ -416,6 +418,7 @@ PROMPT Review the focus document at reports/auth-improvements.md.
 
 ## Next Steps
 
+- **[Glossary](GLOSSARY.md)** — Terminology definitions
 - **[Context Management](CONTEXT-MANAGEMENT.md)** — Optimal context window strategies
 - **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Requirements → specs → tests → code
 - **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation

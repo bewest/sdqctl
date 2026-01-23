@@ -228,9 +228,9 @@ RUN-RETRY 3 "Fix the failing tests based on error output"
 
 ---
 
-## Alternative: Let the Quine Pattern Handle It
+## Alternative: Let the Synthesis Cycle Handle It
 
-The existing quine workflow pattern already handles adaptive behavior:
+The existing synthesis cycle pattern already handles adaptive behavior:
 
 ```dockerfile
 # test-and-fix.conv
@@ -352,7 +352,7 @@ The pipeline pattern (`sdqctl render --json | transform | sdqctl cycle --from-js
 |----------|--------|------------|----------|
 | RUN branching | Runtime | Medium | Error recovery, retries |
 | External pipeline | Pre-execution | High | Workflow selection, customization |
-| Quine pattern | Cross-session | Low | Incremental progress |
+| Synthesis cycle | Cross-session | Low | Incremental progress |
 
 **Guideline**: Use RUN branching for *runtime* decisions; use pipelines for *pre-execution* workflow customization.
 
@@ -404,7 +404,7 @@ class RunDirective:
 - [Dockerfile best practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) - "Keep it simple"
 - [Make vs programming](https://www.gnu.org/software/make/manual/html_node/Conditionals.html) - Even Make has conditionals
 - [GitHub Actions conditionals](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idif) - `if:` on steps
-- [Quine patterns in sdqctl](./docs/QUINE-WORKFLOWS.md) - Existing adaptive approach
+- [Synthesis cycles in sdqctl](../docs/SYNTHESIS-CYCLES.md) - Existing adaptive approach
 
 ---
 

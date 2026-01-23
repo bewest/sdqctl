@@ -502,7 +502,7 @@ PROMPT Fix any broken references found.
 
 ### 5. Interaction with Compaction
 
-During long quine workflows with compaction:
+During long synthesis cycles with compaction:
 - VERIFY results from previous cycles may be summarized
 - `COMPACT-PRESERVE verification` can preserve VERIFY output
 - Consider adding `VERIFY-PRESERVE` for automatic preservation

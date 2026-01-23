@@ -361,7 +361,7 @@ Larger context windows don't mean you should fill them. Quality can degrade even
 ## See Also
 
 - [Getting Started](GETTING-STARTED.md) - Basic context guidance
-- [Quine Workflows](QUINE-WORKFLOWS.md) - "Hint, Don't Inject" pattern
+- [Synthesis Cycles](SYNTHESIS-CYCLES.md) - "Hint, Don't Inject" pattern
 - [Quirks](QUIRKS.md) - Q-002 discusses context-related behaviors
 - [Loop Stress Test](LOOP-STRESS-TEST.md) - Testing context limits
 
