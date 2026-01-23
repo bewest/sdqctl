@@ -34,3 +34,4 @@ sdqctl/pyvenv.cfg
 .vscode/
 .idea/
 
+*.log
