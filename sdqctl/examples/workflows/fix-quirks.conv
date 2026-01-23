@@ -101,6 +101,8 @@ RUN python -m pytest tests/ -v --tb=short -x
 COMPACT
 
 # === Phase 3: Verify and Document ===
+# ELIDE merges test output with this prompt for efficient analysis
+ELIDE
 PROMPT ## Phase 3: Completion
 
 The test results from Phase 2 are shown above (if any failures occurred).
@@ -170,6 +172,8 @@ RUN-TIMEOUT 2m
 RUN python -m pytest tests/ -v --tb=short --co -q | head -20
 
 COMPACT
+# ELIDE merges test output with commit prompt
+ELIDE
 PROMPT If the tests passed, let's ensure docs are up to date and then check our relevant work into git.
 COMPACT
 
