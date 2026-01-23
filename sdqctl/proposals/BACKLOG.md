@@ -13,6 +13,7 @@
 | [VERIFICATION-DIRECTIVES](VERIFICATION-DIRECTIVES.md) | Ready | Decision: Synchronous execution |
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Ready | Decision: Add schema_version |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | Draft | Depends on above three |
+| [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Draft | Help system, command taxonomy, run rename investigation |
 
 ---
 
@@ -142,7 +143,26 @@ Phase 4 (Execution Integration) ✅:
 
 ## Priority 4: Future Proposals
 
-### 4.1 Batch/Parallel Execution
+### 4.1 CLI Ergonomics (NEW)
+
+**Status**: Draft  
+**Proposal**: [CLI-ERGONOMICS.md](CLI-ERGONOMICS.md)
+
+Three work areas:
+- **Help system**: `sdqctl help guidance [topic]` for discoverable documentation
+- **Command taxonomy**: Classify SDK-invoking vs tooling commands
+- **Run rename investigation**: Assess `yield`/`do`/`exec` as alternatives
+
+Implementation workflows:
+```bash
+sdqctl cycle examples/workflows/cli-ergonomics/01-help-system.conv --adapter copilot
+sdqctl cycle examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
+sdqctl cycle examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
+```
+
+---
+
+### 4.2 Batch/Parallel Execution
 
 Run multiple workflows concurrently:
 ```bash

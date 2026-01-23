@@ -1,0 +1,194 @@
+# 01-help-system.conv - Implement sdqctl help command
+#
+# A focused workflow for implementing the help system.
+# Follows the 4-phase pattern: Design → Implement → Verify → Chores
+#
+# Usage:
+#   sdqctl cycle examples/workflows/cli-ergonomics/01-help-system.conv --adapter copilot
+#
+# Deliverables:
+#   - sdqctl/commands/help.py - Help command implementation
+#   - tests/test_help.py - Help command tests
+#   - Updated README.md and GETTING-STARTED.md
+
+MODEL claude-sonnet-4-20250514
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 1
+
+# === Context Management ===
+CONTEXT-LIMIT 70%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE prompts,errors,tool-results
+
+# === Role Clarification ===
+PROLOGUE You are an implementation assistant. Your job is to EDIT FILES directly.
+PROLOGUE Do not describe changes - make them using edit tools.
+PROLOGUE When blocked by missing information, document the blocker and stop.
+
+# === Session Context ===
+PROLOGUE ---
+PROLOGUE ## Help System Implementation
+PROLOGUE Session: {{DATETIME}} | Branch: {{GIT_BRANCH}}
+PROLOGUE Working directory: {{CWD}}
+PROLOGUE ---
+
+# === Implementation Reminders ===
+EPILOGUE ---
+EPILOGUE Remember:
+EPILOGUE - Follow existing command patterns (see commands/verify.py)
+EPILOGUE - Use Click groups for subcommands
+EPILOGUE - Load guidance from docs/*.md files
+EPILOGUE - Test with pytest after implementation
+
+# === Load Context ===
+@proposals/CLI-ERGONOMICS.md
+@sdqctl/cli.py
+@sdqctl/commands/verify.py
+
+# === Phase 1: Design ===
+PROMPT ## Phase 1: Design Help Command
+
+Review the CLI-ERGONOMICS.md proposal and existing command patterns.
+
+**Design the help command structure:**
+
+1. **Command hierarchy:**
+   ```
+   sdqctl help              → Overview of all topics
+   sdqctl help <command>    → Command-specific help (run, cycle, etc.)
+   sdqctl help guidance     → List guidance topics
+   sdqctl help guidance <topic> → Show specific guidance
+   ```
+
+2. **Implementation approach:**
+   - Create `sdqctl/commands/help.py`
+   - Register in `cli.py`
+   - Load guidance from `docs/*.md` files
+   - Map topic names to files (e.g., "elide" → "docs/CONTEXT-MANAGEMENT.md#ELIDE")
+
+3. **Guidance topics to implement:**
+   - elide, compaction, context, directives, workflows
+
+**Output:**
+```markdown
+### Design Decision
+**File structure:** [list files to create/modify]
+**Topic mapping:** [topic → source file]
+**Key functions:** [list main functions needed]
+```
+
+COMPACT
+
+# === Phase 2: Implement ===
+PROMPT ## Phase 2: Implement Help Command
+
+Based on your design, implement the help command.
+
+**Tasks:**
+
+1. **Create `sdqctl/commands/help.py`:**
+   - `help` group command
+   - `help guidance` subcommand with topic argument
+   - Topic-to-content mapping
+   - Rich console output for formatted display
+
+2. **Register in `cli.py`:**
+   - Import help command
+   - Add to CLI group
+
+3. **Add at least 3 guidance topics:**
+   - "elide" - From CONTEXT-MANAGEMENT.md
+   - "compaction" - From CONTEXT-MANAGEMENT.md  
+   - "directives" - Quick reference table
+
+**Use the edit tool to create/modify files directly.**
+
+# Run tests after implementation
+RUN-ON-ERROR continue
+RUN-OUTPUT on-error
+RUN-TIMEOUT 2m
+RUN python -m pytest tests/ -v --tb=short -x -k "help" 2>&1 || echo "No help tests yet - will create"
+
+COMPACT
+
+# === Phase 3: Test and Verify ===
+ELIDE
+PROMPT ## Phase 3: Create Tests and Verify
+
+The test results from Phase 2 are shown above (if any).
+
+**Create tests for the help command:**
+
+1. **Create `tests/test_help.py`:**
+   - Test `sdqctl help` shows overview
+   - Test `sdqctl help guidance` lists topics
+   - Test `sdqctl help guidance elide` shows content
+   - Test unknown topic shows error
+
+2. **Run the full test suite:**
+   - Ensure no regressions
+
+**Implementation:**
+```python
+# tests/test_help.py
+from click.testing import CliRunner
+from sdqctl.cli import cli
+
+def test_help_overview():
+    runner = CliRunner()
+    result = runner.invoke(cli, ['help'])
+    assert result.exit_code == 0
+    assert 'guidance' in result.output
+
+# ... more tests
+```
+
+RUN-ON-ERROR continue
+RUN-OUTPUT always
+RUN-TIMEOUT 2m
+RUN python -m pytest tests/test_help.py -v --tb=short
+
+COMPACT
+
+# === Phase 4: Documentation and Chores ===
+ELIDE
+PROMPT ## Phase 4: Documentation and Git
+
+Test results are shown above.
+
+**Update documentation:**
+
+1. **README.md:**
+   - Add `help` to commands table
+   - Add guidance topics section
+
+2. **docs/GETTING-STARTED.md:**
+   - Add help command to quick start
+   - Reference guidance topics
+
+**Git commit:**
+Stage and commit all changes with message:
+```
+feat(help): implement sdqctl help command with guidance topics
+
+- Add help command group with guidance subcommand
+- Load guidance content from docs/*.md
+- Initial topics: elide, compaction, directives
+- Tests: test_help.py with 4 tests
+```
+
+COMPACT
+
+# === Output Configuration ===
+OUTPUT-FORMAT markdown
+HEADER # Help System Implementation Session
+HEADER ## {{DATETIME}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Next Steps
+FOOTER Run the gap analysis workflow:
+FOOTER ```bash
+FOOTER sdqctl cycle examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
+FOOTER ```

@@ -1,0 +1,255 @@
+# 03-run-rename-assessment.conv - Impact analysis for run command rename
+#
+# A research workflow to assess the impact of renaming the `run` command.
+# Investigation only - does NOT implement any changes.
+#
+# Usage:
+#   sdqctl cycle examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
+#
+# Deliverables:
+#   - Impact report in proposals/CLI-ERGONOMICS.md
+#   - Compatibility strategy recommendations
+#   - Decision support for yield/do/other candidates
+
+MODEL claude-sonnet-4-20250514
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 1
+
+# === Context Management ===
+CONTEXT-LIMIT 70%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE prompts,errors,tool-results
+
+# === Role Clarification ===
+PROLOGUE You are a research assistant performing impact analysis.
+PROLOGUE Analyze code and documentation for rename implications.
+PROLOGUE Do NOT implement any rename - just analyze and document.
+PROLOGUE Provide objective trade-offs for each candidate name.
+
+# === Session Context ===
+PROLOGUE ---
+PROLOGUE ## Run Command Rename Assessment
+PROLOGUE Session: {{DATETIME}} | Branch: {{GIT_BRANCH}}
+PROLOGUE ---
+PROLOGUE
+PROLOGUE Candidates under evaluation:
+PROLOGUE - yield (user preference) - "yielding control to agent"
+PROLOGUE - do - matches plan/do mental model
+PROLOGUE - exec - generic execution
+PROLOGUE - invoke - call a workflow
+
+# === Analysis Reminders ===
+EPILOGUE ---
+EPILOGUE Remember:
+EPILOGUE - This is INVESTIGATION ONLY - no implementation
+EPILOGUE - Document all references to 'run' command
+EPILOGUE - Consider backward compatibility (aliases, deprecation)
+EPILOGUE - Weigh user mental model impact
+
+# === Load Context ===
+@proposals/CLI-ERGONOMICS.md
+@sdqctl/cli.py
+@README.md
+
+# === Phase 1: Code Impact Analysis ===
+PROMPT ## Phase 1: Code Impact Analysis
+
+Analyze the codebase for all references to the `run` command.
+
+**Search for:**
+
+1. **Direct references:**
+   - `sdqctl/commands/run.py` - main implementation
+   - `sdqctl/cli.py` - command registration
+   - Test files referencing 'run'
+
+2. **String references:**
+   - Search for "sdqctl run" in all files
+   - Search for "run command" in documentation
+   - Search for CLI invocations in examples
+
+3. **Import references:**
+   - Where is `run` imported?
+   - What depends on the `run` module?
+
+**Run these commands to gather data:**
+```bash
+grep -r "sdqctl run" . --include="*.md" --include="*.py" --include="*.conv" | head -50
+grep -r "from.*run import" . --include="*.py" | head -20
+grep -r "commands.run" . --include="*.py" | head -20
+```
+
+**Output:**
+```markdown
+### Code Impact Summary
+
+| Category | File Count | Line Count | Examples |
+|----------|------------|------------|----------|
+| Implementation | 1 | ~500 | commands/run.py |
+| Tests | N | ~M | test_run.py |
+| Documentation | N | ~M | README.md, ... |
+| Examples | N | ~M | *.conv files |
+| Total | N | ~M | |
+```
+
+COMPACT
+
+# === Phase 2: Candidate Comparison ===
+PROMPT ## Phase 2: Evaluate Each Candidate
+
+For each rename candidate, assess impact and fit.
+
+**Evaluation criteria:**
+
+1. **yield**
+   - Semantic fit: "Yielding control to agent" ✓
+   - Concerns: Python keyword (but valid as CLI arg)
+   - Muscle memory: Unfamiliar
+   - Related: Python's yield, cooperative multitasking
+
+2. **do**
+   - Semantic fit: "Plan/do" mental model ✓
+   - Concerns: Very common word, possibly overloaded
+   - Muscle memory: Short, easy
+   - Related: make do, todo
+
+3. **exec**
+   - Semantic fit: Execute workflow ✓
+   - Concerns: Conflicts with shell exec, Unix semantics
+   - Muscle memory: Familiar from shells
+   - Related: docker exec, bash exec
+
+4. **invoke**
+   - Semantic fit: Invoke/call a workflow ✓
+   - Concerns: Verbose, 6 characters
+   - Muscle memory: Less common
+   - Related: AWS Lambda invoke
+
+**Output:**
+```markdown
+### Candidate Comparison Matrix
+
+| Criterion | yield | do | exec | invoke |
+|-----------|-------|----|----- |--------|
+| Semantic accuracy | 5 | 4 | 3 | 4 |
+| Brevity | 5 | 2 | 4 | 6 |
+| Uniqueness | 5 | 2 | 2 | 4 |
+| Familiarity | 2 | 4 | 4 | 3 |
+| Conflicts | none | common | shell | none |
+| **Total** | ? | ? | ? | ? |
+```
+
+(1=best, 5=worst for concerns; 1=worst, 5=best for benefits)
+
+COMPACT
+
+# === Phase 3: Compatibility Strategy ===
+ELIDE
+PROMPT ## Phase 3: Backward Compatibility Options
+
+Assess strategies for maintaining compatibility during a rename.
+
+**Options:**
+
+1. **Alias (recommended):**
+   ```python
+   # Keep 'run' as alias for 'yield'
+   @cli.command(name='yield')
+   @click.pass_context  
+   def yield_cmd(ctx, ...):
+       ...
+   
+   # Alias
+   cli.add_command(yield_cmd, name='run')  # Deprecated alias
+   ```
+
+2. **Deprecation warning:**
+   ```python
+   if invoked_as == 'run':
+       click.echo("Warning: 'run' is deprecated, use 'yield'", err=True)
+   ```
+
+3. **Documentation-only change:**
+   - Update docs to prefer new name
+   - Keep old name indefinitely
+   - No code changes
+
+4. **Hard rename:**
+   - Remove old name immediately
+   - Breaking change
+   - Major version bump
+
+**Recommendation factors:**
+- User disruption (scripts, muscle memory)
+- Maintenance burden (two names)
+- Timeline (how long to support old name?)
+
+**Output:**
+```markdown
+### Compatibility Recommendation
+
+**Strategy:** [Alias with deprecation / Hard rename / etc.]
+**Timeline:** [Immediate / 6 months / Never]
+**Migration steps:**
+1. ...
+2. ...
+```
+
+COMPACT
+
+# === Phase 4: Final Report ===
+ELIDE
+PROMPT ## Phase 4: Update Proposal with Findings
+
+Compile findings into the CLI-ERGONOMICS.md proposal.
+
+**Update proposals/CLI-ERGONOMICS.md with:**
+
+1. **Code Impact section:**
+   - Number of files affected
+   - Estimated effort to rename
+
+2. **Candidate Comparison section:**
+   - Comparison matrix from Phase 2
+   - Pros/cons for each
+
+3. **Recommendation:**
+   - Preferred candidate with rationale
+   - Compatibility strategy
+   - Decision criteria for user
+
+4. **Decision Status:**
+   - Mark as "Pending Decision" not "Decided"
+   - This is investigation, not implementation
+
+**Commit changes:**
+```
+docs: add run rename impact assessment to CLI-ERGONOMICS
+
+- Code impact analysis: N files, M lines
+- Candidate comparison: yield, do, exec, invoke
+- Compatibility strategy: alias with deprecation
+- Status: Pending Decision (investigation complete)
+```
+
+COMPACT
+
+# === Output Configuration ===
+OUTPUT-FORMAT markdown
+HEADER # Run Command Rename Assessment
+HEADER ## {{DATETIME}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Summary
+FOOTER 
+FOOTER This assessment provides data for deciding whether to rename `run`.
+FOOTER The decision itself requires user input based on:
+FOOTER - Preference for accuracy vs familiarity
+FOOTER - Tolerance for breaking change
+FOOTER - Timeline for migration
+FOOTER
+FOOTER All three CLI ergonomics workflows complete. Review findings in:
+FOOTER - proposals/CLI-ERGONOMICS.md
+FOOTER - proposals/BACKLOG.md

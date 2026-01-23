@@ -1,0 +1,187 @@
+# 02-tooling-gap-analysis.conv - Analyze tooling commands vs proposals
+#
+# A research workflow to identify gaps between proposals and implementation.
+# Does NOT invoke SDK-heavy commands - focuses on local analysis.
+#
+# Usage:
+#   sdqctl cycle examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
+#
+# Deliverables:
+#   - Gap analysis in proposals/CLI-ERGONOMICS.md
+#   - Updated BACKLOG.md with findings
+#   - Recommendations for validate/show commands
+
+MODEL claude-sonnet-4-20250514
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 1
+
+# === Context Management ===
+CONTEXT-LIMIT 70%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE prompts,errors,tool-results
+
+# === Role Clarification ===
+PROLOGUE You are a research assistant performing gap analysis.
+PROLOGUE Analyze code and proposals to identify missing features.
+PROLOGUE Update tracking documents with findings.
+PROLOGUE Do NOT implement new features - just analyze and document.
+
+# === Session Context ===
+PROLOGUE ---
+PROLOGUE ## Tooling Gap Analysis
+PROLOGUE Session: {{DATETIME}} | Branch: {{GIT_BRANCH}}
+PROLOGUE ---
+
+# === Analysis Reminders ===
+EPILOGUE ---
+EPILOGUE Remember:
+EPILOGUE - Focus on tooling commands (non-SDK)
+EPILOGUE - Compare proposals to actual implementation
+EPILOGUE - Document gaps in BACKLOG.md
+EPILOGUE - Recommend priorities for missing features
+
+# === Load Proposals ===
+@proposals/CLI-ERGONOMICS.md
+@proposals/BACKLOG.md
+@proposals/VERIFICATION-DIRECTIVES.md
+@proposals/PIPELINE-ARCHITECTURE.md
+
+# === Phase 1: Inventory Current State ===
+PROMPT ## Phase 1: Command Inventory
+
+Analyze the current sdqctl command structure.
+
+**Tasks:**
+
+1. **List all implemented commands:**
+   - Read `sdqctl/cli.py` for registered commands
+   - Read each `sdqctl/commands/*.py` for functionality
+
+2. **Classify each command:**
+   - SDK-invoking (sends prompts to AI)
+   - Tooling (local only, no network)
+
+3. **Document command capabilities:**
+   ```markdown
+   | Command | SDK | Subcommands | Description |
+   |---------|-----|-------------|-------------|
+   | run     | ✅  | -           | Execute workflow |
+   | ...     | ... | ...         | ...         |
+   ```
+
+**Output:** Complete command inventory table.
+
+COMPACT
+
+# === Phase 2: Proposal Analysis ===
+PROMPT ## Phase 2: Compare Proposals to Implementation
+
+Review each proposal for tooling-related features.
+
+**For each proposal, identify:**
+
+1. **VERIFICATION-DIRECTIVES.md:**
+   - What's proposed for `verify` command?
+   - What's implemented?
+   - What's missing?
+
+2. **PIPELINE-ARCHITECTURE.md:**
+   - What's proposed for `render` command?
+   - What's implemented?
+   - What's missing?
+
+3. **CLI-ERGONOMICS.md:**
+   - What's proposed for `help`, `validate`, `show`?
+   - What's implemented?
+   - What's missing?
+
+**Output:**
+```markdown
+### Gap Analysis
+
+| Proposal | Feature | Status | Gap |
+|----------|---------|--------|-----|
+| VERIFY   | refs    | ✅     | -   |
+| VERIFY   | links   | 🟡     | Not yet |
+| ...      | ...     | ...    | ... |
+```
+
+COMPACT
+
+# === Phase 3: Evaluate Potential Directives ===
+ELIDE
+PROMPT ## Phase 3: Directive Candidates
+
+Some tooling commands could potentially become directives for in-workflow use.
+
+**Evaluate each candidate:**
+
+1. **VALIDATE directive** (syntax check before execution)
+   - Use case: Pre-flight check in complex workflows
+   - Complexity: Low (parser already exists)
+   - Value: Medium (catch errors early)
+   - Recommendation: Yes/No?
+
+2. **RENDER directive** (template expansion mid-workflow)
+   - Use case: Generate sub-workflow dynamically
+   - Complexity: High (execution flow changes)
+   - Value: Low (ELIDE covers most cases)
+   - Recommendation: Yes/No?
+
+3. **Other candidates?**
+   - STATUS? HELP? Others?
+
+**Output:**
+```markdown
+### Directive Recommendations
+
+| Candidate | Recommend | Rationale |
+|-----------|-----------|-----------|
+| VALIDATE  | Yes/No    | ...       |
+| RENDER    | Yes/No    | ...       |
+```
+
+COMPACT
+
+# === Phase 4: Update Tracking ===
+ELIDE
+PROMPT ## Phase 4: Update BACKLOG.md
+
+Based on your analysis, update the backlog.
+
+**Tasks:**
+
+1. **Update proposals/BACKLOG.md:**
+   - Add CLI-ERGONOMICS.md to proposals table
+   - Add implementation tasks for identified gaps
+   - Prioritize: P1 (blocking), P2 (important), P3 (nice-to-have)
+
+2. **Update proposals/CLI-ERGONOMICS.md:**
+   - Add gap analysis results to document
+   - Update recommendations section
+
+3. **Commit changes:**
+   ```
+   docs: add tooling gap analysis to CLI-ERGONOMICS proposal
+   
+   - Inventory of SDK vs tooling commands
+   - Gap analysis: proposals vs implementation
+   - Directive candidate evaluation
+   - Updated BACKLOG.md with priorities
+   ```
+
+COMPACT
+
+# === Output Configuration ===
+OUTPUT-FORMAT markdown
+HEADER # Tooling Gap Analysis Session
+HEADER ## {{DATETIME}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Next Steps
+FOOTER Run the rename assessment workflow:
+FOOTER ```bash
+FOOTER sdqctl cycle examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
+FOOTER ```
