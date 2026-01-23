@@ -115,13 +115,22 @@ Implemented:
 
 ### 3.3 VERIFY Directive Implementation
 
-**Status**: 🟡 Designed, not implemented  
+**Status**: 🟡 Phase 1 Complete, Phases 2-4 pending  
 **Proposal**: [VERIFICATION-DIRECTIVES.md](VERIFICATION-DIRECTIVES.md)
 
-- [ ] VERIFY-REFS (check @-references exist)
-- [ ] VERIFY-LINKS (check URLs valid)
-- [ ] VERIFY-TRACE (check traceability links)
-- [ ] JSON output format
+Phase 1 (Core Library) ✅:
+- [x] `sdqctl/verifiers/base.py` - VerificationResult, VerificationError, Verifier protocol
+- [x] `sdqctl/verifiers/refs.py` - RefsVerifier (check @-references)
+- [x] `sdqctl/verifiers/__init__.py` - VERIFIERS registry
+- [x] `tests/test_verifiers.py` - 10 tests
+
+Phase 2 (CLI Commands) ✅:
+- [x] `sdqctl verify refs` - Reference verification command
+- [x] `sdqctl verify all` - Run all verifications
+
+Remaining:
+- [ ] Phase 3: VERIFY directive parsing in .conv files
+- [ ] Phase 4: Execution integration (context injection)
 
 ---
 

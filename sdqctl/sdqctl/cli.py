@@ -24,6 +24,7 @@ from .commands.flow import flow
 from .commands.status import status
 from .commands.apply import apply
 from .commands.render import render
+from .commands.verify import verify
 from .core.logging import get_logger, setup_logging
 from .core.progress import set_quiet
 
@@ -84,6 +85,7 @@ cli.add_command(flow)
 cli.add_command(apply)
 cli.add_command(status)
 cli.add_command(render)
+cli.add_command(verify)
 
 
 @cli.command()
