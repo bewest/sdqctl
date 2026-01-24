@@ -18,7 +18,7 @@ from .base import VerificationError, VerificationResult
 class TraceArtifact:
     """A single traceability artifact."""
     id: str
-    type: str  # UCA, SC, REQ, SPEC, TEST, GAP
+    type: str  # UCA, SC, REQ, SPEC, TEST, GAP, LOSS, HAZ, BUG, PROP, Q, IQ
     file: str
     line: int
     links_to: list[str] = field(default_factory=list)  # IDs this artifact links to
@@ -31,19 +31,33 @@ class TraceabilityVerifier:
     name = "traceability"
     description = "Check STPA/IEC 62304 traceability links"
     
-    # Patterns for artifact IDs
+    # Patterns for artifact IDs (from ARTIFACT-TAXONOMY.md)
     # Format: PREFIX-CATEGORY-NNN or PREFIX-NNN
     ID_PATTERNS = {
+        # STPA safety artifacts
+        "LOSS": re.compile(r'\b(LOSS-\d{3})\b'),
+        "HAZ": re.compile(r'\b(HAZ-\d{3})\b'),
         "UCA": re.compile(r'\b(UCA-[A-Z0-9]+-\d{3}|UCA-\d{3})\b'),
         "SC": re.compile(r'\b(SC-[A-Z0-9]+-\d{3}[a-z]?|SC-\d{3}[a-z]?)\b'),
+        # Requirements/specifications
         "REQ": re.compile(r'\b(REQ-[A-Z0-9]+-\d{3}|REQ-\d{3})\b'),
         "SPEC": re.compile(r'\b(SPEC-[A-Z0-9]+-\d{3}|SPEC-\d{3})\b'),
         "TEST": re.compile(r'\b(TEST-[A-Z0-9]+-\d{3}|TEST-\d{3})\b'),
         "GAP": re.compile(r'\b(GAP-[A-Z0-9]+-\d{3}|GAP-\d{3})\b'),
+        # Development artifacts
+        "BUG": re.compile(r'\b(BUG-\d{3})\b'),
+        "PROP": re.compile(r'\b(PROP-\d{3})\b'),
+        "Q": re.compile(r'\b(Q-\d{3})\b'),
+        "IQ": re.compile(r'\b(IQ-\d+)\b'),
     }
     
     # Expected trace chain (higher level → lower level)
-    TRACE_CHAIN = ["UCA", "SC", "REQ", "SPEC", "TEST"]
+    # STPA: LOSS → HAZ → UCA → SC → REQ
+    # IEC 62304: REQ → SPEC → TEST
+    TRACE_CHAIN = ["LOSS", "HAZ", "UCA", "SC", "REQ", "SPEC", "TEST"]
+    
+    # Standalone artifact types (allowed to have no links)
+    STANDALONE_TYPES = {"GAP", "BUG", "PROP", "Q", "IQ"}
     
     # File extensions to scan
     SCAN_EXTENSIONS = {'.md', '.markdown', '.yaml', '.yml', '.txt', '.conv'}
@@ -113,8 +127,24 @@ class TraceabilityVerifier:
         orphan_artifacts = self._find_orphans(artifacts, artifacts_by_type)
         for orphan in orphan_artifacts:
             art = artifacts[orphan]
+            # LOSS without HAZ is concerning (top of STPA chain)
+            if art.type == "LOSS":
+                errors.append(VerificationError(
+                    file=art.file,
+                    line=art.line,
+                    message=f"Orphan LOSS: {art.id} has no downstream HAZ links",
+                    fix_hint="Add Hazard (HAZ) that leads to this loss",
+                ))
+            # HAZ without UCA is concerning
+            elif art.type == "HAZ":
+                errors.append(VerificationError(
+                    file=art.file,
+                    line=art.line,
+                    message=f"Orphan HAZ: {art.id} has no links",
+                    fix_hint="Add UCA that causes this hazard or link to LOSS",
+                ))
             # UCAs without downstream links are concerning
-            if art.type == "UCA":
+            elif art.type == "UCA":
                 errors.append(VerificationError(
                     file=art.file,
                     line=art.line,
@@ -246,8 +276,8 @@ class TraceabilityVerifier:
         orphans = []
         for art_id, artifact in artifacts.items():
             if not artifact.links_to and not artifact.linked_from:
-                # GAPs are allowed to be standalone
-                if artifact.type != "GAP":
+                # Standalone types are allowed to have no links
+                if artifact.type not in self.STANDALONE_TYPES:
                     orphans.append(art_id)
         return orphans
     
@@ -272,12 +302,48 @@ class TraceabilityVerifier:
     ) -> dict[str, float]:
         """Calculate traceability coverage metrics."""
         coverage = {
+            # STPA artifacts
+            "total_losses": len(artifacts_by_type.get("LOSS", [])),
+            "total_hazards": len(artifacts_by_type.get("HAZ", [])),
             "total_ucas": len(artifacts_by_type.get("UCA", [])),
             "total_scs": len(artifacts_by_type.get("SC", [])),
+            # Requirements/specifications
             "total_reqs": len(artifacts_by_type.get("REQ", [])),
             "total_specs": len(artifacts_by_type.get("SPEC", [])),
             "total_tests": len(artifacts_by_type.get("TEST", [])),
+            # Development artifacts
+            "total_bugs": len(artifacts_by_type.get("BUG", [])),
+            "total_props": len(artifacts_by_type.get("PROP", [])),
+            "total_quirks": len(artifacts_by_type.get("Q", [])),
         }
+        
+        # LOSS → HAZ coverage
+        losses_with_haz = 0
+        for loss_id in artifacts_by_type.get("LOSS", []):
+            loss = artifacts[loss_id]
+            has_haz = any(self._is_type(lid, "HAZ", artifacts) for lid in loss.links_to)
+            has_haz = has_haz or any(self._is_type(lid, "HAZ", artifacts) for lid in loss.linked_from)
+            if has_haz:
+                losses_with_haz += 1
+        
+        if coverage["total_losses"] > 0:
+            coverage["loss_to_haz"] = losses_with_haz / coverage["total_losses"] * 100
+        else:
+            coverage["loss_to_haz"] = 0
+        
+        # HAZ → UCA coverage
+        hazards_with_uca = 0
+        for haz_id in artifacts_by_type.get("HAZ", []):
+            haz = artifacts[haz_id]
+            has_uca = any(self._is_type(lid, "UCA", artifacts) for lid in haz.links_to)
+            has_uca = has_uca or any(self._is_type(lid, "UCA", artifacts) for lid in haz.linked_from)
+            if has_uca:
+                hazards_with_uca += 1
+        
+        if coverage["total_hazards"] > 0:
+            coverage["haz_to_uca"] = hazards_with_uca / coverage["total_hazards"] * 100
+        else:
+            coverage["haz_to_uca"] = 0
         
         # UCA → SC coverage
         ucas_with_sc = 0
@@ -320,7 +386,7 @@ class TraceabilityVerifier:
             coverage["spec_to_test"] = 0
         
         # Overall coverage (average of available metrics)
-        metrics = [v for k, v in coverage.items() if k.endswith("_to_") or "_to_" in k]
+        metrics = [v for k, v in coverage.items() if "_to_" in k]
         if metrics:
             coverage["overall"] = sum(m for m in metrics if isinstance(m, (int, float))) / len(metrics)
         else:

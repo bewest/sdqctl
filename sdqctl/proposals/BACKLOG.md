@@ -713,13 +713,19 @@ docs/
   - ID lifecycle and collision avoidance
   - Formatting guidelines
 
-**Deferred to future work:**
+- [x] **Traceability verifier extended** (2026-01-24):
+  - Added LOSS, HAZ, BUG, PROP, Q, IQ patterns
+  - Extended TRACE_CHAIN for full STPA: LOSS → HAZ → UCA → SC → REQ
+  - Added STANDALONE_TYPES (GAP, BUG, PROP, Q, IQ) allowed without links
+  - Orphan detection for LOSS and HAZ (top of safety chain)
+  - Coverage metrics: loss_to_haz, haz_to_uca
+  - 11 new tests in test_verifiers.py
+
+**Remaining future work:**
 
 | Task | Priority | Effort | Notes |
 |------|----------|--------|-------|
 | Add artifact summary to TRACEABILITY-WORKFLOW.md | P2 | 30 min | Link to full proposal |
-| Extend traceability verifier patterns | P2 | 2 hours | Add BUG, PROP, LOSS, HAZ |
-| Add orphan detection for all types | P2 | 1 hour | Extend coverage metrics |
 | Create artifact templates (REQ, GAP, UCA, SPEC) | P3 | 1 hour | Markdown templates |
 | `sdqctl artifact next` command | P3 | 2 hours | Auto-generate next ID |
 | `sdqctl artifact rename` command | P3 | 2 hours | Update all references |

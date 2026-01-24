@@ -991,3 +991,197 @@ PROMPT Analyze traceability results.
         assert "refs" in VERIFIERS
         assert "links" in VERIFIERS
         assert "traceability" in VERIFIERS
+
+
+class TestTraceabilityVerifierExtendedTypes:
+    """Tests for extended artifact types (LOSS, HAZ, BUG, PROP, Q, IQ)."""
+
+    def test_loss_artifact_detection(self, tmp_path):
+        """Test LOSS artifact pattern detection."""
+        source = tmp_path / "losses.md"
+        source.write_text("""
+        # System-Level Losses
+        
+        LOSS-001: Patient harm due to incorrect dosing
+        LOSS-002: Data loss or corruption
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.details["artifacts_by_type"]["LOSS"] == ["LOSS-001", "LOSS-002"]
+        assert result.details["coverage"]["total_losses"] == 2
+
+    def test_hazard_artifact_detection(self, tmp_path):
+        """Test HAZ artifact pattern detection."""
+        source = tmp_path / "hazards.md"
+        source.write_text("""
+        # Hazards
+        
+        HAZ-001: Insulin overdose → LOSS-001
+        HAZ-002: Missed bolus
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert "HAZ-001" in result.details["artifacts_by_type"]["HAZ"]
+        assert result.details["coverage"]["total_hazards"] == 2
+
+    def test_full_stpa_chain(self, tmp_path):
+        """Test LOSS → HAZ → UCA → SC chain."""
+        source = tmp_path / "stpa_chain.md"
+        source.write_text("""
+        # STPA Analysis
+        
+        LOSS-001 → HAZ-001
+        HAZ-001 → UCA-001
+        UCA-001 → SC-001a
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # All artifacts found
+        assert result.details["total_artifacts"] == 4
+        # LOSS-001 has link, so not orphan
+        assert result.passed or len(result.errors) == 0
+
+    def test_bug_artifact_detection(self, tmp_path):
+        """Test BUG artifact pattern detection."""
+        source = tmp_path / "bugs.md"
+        source.write_text("""
+        # Bug Tracker
+        
+        BUG-001: Crash on empty context
+        BUG-002: Timeout not respected
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.details["artifacts_by_type"]["BUG"] == ["BUG-001", "BUG-002"]
+        assert result.details["coverage"]["total_bugs"] == 2
+
+    def test_proposal_artifact_detection(self, tmp_path):
+        """Test PROP artifact pattern detection."""
+        source = tmp_path / "proposals.md"
+        source.write_text("""
+        # Proposals
+        
+        PROP-001: Custom URL scheme for refs
+        PROP-002: Semantic extraction
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.details["artifacts_by_type"]["PROP"] == ["PROP-001", "PROP-002"]
+        assert result.details["coverage"]["total_props"] == 2
+
+    def test_quirk_artifact_detection(self, tmp_path):
+        """Test Q (quirk) artifact pattern detection."""
+        source = tmp_path / "quirks.md"
+        source.write_text("""
+        # Known Quirks
+        
+        Q-001: Filename affects behavior
+        Q-012: Compaction unconditional
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert "Q-001" in result.details["artifacts_by_type"]["Q"]
+        assert "Q-012" in result.details["artifacts_by_type"]["Q"]
+        assert result.details["coverage"]["total_quirks"] == 2
+
+    def test_iq_artifact_detection(self, tmp_path):
+        """Test IQ artifact pattern detection."""
+        source = tmp_path / "quality.md"
+        source.write_text("""
+        # Implementation Quality Issues
+        
+        IQ-1: Missing error handling
+        IQ-15: Excessive complexity
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert "IQ-1" in result.details["artifacts_by_type"]["IQ"]
+        assert "IQ-15" in result.details["artifacts_by_type"]["IQ"]
+
+    def test_standalone_types_allowed(self, tmp_path):
+        """Test that BUG, PROP, Q, IQ are allowed standalone (no orphan errors)."""
+        source = tmp_path / "standalone.md"
+        source.write_text("""
+        # Standalone Artifacts
+        
+        BUG-001: A bug
+        PROP-001: A proposal
+        Q-001: A quirk
+        IQ-1: An issue
+        GAP-001: A gap
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # None should be flagged as orphans
+        assert result.passed
+        assert result.details["orphan_count"] == 0
+
+    def test_loss_haz_coverage(self, tmp_path):
+        """Test LOSS → HAZ coverage calculation."""
+        source = tmp_path / "coverage.md"
+        source.write_text("""
+        # Coverage Test
+        
+        LOSS-001 → HAZ-001
+        LOSS-002: No hazard (orphan)
+        
+        HAZ-001 → UCA-001
+        HAZ-002: No UCA (orphan)
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        coverage = result.details["coverage"]
+        # 1 of 2 losses has HAZ link
+        assert coverage["loss_to_haz"] == 50.0
+        # 1 of 2 hazards has UCA link
+        assert coverage["haz_to_uca"] == 50.0
+
+    def test_orphan_loss_error(self, tmp_path):
+        """Test that orphan LOSS produces error."""
+        source = tmp_path / "orphan_loss.md"
+        source.write_text("""
+        # Losses
+        
+        LOSS-001: Unlinked loss
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # LOSS without links should produce error
+        assert not result.passed
+        assert any("LOSS-001" in err.message for err in result.errors)
+
+    def test_orphan_haz_error(self, tmp_path):
+        """Test that orphan HAZ produces error."""
+        source = tmp_path / "orphan_haz.md"
+        source.write_text("""
+        # Hazards
+        
+        HAZ-001: Unlinked hazard
+        """)
+        
+        verifier = TraceabilityVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # HAZ without links should produce error
+        assert not result.passed
+        assert any("HAZ-001" in err.message for err in result.errors)
