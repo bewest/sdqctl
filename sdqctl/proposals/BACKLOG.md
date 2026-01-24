@@ -550,10 +550,15 @@ Ideas moved from QUIRKS.md "Future Considerations":
 
 ### P0: REFCAT Directive Implementation
 
-**Status**: High Priority  
+**Status**: Partial - CLI Complete, Directive Pending  
 **Proposal**: [REFCAT-DESIGN.md](REFCAT-DESIGN.md)
 
-The `sdqctl refcat` CLI command exists for extracting file content with line-level precision. However, the corresponding **REFCAT directive** for use within `.conv` files is not implemented:
+**Completed** (2026-01-24):
+- ✅ `sdqctl refcat` CLI command with full P0/P1 feature support
+- ✅ Core module `sdqctl/core/refcat.py` with parsing, extraction, formatting
+- ✅ 46 unit tests passing
+
+**Remaining**: The corresponding **REFCAT directive** for use within `.conv` files is not implemented:
 
 ```dockerfile
 # Proposed (not yet implemented)
