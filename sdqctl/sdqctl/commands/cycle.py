@@ -36,7 +36,7 @@ from ..core.logging import get_logger, WorkflowContext, set_workflow_context
 from ..core.loop_detector import LoopDetector, generate_nonce, get_stop_file_instruction
 from ..core.progress import progress as progress_print, WorkflowProgress
 from ..core.session import Session
-from ..utils.output import PromptWriter
+from ..utils.output import PromptWriter, handle_error, print_json_error
 from .utils import run_async
 
 logger = get_logger(__name__)
@@ -195,25 +195,29 @@ def cycle(
         # Get verbosity and show_prompt from context
         verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
         show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+        json_errors = ctx.obj.get("json_errors", False) if ctx.obj else False
         
         run_async(_cycle_from_json_async(
             json_data, max_cycles, session_mode, adapter, model, checkpoint_dir,
             prologue, epilogue, header, footer,
             output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
-            verbosity=verbosity, show_prompt=show_prompt_flag
+            verbosity=verbosity, show_prompt=show_prompt_flag,
+            json_errors=json_errors
         ))
         return
     
     # Get verbosity and show_prompt from context
     verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
     show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+    json_errors = ctx.obj.get("json_errors", False) if ctx.obj else False
     
     run_async(_cycle_async(
         workflow, max_cycles, session_mode, adapter, model, checkpoint_dir,
         prologue, epilogue, header, footer,
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag,
-        min_compaction_density=min_compaction_density
+        min_compaction_density=min_compaction_density,
+        json_errors=json_errors
     ))
 
 
@@ -236,6 +240,7 @@ async def _cycle_from_json_async(
     stop_file_nonce: Optional[str] = None,
     verbosity: int = 0,
     show_prompt: bool = False,
+    json_errors: bool = False,
 ) -> None:
     """Execute workflow from pre-rendered JSON.
     
@@ -411,6 +416,7 @@ async def _cycle_async(
     verbosity: int = 0,
     show_prompt: bool = False,
     min_compaction_density: int = 0,
+    json_errors: bool = False,
 ) -> None:
     """Execute multi-cycle workflow with session management.
     
@@ -897,25 +903,42 @@ async def _cycle_async(
         session.state.status = "failed"
         # Save checkpoint to preserve session state before exit
         checkpoint_path = session.save_pause_checkpoint(f"Loop detected: {e.reason.value}")
-        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-        logger.error(f"Loop detected: {e}")
-        sys.exit(e.exit_code)
+        if not json_errors:
+            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
+            logger.error(f"Loop detected: {e}")
+        exit_code = handle_error(e, json_errors=json_errors, context={
+            "workflow": workflow_path,
+            "checkpoint": str(checkpoint_path),
+        })
+        sys.exit(exit_code)
     
     except MissingContextFiles as e:
         session.state.status = "failed"
         # Save checkpoint to preserve session state before exit
-        checkpoint_path = session.save_pause_checkpoint(f"Missing context files: {e.patterns}")
-        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-        logger.error(f"Missing files: {e}")
-        sys.exit(e.exit_code)
+        checkpoint_path = session.save_pause_checkpoint(f"Missing context files: {e.files}")
+        if not json_errors:
+            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
+            logger.error(f"Missing files: {e}")
+        exit_code = handle_error(e, json_errors=json_errors, context={
+            "workflow": workflow_path,
+            "checkpoint": str(checkpoint_path),
+        })
+        sys.exit(exit_code)
 
     except Exception as e:
         session.state.status = "failed"
         # Save checkpoint to preserve session state before exit
         checkpoint_path = session.save_pause_checkpoint(f"Error: {e}")
-        console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-        console.print(f"[red]Error: {e}[/red]")
-        raise
+        if json_errors:
+            exit_code = handle_error(e, json_errors=True, context={
+                "workflow": workflow_path,
+                "checkpoint": str(checkpoint_path),
+            })
+            sys.exit(exit_code)
+        else:
+            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
+            console.print(f"[red]Error: {e}[/red]")
+            raise
 
     finally:
         # Clear workflow context

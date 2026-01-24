@@ -174,7 +174,7 @@ Enable with `--json-errors` flag for CI integration.
 | 0 | Consolidate docs (this file) | 1 hour | ✅ Complete |
 | 1 | Add `--strict` to verify | 1 hour | ✅ Complete (2026-01-24) |
 | 2 | Implement ON-FAILURE blocks | 4 hours | Pending |
-| 3 | Add `--json-errors` output | 2 hours | Pending |
+| 3 | Add `--json-errors` output | 2 hours | ✅ Complete (2026-01-24) |
 | 4 | ON-ABORT handling | 4 hours | Pending |
 
 ### Phase 1 Implementation Notes
@@ -195,6 +195,48 @@ Added `--strict` flag to all verify commands:
 # Fail CI build if any warnings
 sdqctl verify all --strict
 sdqctl verify traceability --strict
+```
+
+### Phase 3 Implementation Notes
+
+Added `--json-errors` global flag for structured error output:
+
+| Component | Implementation | Notes |
+|-----------|----------------|-------|
+| Global flag | `cli.py` | `--json-errors` option |
+| Exception serialization | `core/exceptions.py` | `exception_to_json()`, `format_json_error()` |
+| Error handler | `utils/output.py` | `handle_error()`, `print_json_error()` |
+| Run command | `commands/run.py` | Uses `handle_error()` for failures |
+| Cycle command | `commands/cycle.py` | Uses `handle_error()` for failures |
+| Exit codes | `core/exceptions.py` | Added `RUN_FAILED`, `VALIDATION_FAILED`, `VERIFY_FAILED` |
+
+**New exception types:**
+- `RunCommandFailed` - For RUN directive failures
+
+**JSON error structure:**
+```json
+{
+  "error": {
+    "type": "MissingContextFiles",
+    "message": "Human-readable error message",
+    "exit_code": 2,
+    "files": ["@missing.md"],
+    "context": {
+      "workflow": "path/to/workflow.conv",
+      "checkpoint": "path/to/checkpoint"
+    }
+  }
+}
+```
+
+**Usage for CI:**
+```bash
+# JSON errors for CI pipelines
+sdqctl --json-errors run workflow.conv 2>&1 | jq '.error.type'
+sdqctl --json-errors cycle workflow.conv | jq .
+
+# Combine with quiet mode (implicit when --json-errors is set)
+sdqctl --json-errors run workflow.conv
 ```
 
 ---

@@ -72,7 +72,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Analysis Complete | N/A | Help implemented, no gaps remaining |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Draft | Phase 0-0.5 ✅ | Taxonomy + enumeration strategies defined |
-| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-1 ✅ | `--strict` flag complete, ON-FAILURE pending |
+| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-1, 3 ✅ | `--strict` flag + `--json-errors` complete, ON-FAILURE pending |
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | **New** | ❌ Not started | Native SDK compaction for cycle mode |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | **New** | ❌ Not started | Resume/list/delete sessions |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Phase 2 Complete | Phase 1-2 ✅ | Adapter methods + status command enhanced |
@@ -967,6 +967,24 @@ sdqctl cycle examples/workflows/proposal-development.conv \
   - Implemented async metadata retrieval from adapters
   - Added 4 new tests in `tests/test_cli.py::TestStatusCommand`
   - Updated SDK-METADATA-APIS.md Phase 2 to Complete
+
+### Session 2026-01-24 (Error Handling Phase 3)
+
+- [x] **`--json-errors` global flag** - Structured error output for CI
+  - Added `--json-errors` flag to main CLI group
+  - Creates JSON output for all error types (MissingContextFiles, LoopDetected, etc.)
+  - Suppresses progress messages when enabled (uses quiet mode)
+  - Extended `core/exceptions.py` with:
+    - `RunCommandFailed` exception for RUN directive failures
+    - `exception_to_json()` function for exception serialization
+    - `format_json_error()` function for JSON string output
+    - New exit codes: `RUN_FAILED`, `VALIDATION_FAILED`, `VERIFY_FAILED`
+  - Extended `utils/output.py` with:
+    - `handle_error()` function for consistent error handling
+    - `print_json_error()` function for ad-hoc JSON errors
+  - Updated run and cycle commands to use structured error output
+  - Added 3 tests in `tests/test_cli.py::TestJsonErrors`
+  - Updated ERROR-HANDLING.md Phase 3 to Complete
 
 ---
 

@@ -3,6 +3,7 @@
 Provides TTY-aware console output for sdqctl:
 - stdout console: for progress and agent responses
 - stderr console: for prompts (via --show-prompt / -P)
+- JSON error output for CI integration (--json-errors)
 
 TTY detection (git-style):
 - When stdout is a TTY: Rich formatting, colors, progress updates
@@ -17,6 +18,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.rule import Rule
+
+from ..core.exceptions import format_json_error, ExitCode
 
 # TTY detection for git-style behavior
 _stdout_is_tty = sys.stdout.isatty()
@@ -173,3 +176,53 @@ def print_success(message: str) -> None:
 def print_warning(message: str) -> None:
     """Print warning message."""
     console.print(f"[yellow]⚠ {message}[/yellow]")
+
+
+def handle_error(
+    exc: Exception,
+    json_errors: bool = False,
+    context: Optional[dict[str, Any]] = None,
+) -> int:
+    """Handle an exception with appropriate output format.
+    
+    Args:
+        exc: The exception to handle
+        json_errors: If True, output JSON format; otherwise Rich format
+        context: Optional additional context (workflow, cycle, etc.)
+    
+    Returns:
+        Exit code to use for sys.exit()
+    """
+    if json_errors:
+        print(format_json_error(exc, context))
+    else:
+        print_error(str(exc))
+    
+    # Return appropriate exit code
+    if hasattr(exc, "exit_code"):
+        return exc.exit_code
+    return ExitCode.GENERAL_ERROR
+
+
+def print_json_error(
+    error_type: str,
+    message: str,
+    exit_code: int = ExitCode.GENERAL_ERROR,
+    details: Optional[dict[str, Any]] = None,
+) -> None:
+    """Print a structured JSON error without an exception.
+    
+    Args:
+        error_type: Error type name (e.g., "ValidationError")
+        message: Human-readable error message
+        exit_code: Exit code to include
+        details: Optional additional details
+    """
+    error_dict: dict[str, Any] = {
+        "type": error_type,
+        "message": message,
+        "exit_code": exit_code,
+    }
+    if details:
+        error_dict.update(details)
+    print(json.dumps({"error": error_dict}, indent=2))

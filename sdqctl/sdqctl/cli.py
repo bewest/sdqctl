@@ -37,8 +37,9 @@ from .core.progress import set_quiet
 @click.option("-v", "--verbose", count=True, help="Increase verbosity (-v, -vv, -vvv)")
 @click.option("-q", "--quiet", is_flag=True, help="Suppress output except errors")
 @click.option("-P", "--show-prompt", is_flag=True, help="Show expanded prompts on stderr")
+@click.option("--json-errors", is_flag=True, help="Output errors as JSON for CI integration")
 @click.pass_context
-def cli(ctx: click.Context, verbose: int, quiet: bool, show_prompt: bool) -> None:
+def cli(ctx: click.Context, verbose: int, quiet: bool, show_prompt: bool, json_errors: bool) -> None:
     """sdqctl - Software Defined Quality Control
 
     Vendor-agnostic CLI for orchestrating AI-assisted development workflows.
@@ -63,6 +64,10 @@ def cli(ctx: click.Context, verbose: int, quiet: bool, show_prompt: bool) -> Non
       -P       Show expanded prompts on stderr (can redirect separately)
 
     \b
+    Error output:
+      --json-errors  Output errors as structured JSON (for CI integration)
+
+    \b
     Examples:
       sdqctl run "Audit authentication module"
       sdqctl run workflow.conv --adapter copilot
@@ -72,13 +77,16 @@ def cli(ctx: click.Context, verbose: int, quiet: bool, show_prompt: bool) -> Non
       sdqctl cycle workflow.conv --max-cycles 5
       sdqctl flow workflows/*.conv --parallel 4
       sdqctl apply workflow.conv --components "lib/*.js" --progress progress.md
+      sdqctl --json-errors run workflow.conv 2>&1 | jq .error  # CI mode
     """
     ctx.ensure_object(dict)
     ctx.obj["verbosity"] = verbose
     ctx.obj["quiet"] = quiet
     ctx.obj["show_prompt"] = show_prompt
+    ctx.obj["json_errors"] = json_errors
     setup_logging(verbose, quiet)
-    set_quiet(quiet)
+    # When json_errors is enabled, also set quiet to suppress progress messages
+    set_quiet(quiet or json_errors)
 
 
 # Register commands

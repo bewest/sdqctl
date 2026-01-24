@@ -325,3 +325,68 @@ Some description.
         if "WARN" in result.output or result.exit_code == 0:
             # If there are warnings in non-strict mode, strict mode should be stricter
             assert "strict mode" in result_strict.output or result_strict.exit_code != 0
+
+
+class TestJsonErrors:
+    """Test --json-errors flag for CI integration."""
+
+    def test_json_errors_flag_in_help(self, cli_runner):
+        """Test --json-errors flag appears in main help."""
+        result = cli_runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "--json-errors" in result.output
+
+    def test_json_errors_with_missing_context_file(self, cli_runner, tmp_path):
+        """Test --json-errors outputs structured JSON for missing context files."""
+        import json
+        
+        # Create a workflow that references a missing file
+        workflow = tmp_path / "test.conv"
+        workflow.write_text("""
+MODEL mock
+ADAPTER mock
+CONTEXT @nonexistent-file-12345.md
+PROMPT Test
+""")
+        result = cli_runner.invoke(cli, ["--json-errors", "run", str(workflow)])
+        # Should fail with exit code 2 (MissingContextFiles)
+        assert result.exit_code == 2
+        # Output should be valid JSON
+        try:
+            data = json.loads(result.output)
+            assert "error" in data
+            assert data["error"]["type"] == "MissingContextFiles"
+            assert data["error"]["exit_code"] == 2
+            assert "files" in data["error"]
+        except json.JSONDecodeError:
+            pytest.fail(f"Output was not valid JSON: {result.output}")
+
+    def test_json_errors_exception_serialization(self):
+        """Test exception_to_json produces valid structure."""
+        from sdqctl.core.exceptions import (
+            exception_to_json, MissingContextFiles, LoopDetected, 
+            LoopReason, RunCommandFailed
+        )
+        
+        # Test MissingContextFiles
+        exc = MissingContextFiles(["@file.md"], {"@file.md": "/path/to/file.md"})
+        result = exception_to_json(exc)
+        assert result["error"]["type"] == "MissingContextFiles"
+        assert result["error"]["exit_code"] == 2
+        assert "@file.md" in result["error"]["files"]
+        
+        # Test LoopDetected
+        exc2 = LoopDetected(LoopReason.STOP_FILE, "Agent created stop file", 3)
+        result2 = exception_to_json(exc2)
+        assert result2["error"]["type"] == "LoopDetected"
+        assert result2["error"]["exit_code"] == 3
+        assert result2["error"]["reason"] == "stop_file"
+        assert result2["error"]["cycle_number"] == 3
+        
+        # Test RunCommandFailed
+        exc3 = RunCommandFailed("pytest", 1, stderr="error", timeout=False)
+        result3 = exception_to_json(exc3)
+        assert result3["error"]["type"] == "RunCommandFailed"
+        assert result3["error"]["exit_code"] == 5
+        assert result3["error"]["command"] == "pytest"
+        assert result3["error"]["timeout"] == False

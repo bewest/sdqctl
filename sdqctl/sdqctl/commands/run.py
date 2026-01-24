@@ -25,12 +25,12 @@ from ..adapters import get_adapter
 from ..adapters.base import AdapterConfig
 from .utils import run_async
 from ..core.conversation import ConversationFile, FileRestrictions, substitute_template_variables
-from ..core.exceptions import MissingContextFiles
+from ..core.exceptions import MissingContextFiles, ExitCode
 from ..core.logging import get_logger
 from ..core.loop_detector import get_stop_file_instruction
 from ..core.progress import progress, ProgressTracker, WorkflowProgress
 from ..core.session import Session
-from ..utils.output import PromptWriter
+from ..utils.output import PromptWriter, handle_error, print_json_error
 
 logger = get_logger(__name__)
 
@@ -389,6 +389,7 @@ def run(
     # Get verbosity and show_prompt from context
     verbosity = ctx.obj.get("verbosity", 0) if ctx.obj else 0
     show_prompt_flag = ctx.obj.get("show_prompt", False) if ctx.obj else False
+    json_errors = ctx.obj.get("json_errors", False) if ctx.obj else False
     
     run_async(_run_async(
         target, adapter, model, context, 
@@ -396,7 +397,8 @@ def run(
         prologue, epilogue, header, footer,
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag,
-        min_compaction_density=min_compaction_density
+        min_compaction_density=min_compaction_density,
+        json_errors=json_errors
     ))
 
 
@@ -422,6 +424,7 @@ async def _run_async(
     verbosity: int = 0,
     show_prompt: bool = False,
     min_compaction_density: int = 0,
+    json_errors: bool = False,
 ) -> None:
     """Async implementation of run command."""
     from ..core.conversation import (
@@ -459,11 +462,17 @@ async def _run_async(
         # Errors are blocking
         if errors:
             patterns = [pattern for pattern, _ in errors]
-            console.print(f"[red]Error: Missing mandatory context files:[/red]")
-            for pattern, resolved in errors:
-                console.print(f"[red]  - {pattern} (resolved to {resolved})[/red]")
-            console.print(f"[dim]Tip: Use VALIDATION-MODE lenient or --allow-missing to continue[/dim]")
-            sys.exit(MissingContextFiles(patterns).exit_code)
+            resolved_paths = {pattern: resolved for pattern, resolved in errors}
+            exc = MissingContextFiles(patterns, resolved_paths)
+            if json_errors:
+                exit_code = handle_error(exc, json_errors=True, context={"workflow": str(target)})
+                sys.exit(exit_code)
+            else:
+                console.print(f"[red]Error: Missing mandatory context files:[/red]")
+                for pattern, resolved in errors:
+                    console.print(f"[red]  - {pattern} (resolved to {resolved})[/red]")
+                console.print(f"[dim]Tip: Use VALIDATION-MODE lenient or --allow-missing to continue[/dim]")
+                sys.exit(exc.exit_code)
     else:
         # Treat as inline prompt
         conv = ConversationFile(
@@ -578,8 +587,16 @@ async def _run_async(
     try:
         ai_adapter = get_adapter(conv.adapter)
     except ValueError as e:
-        console.print(f"[red]Error: {e}[/red]")
-        console.print("[yellow]Using mock adapter instead[/yellow]")
+        if json_errors:
+            print_json_error(
+                "AdapterError",
+                str(e),
+                ExitCode.GENERAL_ERROR,
+                {"adapter": conv.adapter, "fallback": "mock"}
+            )
+        else:
+            console.print(f"[red]Error: {e}[/red]")
+            console.print("[yellow]Using mock adapter instead[/yellow]")
         ai_adapter = get_adapter("mock")
 
     # Run workflow
