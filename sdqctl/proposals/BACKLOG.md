@@ -178,12 +178,12 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 
 ## Directive Candidates Analysis
 
-### Currently Implemented (50 directives)
+### Currently Implemented (66 directives)
 
 **Metadata**: `MODEL`, `ADAPTER`, `MODE`, `MAX-CYCLES`, `CWD`  
-**Context**: `CONTEXT`, `CONTEXT-OPTIONAL`, `CONTEXT-EXCLUDE`, `CONTEXT-LIMIT`, `ON-CONTEXT-LIMIT`, `VALIDATION-MODE`  
+**Context**: `CONTEXT`, `CONTEXT-OPTIONAL`, `CONTEXT-EXCLUDE`, `CONTEXT-LIMIT`, `ON-CONTEXT-LIMIT`, `VALIDATION-MODE`, `REFCAT`  
 **File Control**: `ALLOW-FILES`, `DENY-FILES`, `ALLOW-DIR`, `DENY-DIR`  
-**Injection**: `PROLOGUE`, `EPILOGUE`, `HEADER`, `FOOTER`  
+**Injection**: `PROLOGUE`, `EPILOGUE`, `HEADER`, `FOOTER`, `HELP`  
 **Prompts**: `PROMPT`, `ON-CONTEXT-LIMIT-PROMPT`  
 **Compaction**: `COMPACT`, `COMPACT-PRESERVE`, `COMPACT-SUMMARY`, `COMPACT-PROLOGUE`, `COMPACT-EPILOGUE`, `NEW-CONVERSATION`, `ELIDE`  
 **Checkpoints**: `CHECKPOINT`, `CHECKPOINT-AFTER`, `CHECKPOINT-NAME`, `PAUSE`  
@@ -199,8 +199,9 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 
 | Directive | Source Proposal | Priority | Complexity | Notes |
 |-----------|-----------------|----------|------------|-------|
-| `VERIFY-COVERAGE` | STPA-INTEGRATION | P2 | Medium | Check trace coverage % |
 | `VERIFY-IMPLEMENTED` | STPA-INTEGRATION | P2 | Medium | Pattern search in code |
+
+> **Note:** `VERIFY-COVERAGE` was implemented 2026-01-24 and is now in "Currently Implemented" list above.
 
 > **Note:** `ON-FAILURE` and `ON-SUCCESS` were implemented 2026-01-24 - see [Session notes](#session-2026-01-24-on-failureon-success-blocks).
 > 
