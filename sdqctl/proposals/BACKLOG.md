@@ -1076,6 +1076,23 @@ sdqctl verify trace "SC-001 -> REQ-001" --json
 
 ---
 
+### Session 2026-01-24 (Backlog Cohesiveness)
+
+- [x] **BACKLOG.md directive count fix** - Updated 50 → 66 directives
+  - Added `REFCAT` to Context category
+  - Added `HELP` to Injection category
+  - Removed `VERIFY-COVERAGE` from "NOT Implemented" (was duplicate)
+  - Commit: `282cc12`
+
+- [x] **Links verifier bug fix** - Skip links in code blocks and inline code
+  - Added `CODE_BLOCK_PATTERN` to track fenced code blocks
+  - Added `INLINE_CODE_PATTERN` to strip inline code before matching
+  - Fixes 7 false positives in docs/ (VALIDATION-WORKFLOW, EXTENDING-VERIFIERS, TRACEABILITY-WORKFLOW)
+  - Added 2 tests: `test_skip_links_in_code_blocks`, `test_skip_links_in_inline_code`
+  - Commit: `7ee0461`
+
+---
+
 ## References
 IMPORTANT: remember to cross reference our generic backlog against other task lists and backlogs.  Some quirk proposals become backlog items!
 
