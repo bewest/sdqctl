@@ -156,7 +156,8 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 |---------|----------|-------------|-----|
 | STPA workflow templates | Phase 2 | ✅ `examples/workflows/stpa/` | None |
 | STPA template variables | Phase 1 | ❌ Not implemented | Future work |
-| `VERIFY-TRACE` directive | Phase 3 | ❌ Not implemented | Future work |
+| `VERIFY-TRACE` directive | Phase 3 | ✅ `conversation.py` | None |
+| `sdqctl verify trace` CLI | Phase 3 | ✅ `commands/verify.py` | None |
 | `VERIFY-COVERAGE` directive | Phase 3 | ❌ Not implemented | Future work |
 | `VERIFY-IMPLEMENTED` directive | Phase 3 | ❌ Not implemented | Future work |
 | CI JSON output format | Phase 4 | ❌ Not implemented | Future work |
