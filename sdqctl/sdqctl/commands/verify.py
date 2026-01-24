@@ -29,7 +29,9 @@ def verify():
 @click.option("--verbose", "-v", is_flag=True, help="Show all findings")
 @click.option("--path", "-p", type=click.Path(exists=True), default=".", 
               help="Directory to verify")
-def verify_refs(json_output: bool, verbose: bool, path: str):
+@click.option("--suggest-fixes", is_flag=True, 
+              help="Search for correct paths for broken refs")
+def verify_refs(json_output: bool, verbose: bool, path: str, suggest_fixes: bool):
     """Verify that @-references and alias:refs resolve to files.
     
     Scans markdown and workflow files for references and validates
@@ -46,9 +48,13 @@ def verify_refs(json_output: bool, verbose: bool, path: str):
       sdqctl verify refs                    # Verify current directory
       sdqctl verify refs -p docs/           # Verify specific directory
       sdqctl verify refs --json             # JSON output for CI
+      sdqctl verify refs --suggest-fixes    # Search for correct paths
     """
     verifier = VERIFIERS["refs"]()
     result = verifier.verify(Path(path))
+    
+    if suggest_fixes and result.errors:
+        result = _add_fix_suggestions(result, Path(path))
     
     _output_result(result, json_output, verbose, "refs")
 
@@ -118,3 +124,54 @@ def _output_result(result: VerificationResult, json_output: bool, verbose: bool,
                 console.print(f"  [yellow]WARN[/yellow] {loc}: {warn.message}")
     
     raise SystemExit(0 if result.passed else 1)
+
+
+def _add_fix_suggestions(result: VerificationResult, root: Path) -> VerificationResult:
+    """Add fix suggestions by searching for moved files."""
+    import subprocess
+    from ..verifiers.base import VerificationError
+    
+    externals_dir = root / "externals"
+    if not externals_dir.exists():
+        return result
+    
+    new_errors = []
+    for err in result.errors:
+        if 'Expected at' in (err.fix_hint or ''):
+            # Extract filename from expected path
+            expected_path = err.fix_hint.replace('Expected at', '').strip()
+            filename = Path(expected_path).name
+            
+            # Search for file in externals
+            try:
+                proc = subprocess.run(
+                    ['find', str(externals_dir), '-name', filename, '-type', 'f'],
+                    capture_output=True, text=True, timeout=5
+                )
+                found = [p for p in proc.stdout.strip().split('\n') if p]
+                
+                if found:
+                    # Create suggestion
+                    suggestion = f"Found: {found[0]}"
+                    if len(found) > 1:
+                        suggestion += f" (+{len(found)-1} more)"
+                    new_hint = f"{err.fix_hint}\n        Suggestion: {suggestion}"
+                    new_errors.append(VerificationError(
+                        file=err.file,
+                        line=err.line,
+                        message=err.message,
+                        fix_hint=new_hint,
+                    ))
+                    continue
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+        
+        new_errors.append(err)
+    
+    return VerificationResult(
+        passed=result.passed,
+        errors=new_errors,
+        warnings=result.warnings,
+        summary=result.summary,
+        details=result.details,
+    )

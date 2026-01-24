@@ -301,6 +301,26 @@ The `refs` verifier supports multiple reference types with intelligent resolutio
 - Placeholder aliases: `project:`, `extract:`, `alias:` (example refs in docs)
 - Connection strings: `localhost:port`, `mongo:`, `redis:` (database URIs)
 
+### Triage Workflow
+
+When verifying a workspace with many broken refs, use `--suggest-fixes` to find correct paths:
+
+```bash
+# Verify and suggest fixes for moved files
+sdqctl verify refs --suggest-fixes -v
+
+# JSON output for scripting
+sdqctl verify refs --suggest-fixes --json > refs-triage.json
+```
+
+**Error Classification:**
+
+| Hint | Meaning | Action |
+|------|---------|--------|
+| `Expected at /path/...` | Alias known, file doesn't exist | File moved - check suggestion |
+| `Unknown alias 'X'` | Alias not in workspace.lock.json | Add alias or fix typo |
+| `Suggestion: Found: path` | Actual file location found | Update ref to use correct path |
+
 ### In Workflows
 
 ```dockerfile
