@@ -47,17 +47,28 @@ class RefsVerifier:
     # File extensions to scan for references
     SCAN_EXTENSIONS = {'.md', '.conv', '.txt', '.yaml', '.yml'}
     
-    # Patterns that look like refs but aren't
+    # Patterns that look like refs but aren't (JSDoc, decorators, etc.)
     FALSE_POSITIVE_PATTERNS = {
+        # JSDoc annotations
         '@param', '@returns', '@return', '@throws', '@type', '@typedef',
         '@property', '@example', '@see', '@since', '@deprecated',
         '@author', '@license', '@copyright', '@version',
+        # Python/Click decorators
+        '@click', '@app', '@pytest', '@fixture', '@override',
+        '@staticmethod', '@classmethod', '@abstractmethod',
+        '@dataclass', '@property', '@cached',
+        # Other common patterns
+        '@verify', '@test', '@before', '@after',
     }
+    
+    # Patterns that match version pins like @v4.4.3 or @2.4.0
+    VERSION_PATTERN = re.compile(r'^v?\d+(\.\d+)*$')
     
     # Common prefixes that look like alias:path but aren't
     ALIAS_FALSE_POSITIVES = {
         'http', 'https', 'ftp', 'mailto', 'file', 'data',  # URLs
         'ref', 'refs', 'see', 'type', 'class', 'enum',      # Common prose
+        'caregiver',  # App-specific URL schemes
     }
     
     def verify(
@@ -166,6 +177,11 @@ class RefsVerifier:
     ) -> tuple[list[VerificationError], int, int]:
         """Check @-references in a line.
         
+        Resolution order:
+        1. Explicit relative (./path) - resolve from file's directory
+        2. Explicit absolute (/path) - resolve from root
+        3. Try workspace root first, then fall back to file-relative
+        
         Returns:
             Tuple of (errors, valid_count, total_count)
         """
@@ -176,26 +192,43 @@ class RefsVerifier:
         for match in self.AT_REF_PATTERN.finditer(line):
             ref_path = match.group(1)
             
-            # Skip false positives
+            # Skip false positives (decorators, JSDoc, etc.)
             full_match = f"@{ref_path}"
             if any(full_match.startswith(fp) for fp in self.FALSE_POSITIVE_PATTERNS):
                 continue
             
-            # Skip if looks like email
+            # Skip version pins like @v4.4.3 or @2.4.0
+            if self.VERSION_PATTERN.match(ref_path):
+                continue
+            
+            # Skip if looks like email (text before @ looks like email local part)
             if '@' in line[:match.start()] and '.' in ref_path:
                 before = line[:match.start()]
                 if re.search(r'[a-zA-Z0-9._%+-]+$', before):
                     continue
             
+            # Skip if looks like domain name (common TLDs at end)
+            if re.match(r'^[a-zA-Z0-9.-]+\.(com|org|net|io|de|be|co|uk)$', ref_path):
+                continue
+            
             total_count += 1
             
-            # Resolve reference path (relative to the file containing it)
+            # Resolve reference path with fallback strategy
+            resolved = None
             if ref_path.startswith('./'):
+                # Explicit relative - resolve from file's directory
                 resolved = filepath.parent / ref_path[2:]
             elif ref_path.startswith('/'):
+                # Explicit absolute - resolve from root
                 resolved = root / ref_path[1:]
             else:
-                resolved = filepath.parent / ref_path
+                # Try workspace root first (common convention for project refs)
+                root_resolved = root / ref_path
+                if root_resolved.exists():
+                    resolved = root_resolved
+                else:
+                    # Fall back to file-relative
+                    resolved = filepath.parent / ref_path
             
             # Check if file exists
             if resolved.exists():
@@ -235,6 +268,10 @@ class RefsVerifier:
             
             # Skip URL schemes and common false positives
             if alias.lower() in self.ALIAS_FALSE_POSITIVES:
+                continue
+            
+            # Skip ellipsis paths (display shorthand like Sources/.../File.swift)
+            if '...' in ref_path or '…' in ref_path:
                 continue
             
             total_count += 1

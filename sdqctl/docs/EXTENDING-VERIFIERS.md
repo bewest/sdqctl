@@ -278,7 +278,26 @@ sdqctl verify links --json
 sdqctl verify links -p examples/
 ```
 
-**Note:** The `refs` verifier supports both `@-references` (e.g., `@docs/README.md`) and workspace alias references (e.g., `loop:Loop/README.md`). Alias references are resolved using `workspace.lock.json`.
+### Reference Resolution
+
+The `refs` verifier supports multiple reference types with intelligent resolution:
+
+**@-References:**
+- `@path/file.md` - Tries workspace root first, falls back to file-relative
+- `@./relative/path.md` - Always resolves relative to containing file
+- `@/absolute/path.md` - Always resolves from workspace root
+
+**Alias References:**
+- `loop:Loop/README.md` - Resolves using `workspace.lock.json` aliases
+- `crm:lib/server.js#L10-L50` - Supports line ranges (file existence validated)
+
+**False Positives Excluded:**
+- Python decorators: `@click.option`, `@app.command`
+- JSDoc annotations: `@param`, `@returns`, `@example`
+- Version pins: `@v4.4.3`, `@2.4.0`
+- Email domains: `@gmail.com`, `@example.org`
+- URL schemes: `https://`, `mailto:`
+- Ellipsis paths: `Sources/.../File.swift` (display-only shorthand)
 
 ### In Workflows
 

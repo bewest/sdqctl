@@ -290,6 +290,111 @@ class TestRefsVerifierAliasRefs:
         
         assert result.passed
         assert result.details["alias_refs_valid"] == 1
+    
+    def test_ellipsis_paths_skipped(self, workspace_with_lock):
+        """Test that ellipsis paths like Sources/.../File.swift are skipped."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `loop:Sources/.../OTPManager.swift` for details")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        # Should pass - ellipsis paths are display-only, not validated
+        assert result.passed
+        assert result.details["alias_refs_found"] == 0
+    
+    def test_version_pins_skipped(self, tmp_path):
+        """Test that version pins like @v4.4.3 are not treated as refs."""
+        source = tmp_path / "workflow.yml"
+        source.write_text("uses: actions/checkout@v4.4.3")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.passed
+        assert result.details["refs_found"] == 0
+    
+    def test_decorator_patterns_skipped(self, tmp_path):
+        """Test that Python decorators are not treated as refs."""
+        source = tmp_path / "example.md"
+        source.write_text("""
+        ```python
+        @click.option('--name')
+        @app.command()
+        def main():
+            pass
+        ```
+        """)
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.passed
+        assert result.details["refs_found"] == 0
+    
+    def test_domain_names_skipped(self, tmp_path):
+        """Test that email-like domain refs are not treated as file refs."""
+        source = tmp_path / "contact.md"
+        source.write_text("Contact us at support@example.com or admin@zreptil.de")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.passed
+        assert result.details["refs_found"] == 0
+
+
+class TestRootRelativeResolution:
+    """Test workspace-root-first resolution for @refs."""
+    
+    def test_root_relative_ref_resolves(self, tmp_path):
+        """Test that @path/file.md tries workspace root first."""
+        # Create file at root
+        (tmp_path / "traceability").mkdir()
+        (tmp_path / "traceability" / "requirements.md").write_text("# Reqs")
+        
+        # Create workflow in subdirectory
+        (tmp_path / "workflows").mkdir()
+        workflow = tmp_path / "workflows" / "test.conv"
+        workflow.write_text("CONTEXT @traceability/requirements.md")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # Should resolve from root, not from workflows/
+        assert result.passed
+        assert result.details["refs_valid"] == 1
+    
+    def test_file_relative_fallback(self, tmp_path):
+        """Test that file-relative resolution is used as fallback."""
+        # Create file relative to source file only
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "local").mkdir()
+        (tmp_path / "docs" / "local" / "notes.md").write_text("# Notes")
+        
+        source = tmp_path / "docs" / "readme.md"
+        source.write_text("See @local/notes.md for details")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.passed
+        assert result.details["refs_valid"] == 1
+    
+    def test_explicit_relative_stays_file_relative(self, tmp_path):
+        """Test that ./path stays file-relative (no root fallback)."""
+        # Create file only relative to source
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "local.md").write_text("# Local")
+        
+        source = tmp_path / "docs" / "readme.md"
+        source.write_text("See @./local.md for details")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(tmp_path)
+        
+        assert result.passed
+        assert result.details["refs_valid"] == 1
 
 
 class TestVerifyExecutionIntegration:
