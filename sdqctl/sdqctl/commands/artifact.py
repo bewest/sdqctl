@@ -432,3 +432,214 @@ def rename_artifact(old_id: str, new_id: str, path: str, dry_run: bool, as_json:
         for filepath in sorted(files_changed):
             rel_path = filepath.relative_to(root) if filepath.is_relative_to(root) else filepath
             console.print(f"    {rel_path}")
+
+
+def find_definition_heading(filepath: Path, artifact_id: str) -> Optional[tuple[int, str]]:
+    """Find the definition heading for an artifact ID.
+    
+    Looks for patterns like:
+      ### REQ-001: Some Title
+      ## UCA-BOLUS-003: Description
+    
+    Returns (line_number, full_heading_text) or None if not found.
+    """
+    pattern = re.compile(rf'^(#+\s+{re.escape(artifact_id)}[:\s].*)$', re.MULTILINE)
+    
+    try:
+        content = filepath.read_text(errors='replace')
+    except Exception:
+        return None
+    
+    lines = content.splitlines()
+    for line_num, line in enumerate(lines, start=1):
+        if pattern.match(line):
+            return (line_num, line)
+    
+    return None
+
+
+def mark_heading_retired(heading: str) -> str:
+    """Add [RETIRED] suffix to a heading if not already present."""
+    if "[RETIRED]" in heading:
+        return heading  # Already marked
+    
+    # Insert [RETIRED] after the artifact ID
+    # Pattern: ### REQ-001: Title -> ### REQ-001: [RETIRED] Title
+    #          ### REQ-001 -> ### REQ-001 [RETIRED]
+    parts = heading.split(":", 1)
+    if len(parts) == 2:
+        return f"{parts[0]}: [RETIRED]{parts[1]}"
+    else:
+        return f"{heading} [RETIRED]"
+
+
+@artifact.command("retire")
+@click.argument("artifact_id")
+@click.option("--reason", "-r", required=True,
+              help="Reason for retirement (e.g., 'Superseded by REQ-010')")
+@click.option("--successor", "-s",
+              help="Successor artifact ID (if replaced by another)")
+@click.option("--path", "-p", type=click.Path(exists=True), default=".",
+              help="Directory to search for the artifact")
+@click.option("--dry-run", is_flag=True,
+              help="Show what would be changed without making changes")
+@click.option("--json", "as_json", is_flag=True,
+              help="Output as JSON")
+def retire_artifact(
+    artifact_id: str,
+    reason: str,
+    successor: Optional[str],
+    path: str,
+    dry_run: bool,
+    as_json: bool,
+) -> None:
+    """Mark an artifact as retired with reason and optional successor.
+    
+    Finds the artifact's definition heading and marks it as [RETIRED],
+    adding status metadata. Use this when an artifact is superseded or
+    no longer applicable.
+    
+    \b
+    Examples:
+      sdqctl artifact retire REQ-003 --reason "Superseded by REQ-010"
+      sdqctl artifact retire GAP-001 --reason "Fixed in v2.0" --successor REQ-020
+      sdqctl artifact retire UCA-005 --reason "Obsolete design" --dry-run
+    """
+    from datetime import date
+    
+    root = Path(path)
+    today = date.today().isoformat()
+    
+    # Find all files containing this artifact
+    references = find_all_references(root, artifact_id)
+    
+    if not references:
+        if as_json:
+            import json
+            console.print(json.dumps({
+                "artifact_id": artifact_id,
+                "status": "not_found",
+                "error": f"No references to {artifact_id} found",
+            }))
+        else:
+            console.print(f"[red]Error:[/red] No references to {artifact_id} found")
+        raise SystemExit(1)
+    
+    # Find the definition heading
+    definition_file: Optional[Path] = None
+    definition_line: Optional[int] = None
+    definition_heading: Optional[str] = None
+    
+    # Check each file for a heading definition
+    for filepath, _, _ in references:
+        result = find_definition_heading(filepath, artifact_id)
+        if result:
+            definition_file = filepath
+            definition_line, definition_heading = result
+            break
+    
+    if not definition_file or not definition_heading:
+        # No heading found - report all references for manual review
+        if as_json:
+            import json
+            console.print(json.dumps({
+                "artifact_id": artifact_id,
+                "status": "no_definition",
+                "warning": f"No definition heading found for {artifact_id}",
+                "references_found": len(references),
+            }))
+        else:
+            console.print(f"[yellow]Warning:[/yellow] No definition heading found for {artifact_id}")
+            console.print(f"Found {len(references)} reference(s) but no heading like '### {artifact_id}: ...'")
+            console.print("[dim]Consider adding a definition section manually[/dim]")
+        raise SystemExit(1)
+    
+    # Build the retirement block
+    retired_heading = mark_heading_retired(definition_heading)
+    status_block = f"\n**Status:** RETIRED ({today})\n**Reason:** {reason}"
+    if successor:
+        status_block += f"\n**Successor:** {successor}"
+    
+    if dry_run:
+        if as_json:
+            import json
+            result = {
+                "artifact_id": artifact_id,
+                "dry_run": True,
+                "definition_file": str(definition_file.relative_to(root) if definition_file.is_relative_to(root) else definition_file),
+                "definition_line": definition_line,
+                "original_heading": definition_heading,
+                "retired_heading": retired_heading,
+                "status_block": status_block.strip(),
+                "reason": reason,
+                "successor": successor,
+                "date": today,
+            }
+            # Use print() instead of console.print() to avoid Rich markup interpretation
+            print(json.dumps(result, indent=2))
+        else:
+            rel_path = definition_file.relative_to(root) if definition_file.is_relative_to(root) else definition_file
+            console.print(f"[bold]Dry run:[/bold] Would retire [cyan]{artifact_id}[/cyan]")
+            console.print(f"\n[dim]File:[/dim] {rel_path}:{definition_line}")
+            console.print(f"\n[dim]Original heading:[/dim]")
+            console.print(f"  {definition_heading}")
+            console.print(f"\n[dim]Retired heading:[/dim]")
+            console.print(f"  {retired_heading}")
+            console.print(f"\n[dim]Status block to insert:[/dim]")
+            for line in status_block.strip().split("\n"):
+                console.print(f"  {line}")
+        return
+    
+    # Apply the retirement
+    try:
+        content = definition_file.read_text(errors='replace')
+    except Exception as e:
+        console.print(f"[red]Error reading {definition_file}:[/red] {e}")
+        raise SystemExit(1)
+    
+    lines = content.splitlines()
+    
+    # Find and replace the heading, then insert status block after
+    modified_lines = []
+    heading_found = False
+    
+    for i, line in enumerate(lines):
+        if not heading_found and line == definition_heading:
+            modified_lines.append(retired_heading)
+            # Insert status block after heading
+            for status_line in status_block.strip().split("\n"):
+                modified_lines.append(status_line)
+            heading_found = True
+        else:
+            modified_lines.append(line)
+    
+    if not heading_found:
+        console.print(f"[red]Error:[/red] Could not find heading to modify")
+        raise SystemExit(1)
+    
+    # Write the modified content
+    try:
+        definition_file.write_text("\n".join(modified_lines))
+    except Exception as e:
+        console.print(f"[red]Error writing {definition_file}:[/red] {e}")
+        raise SystemExit(1)
+    
+    if as_json:
+        import json
+        result = {
+            "artifact_id": artifact_id,
+            "status": "retired",
+            "file": str(definition_file.relative_to(root) if definition_file.is_relative_to(root) else definition_file),
+            "line": definition_line,
+            "reason": reason,
+            "successor": successor,
+            "date": today,
+        }
+        console.print(json.dumps(result, indent=2))
+    else:
+        rel_path = definition_file.relative_to(root) if definition_file.is_relative_to(root) else definition_file
+        console.print(f"[green]✓[/green] Retired [cyan]{artifact_id}[/cyan]")
+        console.print(f"  File: {rel_path}:{definition_line}")
+        console.print(f"  Reason: {reason}")
+        if successor:
+            console.print(f"  Successor: {successor}")

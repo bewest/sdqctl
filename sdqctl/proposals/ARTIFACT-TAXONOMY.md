@@ -664,4 +664,5 @@ sdqctl verify traceability --strict
 
 ## Changelog
 
+- 2026-01-24: Added `artifact retire` command implementation
 - 2026-01-24: Initial proposal

@@ -376,3 +376,153 @@ class TestArtifactRenameCLI:
             assert "REQ-NEW-001" in content  # Changed
             assert "REQ-0012" in content     # Unchanged (different number)
             assert "XREQ-001" in content     # Unchanged (prefix)
+
+
+class TestArtifactRetireCLI:
+    """Test sdqctl artifact retire CLI command."""
+    
+    def test_retire_dry_run(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "reqs.md"
+            test_file.write_text("### REQ-003: Old requirement\nThis is an old requirement.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "REQ-003",
+                "--reason", "Superseded by REQ-010",
+                "--path", tmpdir, "--dry-run"
+            ])
+            assert result.exit_code == 0
+            assert "Dry run" in result.output
+            assert "REQ-003" in result.output
+            assert "[RETIRED]" in result.output
+            assert "Superseded by REQ-010" in result.output
+            
+            # Verify file was NOT changed
+            content = test_file.read_text()
+            assert "[RETIRED]" not in content
+    
+    def test_retire_applies_changes(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "reqs.md"
+            test_file.write_text("### REQ-003: Old requirement\nThis is an old requirement.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "REQ-003",
+                "--reason", "Superseded by REQ-010",
+                "--path", tmpdir
+            ])
+            assert result.exit_code == 0
+            assert "Retired" in result.output
+            
+            # Verify file WAS changed
+            content = test_file.read_text()
+            assert "[RETIRED]" in content
+            assert "**Status:** RETIRED" in content
+            assert "Superseded by REQ-010" in content
+    
+    def test_retire_with_successor(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "gaps.md"
+            test_file.write_text("### GAP-001: A gap to close\nDetails here.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "GAP-001",
+                "--reason", "Fixed in v2.0",
+                "--successor", "REQ-020",
+                "--path", tmpdir
+            ])
+            assert result.exit_code == 0
+            
+            content = test_file.read_text()
+            assert "[RETIRED]" in content
+            assert "**Successor:** REQ-020" in content
+    
+    def test_retire_no_definition_found(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # File has REQ-001 but no heading definition
+            test_file = Path(tmpdir) / "notes.md"
+            test_file.write_text("See REQ-001 for details.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "REQ-001",
+                "--reason", "Test",
+                "--path", tmpdir
+            ])
+            assert result.exit_code == 1
+            assert "No definition heading found" in result.output
+    
+    def test_retire_not_found(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "empty.md"
+            test_file.write_text("No artifacts here.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "NONEXISTENT-001",
+                "--reason", "Test",
+                "--path", tmpdir
+            ])
+            assert result.exit_code == 1
+            assert "No references" in result.output
+    
+    def test_retire_json_output(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "test.md"
+            test_file.write_text("## UCA-005: Control action\nDetails.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "UCA-005",
+                "--reason", "Obsolete design",
+                "--path", tmpdir, "--json"
+            ])
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert data["artifact_id"] == "UCA-005"
+            assert data["status"] == "retired"
+            assert data["reason"] == "Obsolete design"
+            assert "date" in data
+    
+    def test_retire_dry_run_json(self):
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "test.md"
+            test_file.write_text("### SPEC-010: A spec\nDetails.\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "SPEC-010",
+                "--reason", "Merged into SPEC-020",
+                "--successor", "SPEC-020",
+                "--path", tmpdir, "--dry-run", "--json"
+            ])
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert data["dry_run"] is True
+            assert data["artifact_id"] == "SPEC-010"
+            assert "[RETIRED]" in data["retired_heading"]
+            assert data["successor"] == "SPEC-020"
+            
+            # Verify file NOT changed
+            content = test_file.read_text()
+            assert "[RETIRED]" not in content
+    
+    def test_retire_idempotent(self):
+        """Already retired artifacts should not get double-tagged."""
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # File already has [RETIRED] in heading
+            test_file = Path(tmpdir) / "test.md"
+            test_file.write_text("### REQ-005: [RETIRED] Old req\n**Status:** RETIRED (2026-01-01)\n")
+            
+            result = runner.invoke(cli, [
+                "artifact", "retire", "REQ-005",
+                "--reason", "Already retired",
+                "--path", tmpdir, "--dry-run"
+            ])
+            assert result.exit_code == 0
+            # The retired_heading should NOT have double [RETIRED]
+            assert "[RETIRED] [RETIRED]" not in result.output

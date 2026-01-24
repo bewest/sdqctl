@@ -9,6 +9,9 @@
 
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4
 
+Note: remember to cross reference and evalute priorities across  roadmaps.
+Let's PRIORITIZE error handling and production hardening (magic constants, invalid inputs).
+
 ### Tooling Commands Status (Non-SDK)
 
 All 7 proposed tooling commands are **fully implemented**:
@@ -734,6 +737,7 @@ docs/
 | ~~Create artifact templates (REQ, GAP, UCA, SPEC)~~ | ~~P3~~ | ~~1 hour~~ | ✅ Done 2026-01-24 - `examples/templates/artifacts/` |
 | ~~`sdqctl artifact next` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - includes `list` subcommand |
 | ~~`sdqctl artifact rename` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - `--dry-run` and `--json` flags |
+| ~~`sdqctl artifact retire` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - `--reason`, `--successor`, `--dry-run`, `--json` flags |
 | ~~Nightscout ecosystem conventions doc~~ | ~~P3~~ | ~~1 hour~~ | ✅ Done 2026-01-24 - `docs/NIGHTSCOUT-ECOSYSTEM.md` |
 
 ### Session 2026-01-24 (Documentation Philosophy)
