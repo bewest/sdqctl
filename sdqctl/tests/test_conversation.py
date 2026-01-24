@@ -1543,3 +1543,189 @@ END
         assert len(errors) > 0
         assert "ON-SUCCESS" in errors[0]
         assert "ELIDE" in errors[0]
+
+
+class TestIncludeDirectiveParsing:
+    """Test INCLUDE directive for including other .conv files."""
+
+    def test_include_basic(self, tmp_path):
+        """Test basic INCLUDE merges steps from included file."""
+        # Create included file
+        included = tmp_path / "common.conv"
+        included.write_text("""PROMPT Setup step.
+PROMPT Common step.
+""")
+        
+        # Create main file with INCLUDE
+        main = tmp_path / "main.conv"
+        main.write_text(f"""MODEL gpt-4
+ADAPTER mock
+INCLUDE common.conv
+PROMPT Main step.
+""")
+        
+        conv = ConversationFile.from_file(main)
+        
+        # Should have 3 prompts: 2 from included + 1 from main
+        assert len(conv.prompts) == 3
+        assert conv.prompts[0] == "Setup step."
+        assert conv.prompts[1] == "Common step."
+        assert conv.prompts[2] == "Main step."
+        
+        # Should track the included file
+        assert len(conv.included_files) == 1
+        assert conv.included_files[0] == included.resolve()
+
+    def test_include_merges_context(self, tmp_path):
+        """Test INCLUDE merges context files from included file."""
+        included = tmp_path / "context.conv"
+        included.write_text("""CONTEXT @lib/*.py
+CONTEXT-OPTIONAL @tests/*.py
+""")
+        
+        main = tmp_path / "main.conv"
+        main.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE context.conv
+CONTEXT @src/*.py
+PROMPT Analyze.
+""")
+        
+        conv = ConversationFile.from_file(main)
+        
+        # Should merge context files
+        assert "@lib/*.py" in conv.context_files
+        assert "@src/*.py" in conv.context_files
+        assert "@tests/*.py" in conv.context_files_optional
+
+    def test_include_nested(self, tmp_path):
+        """Test nested INCLUDE (file A includes B which includes C)."""
+        # Create nested files
+        c = tmp_path / "c.conv"
+        c.write_text("""PROMPT From C.
+""")
+        
+        b = tmp_path / "b.conv"
+        b.write_text("""INCLUDE c.conv
+PROMPT From B.
+""")
+        
+        a = tmp_path / "main.conv"
+        a.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE b.conv
+PROMPT From A.
+""")
+        
+        conv = ConversationFile.from_file(a)
+        
+        # Should have prompts from all levels
+        assert len(conv.prompts) == 3
+        assert conv.prompts[0] == "From C."
+        assert conv.prompts[1] == "From B."
+        assert conv.prompts[2] == "From A."
+        
+        # Should track both included files
+        assert len(conv.included_files) == 2
+
+    def test_include_cycle_detection(self, tmp_path):
+        """Test INCLUDE detects cycles and raises error."""
+        # Create circular dependency: A -> B -> A
+        a = tmp_path / "a.conv"
+        b = tmp_path / "b.conv"
+        
+        a.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE b.conv
+PROMPT From A.
+""")
+        
+        b.write_text("""INCLUDE a.conv
+PROMPT From B.
+""")
+        
+        with pytest.raises(ValueError) as excinfo:
+            ConversationFile.from_file(a)
+        
+        assert "cycle" in str(excinfo.value).lower()
+        assert "a.conv" in str(excinfo.value)
+
+    def test_include_file_not_found(self, tmp_path):
+        """Test INCLUDE raises error for missing file."""
+        main = tmp_path / "main.conv"
+        main.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE nonexistent.conv
+PROMPT Test.
+""")
+        
+        with pytest.raises(FileNotFoundError) as excinfo:
+            ConversationFile.from_file(main)
+        
+        assert "INCLUDE file not found" in str(excinfo.value)
+        assert "nonexistent.conv" in str(excinfo.value)
+
+    def test_include_relative_path(self, tmp_path):
+        """Test INCLUDE resolves paths relative to including file."""
+        # Create subdirectory with included file
+        subdir = tmp_path / "common"
+        subdir.mkdir()
+        included = subdir / "setup.conv"
+        included.write_text("""PROMPT Setup.
+""")
+        
+        main = tmp_path / "main.conv"
+        main.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE common/setup.conv
+PROMPT Main.
+""")
+        
+        conv = ConversationFile.from_file(main)
+        
+        assert len(conv.prompts) == 2
+        assert conv.prompts[0] == "Setup."
+        assert conv.prompts[1] == "Main."
+
+    def test_include_merges_refcat_refs(self, tmp_path):
+        """Test INCLUDE merges REFCAT refs from included file."""
+        included = tmp_path / "refs.conv"
+        included.write_text("""REFCAT @lib/core.py#L10-L50
+""")
+        
+        main = tmp_path / "main.conv"
+        main.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE refs.conv
+REFCAT @src/main.py#L1-L20
+PROMPT Analyze.
+""")
+        
+        conv = ConversationFile.from_file(main)
+        
+        assert len(conv.refcat_refs) == 2
+        assert "@lib/core.py#L10-L50" in conv.refcat_refs
+        assert "@src/main.py#L1-L20" in conv.refcat_refs
+
+    def test_include_merges_prologues_epilogues(self, tmp_path):
+        """Test INCLUDE merges prologues and epilogues."""
+        included = tmp_path / "common.conv"
+        included.write_text("""PROLOGUE You are an expert analyst.
+EPILOGUE Format as markdown.
+""")
+        
+        main = tmp_path / "main.conv"
+        main.write_text("""MODEL gpt-4
+ADAPTER mock
+INCLUDE common.conv
+PROLOGUE Focus on security.
+PROMPT Analyze.
+""")
+        
+        conv = ConversationFile.from_file(main)
+        
+        assert len(conv.prologues) == 2
+        assert "expert analyst" in conv.prologues[0]
+        assert "security" in conv.prologues[1]
+        assert len(conv.epilogues) == 1
+        assert "markdown" in conv.epilogues[0]

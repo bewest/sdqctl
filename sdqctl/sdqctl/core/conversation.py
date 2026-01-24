@@ -120,6 +120,9 @@ class DirectiveType(Enum):
     # Help injection
     HELP = "HELP"  # Inject help topic(s) into prologues: HELP directives workflow
 
+    # File inclusion
+    INCLUDE = "INCLUDE"  # Include another .conv file: INCLUDE common/setup.conv
+
     # Debug directives
     DEBUG = "DEBUG"  # Comma-separated debug categories (session,tool,intent,event)
     DEBUG_INTENTS = "DEBUG-INTENTS"  # true/false - enable intent tracking output
@@ -324,6 +327,9 @@ class ConversationFile:
     # Pre-flight requirements (files/commands that must exist)
     requirements: list[str] = field(default_factory=list)  # @file.py, cmd:git
 
+    # Included files (for INCLUDE directive tracking)
+    included_files: list[Path] = field(default_factory=list)  # Paths of included .conv files
+
     # Flow control
     pause_points: list[tuple[int, str]] = field(default_factory=list)  # (after_prompt_index, message)
 
@@ -337,10 +343,21 @@ class ConversationFile:
     directives: list[Directive] = field(default_factory=list)
 
     @classmethod
-    def parse(cls, content: str, source_path: Optional[Path] = None) -> "ConversationFile":
-        """Parse a ConversationFile from string content."""
+    def parse(cls, content: str, source_path: Optional[Path] = None, _include_stack: Optional[set] = None) -> "ConversationFile":
+        """Parse a ConversationFile from string content.
+        
+        Args:
+            content: The .conv file content to parse.
+            source_path: Path to the source file (for relative INCLUDE resolution).
+            _include_stack: Internal: Set of already-included files for cycle detection.
+        """
         conv = cls(source_path=source_path)
         directives = []
+        
+        # Track already-included files to prevent cycles
+        include_stack = _include_stack or set()
+        if source_path:
+            include_stack.add(source_path.resolve())
 
         # Track multiline prompts
         current_multiline: Optional[tuple[DirectiveType, list[str], int]] = None
@@ -417,7 +434,10 @@ class ConversationFile:
                     current_multiline = (directive.type, [directive.value], line_num)
                 else:
                     directives.append(directive)
-                    if block_context:
+                    # Handle INCLUDE specially - needs to merge included file
+                    if directive.type == DirectiveType.INCLUDE:
+                        cls._process_include(conv, directive, include_stack)
+                    elif block_context:
                         # Add to current block
                         _apply_directive_to_block(block_context[1], directive)
                         # Track if this is a RUN within the block (for potential nested blocks - not allowed)
@@ -451,11 +471,65 @@ class ConversationFile:
         return conv
 
     @classmethod
-    def from_file(cls, path: Path | str) -> "ConversationFile":
+    def from_file(cls, path: Path | str, _include_stack: Optional[set] = None) -> "ConversationFile":
         """Load and parse a ConversationFile from disk."""
         path = Path(path)
         content = path.read_text()
-        return cls.parse(content, source_path=path)
+        return cls.parse(content, source_path=path, _include_stack=_include_stack)
+
+    @classmethod
+    def _process_include(cls, conv: "ConversationFile", directive: Directive, include_stack: set) -> None:
+        """Process INCLUDE directive by merging included file content.
+        
+        Args:
+            conv: The conversation being built
+            directive: The INCLUDE directive
+            include_stack: Set of already-included file paths for cycle detection
+        """
+        include_path = directive.value.strip()
+        
+        # Resolve path relative to current file's directory
+        if conv.source_path:
+            base_dir = conv.source_path.parent
+        else:
+            base_dir = Path.cwd()
+        
+        resolved_path = (base_dir / include_path).resolve()
+        
+        # Check for include cycle
+        if resolved_path in include_stack:
+            cycle_files = [str(p) for p in include_stack]
+            raise ValueError(
+                f"INCLUDE cycle detected: {include_path} at line {directive.line_number}\n"
+                f"Include stack: {' -> '.join(cycle_files)} -> {include_path}"
+            )
+        
+        # Check file exists
+        if not resolved_path.exists():
+            raise FileNotFoundError(
+                f"INCLUDE file not found: {include_path} at line {directive.line_number}\n"
+                f"Searched: {resolved_path}"
+            )
+        
+        # Parse the included file with cycle detection
+        included_conv = cls.from_file(resolved_path, _include_stack=include_stack.copy())
+        
+        # Track included file
+        conv.included_files.append(resolved_path)
+        
+        # Merge content from included file (metadata is NOT merged - only steps/context)
+        # This follows the principle that INCLUDE is for reusable workflow fragments
+        conv.context_files.extend(included_conv.context_files)
+        conv.context_files_optional.extend(included_conv.context_files_optional)
+        conv.context_exclude.extend(included_conv.context_exclude)
+        conv.prologues.extend(included_conv.prologues)
+        conv.epilogues.extend(included_conv.epilogues)
+        conv.prompts.extend(included_conv.prompts)
+        conv.steps.extend(included_conv.steps)
+        conv.refcat_refs.extend(included_conv.refcat_refs)
+        conv.help_topics.extend(included_conv.help_topics)
+        conv.requirements.extend(included_conv.requirements)
+        conv.included_files.extend(included_conv.included_files)
 
     @classmethod
     def from_rendered_json(cls, data: dict) -> "ConversationFile":
@@ -955,6 +1029,10 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             # REQUIRE can have multiple items: REQUIRE @file.py cmd:git @other.md
             items = directive.value.split()
             conv.requirements.extend(items)
+        
+        # File inclusion (handled in parse loop, no-op here)
+        case DirectiveType.INCLUDE:
+            pass  # Processed inline during parsing
         
         # Prompts - add to both flat list and steps
         case DirectiveType.PROMPT:

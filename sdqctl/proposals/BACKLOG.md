@@ -176,7 +176,7 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 
 ## Directive Candidates Analysis
 
-### Currently Implemented (47 directives)
+### Currently Implemented (48 directives)
 
 **Metadata**: `MODEL`, `ADAPTER`, `MODE`, `MAX-CYCLES`, `CWD`  
 **Context**: `CONTEXT`, `CONTEXT-OPTIONAL`, `CONTEXT-EXCLUDE`, `CONTEXT-LIMIT`, `ON-CONTEXT-LIMIT`, `VALIDATION-MODE`  
@@ -190,6 +190,7 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 **Branching**: `ON-FAILURE`, `ON-SUCCESS`, `END`  
 **Verify**: `VERIFY`, `VERIFY-ON-ERROR`, `VERIFY-OUTPUT`, `VERIFY-LIMIT`, `CHECK-REFS`, `CHECK-LINKS`, `CHECK-TRACEABILITY`  
 **Pre-flight**: `REQUIRE`  
+**Inclusion**: `INCLUDE`  
 **Debug**: `DEBUG`, `DEBUG-INTENTS`, `EVENT-LOG`
 
 ### Proposed but NOT Implemented
@@ -199,11 +200,12 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 | `VERIFY-TRACE` | STPA-INTEGRATION | P2 | Medium | `VERIFY-TRACE UCA-001 -> REQ-020` |
 | `VERIFY-COVERAGE` | STPA-INTEGRATION | P2 | Medium | Check trace coverage % |
 | `VERIFY-IMPLEMENTED` | STPA-INTEGRATION | P2 | Medium | Pattern search in code |
-| `INCLUDE` | STPA-INTEGRATION | P3 | Low | Include other .conv files |
 
 > **Note:** `ON-FAILURE` and `ON-SUCCESS` were implemented 2026-01-24 - see [Session notes](#session-2026-01-24-on-failureon-success-blocks).
 > 
 > **Note:** `CHECK-REFS`, `CHECK-LINKS`, `CHECK-TRACEABILITY` aliases were implemented 2026-01-24.
+>
+> **Note:** `INCLUDE` directive implemented 2026-01-24 - see [Session notes](#session-2026-01-24-include-directive).
 
 ### Rejected Directives (per proposals)
 
@@ -1004,6 +1006,35 @@ sdqctl cycle examples/workflows/proposal-development.conv \
   - Updated directive count 44 → 47
   - Added 4 tests in `TestCheckAliasDirectives`
   - All 870 tests pass
+
+### Session 2026-01-24 (INCLUDE Directive)
+
+- [x] **`INCLUDE` directive** - Include other .conv files for workflow composition
+  - Added `DirectiveType.INCLUDE` in `conversation.py`
+  - Added `included_files` field to `ConversationFile` dataclass
+  - Implemented `_process_include()` method with:
+    - Recursive parsing of included files
+    - Cycle detection to prevent infinite loops
+    - Path resolution relative to including file
+    - Merge of steps, context, prologues, epilogues, REFCAT refs
+  - Metadata (MODEL, ADAPTER, etc.) is NOT merged from included files
+  - Added 8 tests in `TestIncludeDirectiveParsing`
+  - Updated directive count 47 → 48
+  - All 878 tests pass
+
+**Syntax:**
+```dockerfile
+# Include a common setup file
+INCLUDE common/setup.conv
+
+# Include from subdirectory
+INCLUDE verification/stpa-checks.conv
+```
+
+**Use cases:**
+- Reusable workflow fragments (common prologues, verification steps)
+- Modular STPA workflow templates
+- Shared context definitions across projects
 
 ---
 
