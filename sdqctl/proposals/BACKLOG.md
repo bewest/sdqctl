@@ -1028,6 +1028,20 @@ sdqctl cycle examples/workflows/proposal-development.conv \
 - [x] **ERROR-HANDLING.md** - Status updated: Draft → Implemented (commit 507a677)
   - ON-FAILURE/ON-SUCCESS moved to Implemented table
 
+### Session 2026-01-24 (CHECK-* Aliases)
+
+- [x] **Cohesiveness fix** - Fixed stale directive tables in BACKLOG.md (commit be4503f)
+  - Updated directive count 41 → 44
+  - Added Branching category (ON-FAILURE, ON-SUCCESS, END)
+  - Removed ON-FAILURE/ON-SUCCESS from "NOT Implemented" table
+- [x] **CHECK-* directive aliases** - Implemented verification shortcuts (commit 599166b)
+  - Added `CHECK-REFS` (alias for `VERIFY refs`)
+  - Added `CHECK-LINKS` (alias for `VERIFY links`)
+  - Added `CHECK-TRACEABILITY` (alias for `VERIFY traceability`)
+  - Updated directive count 44 → 47
+  - Added 4 tests in `TestCheckAliasDirectives`
+  - All 870 tests pass
+
 ---
 
 ## References
