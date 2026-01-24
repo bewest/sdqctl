@@ -65,14 +65,14 @@ All 7 proposed tooling commands are **fully implemented**:
 
 | Proposal | Status | Implementation | Notes |
 |----------|--------|----------------|-------|
-| [RUN-BRANCHING](RUN-BRANCHING.md) | Ready | Phase 1 ✅, Phase 2 ❌ | RUN-RETRY done, ON-FAILURE pending |
+| [RUN-BRANCHING](RUN-BRANCHING.md) | Ready | Phase 1-2 ✅ | RUN-RETRY + ON-FAILURE/ON-SUCCESS complete |
 | [VERIFICATION-DIRECTIVES](VERIFICATION-DIRECTIVES.md) | Ready | Phase 1-4 ✅ | All phases complete |
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Ready | ✅ Complete | --from-json + schema_version implemented |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | Draft | ✅ Core complete | Templates + traceability verifier done |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Analysis Complete | N/A | Help implemented, no gaps remaining |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Draft | Phase 0-0.5 ✅ | Taxonomy + enumeration strategies defined |
-| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-1, 3 ✅ | `--strict` flag + `--json-errors` complete, ON-FAILURE pending |
+| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | **New** | ❌ Not started | Native SDK compaction for cycle mode |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | **New** | ❌ Not started | Resume/list/delete sessions |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Phase 2 Complete | Phase 1-2 ✅ | Adapter methods + status command enhanced |
@@ -1001,6 +1001,23 @@ sdqctl cycle examples/workflows/proposal-development.conv \
   - Added 11 tests in `tests/test_conversation.py::TestRequireDirectiveParsing` and `TestRequireDirectiveValidation`
   - Added 2 CLI tests in `tests/test_cli.py::TestValidateCommand`
   - Updated directive count: 40 → 41 directives
+
+### Session 2026-01-24 (ON-FAILURE/ON-SUCCESS Blocks)
+
+- [x] **ON-FAILURE/ON-SUCCESS blocks** - Conditional execution after RUN (ERROR-HANDLING Phase 2)
+  - Added `DirectiveType.ON_FAILURE`, `ON_SUCCESS`, `END` in `conversation.py`
+  - Added `on_failure` and `on_success` list fields to `ConversationStep`
+  - Implemented block parsing in `ConversationFile.parse()` with:
+    - Block context tracking
+    - Error checking for blocks without RUN, unclosed blocks, nested blocks
+  - Added `_apply_directive_to_block()` helper for block-scoped directives
+  - Updated `validate_elide_chains()` to detect blocks in ELIDE chains
+  - Added `_execute_block_steps()` in `run.py` for executing block content
+  - Updated RUN step handling to execute blocks based on exit code
+  - Added 9 tests in `tests/test_conversation.py::TestOnFailureDirectiveParsing`
+  - Updated directive count: 41 → 44 directives (ON-FAILURE, ON-SUCCESS, END)
+  - Updated RUN-BRANCHING.md status to Implemented
+  - Updated ERROR-HANDLING.md Phase 2 to Complete
 
 ---
 

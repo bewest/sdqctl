@@ -1322,3 +1322,159 @@ PROMPT Test.
         error_messages = [e[1] for e in errors]
         assert any("missing.md" in msg for msg in error_messages)
         assert any("nonexistent-cmd-12345" in msg for msg in error_messages)
+
+
+
+class TestOnFailureDirectiveParsing:
+    """Tests for ON-FAILURE/ON-SUCCESS block parsing."""
+
+    def test_parse_on_failure_block(self):
+        """Test parsing a basic ON-FAILURE block."""
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-FAILURE
+  PROMPT Fix the failing tests.
+END
+PROMPT Continue.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.steps) == 2
+        assert conv.steps[0].type == "run"
+        assert conv.steps[0].content == "pytest"
+        assert len(conv.steps[0].on_failure) == 1
+        assert conv.steps[0].on_failure[0].type == "prompt"
+        assert conv.steps[0].on_failure[0].content == "Fix the failing tests."
+        assert conv.steps[1].type == "prompt"
+
+    def test_parse_on_success_block(self):
+        """Test parsing a basic ON-SUCCESS block."""
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-SUCCESS
+  PROMPT All tests passed!
+END
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.steps) == 1
+        assert conv.steps[0].type == "run"
+        assert len(conv.steps[0].on_success) == 1
+        assert conv.steps[0].on_success[0].type == "prompt"
+
+    def test_parse_both_blocks(self):
+        """Test parsing both ON-FAILURE and ON-SUCCESS blocks."""
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-FAILURE
+  PROMPT Fix the tests.
+END
+ON-SUCCESS
+  PROMPT Deploy now.
+END
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.steps[0].on_failure) == 1
+        assert len(conv.steps[0].on_success) == 1
+
+    def test_parse_multiple_steps_in_block(self):
+        """Test parsing a block with multiple steps.
+        
+        Note: Block content should NOT be indented, as indented lines
+        are treated as multiline continuation of the previous directive.
+        """
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-FAILURE
+PROMPT Analyze failures.
+RUN git diff
+PROMPT Fix based on diff.
+END
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.steps[0].on_failure) == 3
+        assert conv.steps[0].on_failure[0].type == "prompt"
+        assert conv.steps[0].on_failure[1].type == "run"
+        assert conv.steps[0].on_failure[2].type == "prompt"
+
+    def test_parse_on_failure_without_run_raises_error(self):
+        """Test that ON-FAILURE without preceding RUN raises ValueError."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Something
+ON-FAILURE
+  PROMPT Fix it
+END
+"""
+        with pytest.raises(ValueError) as excinfo:
+            ConversationFile.parse(content)
+        assert "ON-FAILURE without preceding RUN" in str(excinfo.value)
+
+    def test_parse_unclosed_block_raises_error(self):
+        """Test that unclosed ON-FAILURE block raises ValueError."""
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-FAILURE
+  PROMPT Fix it
+"""
+        with pytest.raises(ValueError) as excinfo:
+            ConversationFile.parse(content)
+        assert "Unclosed ON-FAILURE block" in str(excinfo.value)
+
+    def test_parse_nested_blocks_raises_error(self):
+        """Test that nested ON-FAILURE blocks raise ValueError."""
+        content = """MODEL gpt-4
+ADAPTER mock
+RUN pytest
+ON-FAILURE
+  ON-SUCCESS
+    PROMPT Oops
+  END
+END
+"""
+        with pytest.raises(ValueError) as excinfo:
+            ConversationFile.parse(content)
+        assert "Nested" in str(excinfo.value)
+
+    def test_elide_chain_with_on_failure_invalid(self):
+        """Test that ELIDE chain with ON-FAILURE blocks is invalid."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Analyze
+ELIDE
+RUN pytest
+ON-FAILURE
+  PROMPT Fix
+END
+"""
+        conv = ConversationFile.parse(content)
+        errors = conv.validate_elide_chains()
+        
+        assert len(errors) > 0
+        assert "ON-FAILURE" in errors[0]
+        assert "ELIDE" in errors[0]
+
+    def test_elide_chain_with_on_success_invalid(self):
+        """Test that ELIDE chain with ON-SUCCESS blocks is invalid."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Analyze
+ELIDE
+RUN pytest
+ON-SUCCESS
+  PROMPT Deploy
+END
+"""
+        conv = ConversationFile.parse(content)
+        errors = conv.validate_elide_chains()
+        
+        assert len(errors) > 0
+        assert "ON-SUCCESS" in errors[0]
+        assert "ELIDE" in errors[0]

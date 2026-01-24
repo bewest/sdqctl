@@ -1,10 +1,11 @@
 # Proposal: Conditional Branching for RUN Directive
 
-> **Status**: Ready for Implementation  
-> **Date**: 2026-01-23  
+> **Status**: Implemented ✅  
+> **Date**: 2026-01-24  
 > **Author**: sdqctl development  
 > **Scope**: Workflow control flow after RUN command success/failure  
-> **Decision**: Option C — RUN-RETRY first, then ON-FAILURE blocks
+> **Decision**: Option C — RUN-RETRY first, then ON-FAILURE blocks  
+> **Implementation**: Phase 1 (RUN-RETRY) ✅, Phase 2 (ON-FAILURE/ON-SUCCESS) ✅
 
 ---
 

@@ -173,7 +173,7 @@ Enable with `--json-errors` flag for CI integration.
 |-------|---------|--------|--------|
 | 0 | Consolidate docs (this file) | 1 hour | ✅ Complete |
 | 1 | Add `--strict` to verify | 1 hour | ✅ Complete (2026-01-24) |
-| 2 | Implement ON-FAILURE blocks | 4 hours | Pending |
+| 2 | Implement ON-FAILURE blocks | 4 hours | ✅ Complete (2026-01-24) |
 | 3 | Add `--json-errors` output | 2 hours | ✅ Complete (2026-01-24) |
 | 4 | ON-ABORT handling | 4 hours | Pending |
 
@@ -196,6 +196,43 @@ Added `--strict` flag to all verify commands:
 sdqctl verify all --strict
 sdqctl verify traceability --strict
 ```
+
+### Phase 2 Implementation Notes
+
+Implemented `ON-FAILURE` and `ON-SUCCESS` blocks for conditional execution based on RUN result:
+
+| Component | Implementation | Notes |
+|-----------|----------------|-------|
+| Directive types | `core/conversation.py` | `DirectiveType.ON_FAILURE`, `ON_SUCCESS`, `END` |
+| Step fields | `core/conversation.py` | `ConversationStep.on_failure`, `on_success` lists |
+| Block parsing | `core/conversation.py` | Block context tracking in `parse()` method |
+| ELIDE validation | `core/conversation.py` | `validate_elide_chains()` checks for blocks |
+| Block execution | `commands/run.py` | `_execute_block_steps()` helper |
+| Tests | `tests/test_conversation.py` | 9 tests in `TestOnFailureDirectiveParsing` |
+
+**Syntax:**
+```dockerfile
+RUN pytest
+ON-FAILURE
+PROMPT Fix the failing tests.
+RUN git diff
+END
+ON-SUCCESS
+PROMPT All tests passed! Deploy now.
+END
+```
+
+**Semantics:**
+- `ON-FAILURE` block executes if preceding RUN exits non-zero
+- `ON-SUCCESS` block executes if preceding RUN exits zero
+- Both blocks are optional
+- Block content should NOT be indented (indentation = multiline continuation)
+- Blocks cannot be nested
+- Blocks inside ELIDE chains are invalid (parse error)
+
+**Interaction with stop-on-error:**
+- If `ON-FAILURE` block is present and run_on_error=stop, workflow continues (block handles failure)
+- If no `ON-FAILURE` block and run_on_error=stop, workflow stops as before
 
 ### Phase 3 Implementation Notes
 

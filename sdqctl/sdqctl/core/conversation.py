@@ -104,6 +104,11 @@ class DirectiveType(Enum):
 
     # Flow control
     PAUSE = "PAUSE"
+    
+    # Branching on RUN result
+    ON_FAILURE = "ON-FAILURE"  # Block executed if previous RUN fails
+    ON_SUCCESS = "ON-SUCCESS"  # Block executed if previous RUN succeeds
+    END = "END"  # End of ON-FAILURE/ON-SUCCESS block
 
     # Pre-flight checks
     REQUIRE = "REQUIRE"  # Require file/command exists: REQUIRE @file.py, REQUIRE cmd:git
@@ -205,6 +210,9 @@ class ConversationStep:
     retry_prompt: str = ""  # For run_retry: prompt to send on failure
     verify_type: str = ""  # For verify: refs, links, traceability, all
     verify_options: dict = field(default_factory=dict)  # For verify: additional options
+    # For RUN with ON-FAILURE/ON-SUCCESS blocks
+    on_failure: list["ConversationStep"] = field(default_factory=list)  # Steps to run on failure
+    on_success: list["ConversationStep"] = field(default_factory=list)  # Steps to run on success
     
 
 def _get_default_model() -> str:
@@ -332,6 +340,11 @@ class ConversationFile:
 
         # Track multiline prompts
         current_multiline: Optional[tuple[DirectiveType, list[str], int]] = None
+        
+        # Track block context for ON-FAILURE/ON-SUCCESS
+        # block_context is None when not in a block, or ("on_failure"|"on_success", steps_list, run_step)
+        block_context: Optional[tuple[str, list[ConversationStep], ConversationStep]] = None
+        last_run_step: Optional[ConversationStep] = None
 
         for line_num, line in enumerate(content.split("\n"), 1):
             # Handle multiline continuation
@@ -348,7 +361,11 @@ class ConversationFile:
                         type=dtype, value=value, line_number=start_line, raw_line="<multiline>"
                     )
                     directives.append(directive)
-                    _apply_directive(conv, directive)
+                    if block_context:
+                        # Add to current block instead of main conv
+                        _apply_directive_to_block(block_context[1], directive)
+                    else:
+                        _apply_directive(conv, directive)
                     current_multiline = None
 
             # Skip empty lines and comments
@@ -359,6 +376,34 @@ class ConversationFile:
             # Parse directive
             directive = _parse_line(stripped, line_num)
             if directive:
+                # Check for block control directives
+                if directive.type == DirectiveType.ON_FAILURE:
+                    if last_run_step is None:
+                        raise ValueError(f"Line {line_num}: ON-FAILURE without preceding RUN")
+                    if block_context is not None:
+                        raise ValueError(f"Line {line_num}: Nested ON-FAILURE/ON-SUCCESS blocks not allowed")
+                    block_context = ("on_failure", [], last_run_step)
+                    continue
+                
+                elif directive.type == DirectiveType.ON_SUCCESS:
+                    if last_run_step is None:
+                        raise ValueError(f"Line {line_num}: ON-SUCCESS without preceding RUN")
+                    if block_context is not None:
+                        raise ValueError(f"Line {line_num}: Nested ON-FAILURE/ON-SUCCESS blocks not allowed")
+                    block_context = ("on_success", [], last_run_step)
+                    continue
+                
+                elif directive.type == DirectiveType.END:
+                    if block_context is None:
+                        raise ValueError(f"Line {line_num}: END without matching ON-FAILURE/ON-SUCCESS")
+                    block_type, block_steps, run_step = block_context
+                    if block_type == "on_failure":
+                        run_step.on_failure = block_steps
+                    else:
+                        run_step.on_success = block_steps
+                    block_context = None
+                    continue
+                
                 # Check if this starts a multiline
                 if directive.type in (
                     DirectiveType.PROMPT,
@@ -368,7 +413,17 @@ class ConversationFile:
                     current_multiline = (directive.type, [directive.value], line_num)
                 else:
                     directives.append(directive)
-                    _apply_directive(conv, directive)
+                    if block_context:
+                        # Add to current block
+                        _apply_directive_to_block(block_context[1], directive)
+                        # Track if this is a RUN within the block (for potential nested blocks - not allowed)
+                    else:
+                        _apply_directive(conv, directive)
+                        # Track RUN steps for ON-FAILURE/ON-SUCCESS attachment
+                        if directive.type == DirectiveType.RUN:
+                            # Get the last added step (it's a RUN)
+                            if conv.steps and conv.steps[-1].type == "run":
+                                last_run_step = conv.steps[-1]
 
         # Handle trailing multiline
         if current_multiline is not None:
@@ -378,7 +433,15 @@ class ConversationFile:
                 type=dtype, value=value, line_number=start_line, raw_line="<multiline>"
             )
             directives.append(directive)
-            _apply_directive(conv, directive)
+            if block_context:
+                _apply_directive_to_block(block_context[1], directive)
+            else:
+                _apply_directive(conv, directive)
+        
+        # Check for unclosed block
+        if block_context is not None:
+            block_name = "ON-FAILURE" if block_context[0] == "on_failure" else "ON-SUCCESS"
+            raise ValueError(f"Unclosed {block_name} block (missing END)")
 
         conv.directives = directives
         return conv
@@ -583,7 +646,7 @@ class ConversationFile:
         """Validate that ELIDE chains don't contain incompatible constructs.
         
         ELIDE merges steps into a single AI turn. Branching constructs 
-        (RUN-RETRY) require multiple turns and are incompatible.
+        (RUN-RETRY, ON-FAILURE, ON-SUCCESS) require multiple turns and are incompatible.
         
         Returns:
             List of error messages for invalid ELIDE chain usage.
@@ -604,8 +667,20 @@ class ConversationFile:
                     "Remove ELIDE or RUN-RETRY."
                 )
             
-            # Check for other branching constructs (future: ON-FAILURE, ON-SUCCESS)
-            # These will be added when those directives are implemented
+            # Check for RUN with ON-FAILURE/ON-SUCCESS blocks inside ELIDE chain
+            if in_elide_chain and step.type == "run":
+                if step.on_failure:
+                    errors.append(
+                        f"ON-FAILURE block at step {i+1} is inside ELIDE chain. "
+                        "ON-FAILURE requires separate AI turns and cannot be used with ELIDE. "
+                        "Remove ELIDE or ON-FAILURE block."
+                    )
+                if step.on_success:
+                    errors.append(
+                        f"ON-SUCCESS block at step {i+1} is inside ELIDE chain. "
+                        "ON-SUCCESS requires separate AI turns and cannot be used with ELIDE. "
+                        "Remove ELIDE or ON-SUCCESS block."
+                    )
             
             # Any non-elide step breaks the chain unless next is elide
             if i + 1 < len(self.steps) and self.steps[i + 1].type == "elide":
@@ -1055,6 +1130,42 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
         case DirectiveType.EVENT_LOG:
             # Path for event log (supports template variables)
             conv.event_log = directive.value.strip()
+
+
+def _apply_directive_to_block(steps: list[ConversationStep], directive: Directive) -> None:
+    """Apply a directive inside an ON-FAILURE/ON-SUCCESS block.
+    
+    Only a subset of directives are allowed inside blocks:
+    - PROMPT - send a prompt to the AI
+    - RUN - execute a shell command (no nested RUN-RETRY or ON-FAILURE)
+    - CHECKPOINT - save state
+    - COMPACT - compress context
+    
+    Configuration directives (MODEL, ADAPTER, etc.) are not allowed in blocks.
+    """
+    match directive.type:
+        case DirectiveType.PROMPT:
+            steps.append(ConversationStep(type="prompt", content=directive.value))
+        case DirectiveType.RUN:
+            steps.append(ConversationStep(type="run", content=directive.value))
+        case DirectiveType.CHECKPOINT:
+            steps.append(ConversationStep(type="checkpoint", content=directive.value))
+        case DirectiveType.COMPACT:
+            steps.append(ConversationStep(type="compact", preserve=[]))
+        case DirectiveType.COMPACT_PRESERVE:
+            # Modify the last COMPACT step if present
+            for i in range(len(steps) - 1, -1, -1):
+                if steps[i].type == "compact":
+                    steps[i].preserve.append(directive.value)
+                    break
+        case DirectiveType.PAUSE:
+            steps.append(ConversationStep(type="pause"))
+        case DirectiveType.NEW_CONVERSATION:
+            steps.append(ConversationStep(type="new_conversation"))
+        case _:
+            # Silently ignore configuration directives in blocks
+            # This allows blocks to contain only execution-oriented directives
+            pass
 
 
 def substitute_template_variables(text: str, variables: dict[str, str]) -> str:
