@@ -770,6 +770,55 @@ class TestLinksVerifier:
         
         # Only root file scanned
         assert result.details["files_scanned"] == 1
+    
+    def test_skip_links_in_code_blocks(self, tmp_path):
+        """Test that links inside code blocks are skipped."""
+        source = tmp_path / "doc.md"
+        source.write_text("""# Example
+
+Regular [valid](exists.md) link.
+
+```markdown
+This [link](broken.md) is in a code block and should be ignored.
+```
+
+After code block.
+""")
+        
+        # Create only the file referenced outside code block
+        target = tmp_path / "exists.md"
+        target.write_text("# Target")
+        
+        verifier = LinksVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # Should only find the valid link outside code block
+        assert result.passed, f"Unexpected errors: {result.errors}"
+        assert result.details["links_found"] == 1
+        assert result.details["links_valid"] == 1
+        assert result.details["links_broken"] == 0
+    
+    def test_skip_links_in_inline_code(self, tmp_path):
+        """Test that links inside inline code (backticks) are skipped."""
+        source = tmp_path / "doc.md"
+        source.write_text("""# Example
+
+Check markdown links with `[text](url)` syntax.
+
+Here's a real [valid](exists.md) link.
+""")
+        
+        # Create only the file referenced outside inline code
+        target = tmp_path / "exists.md"
+        target.write_text("# Target")
+        
+        verifier = LinksVerifier()
+        result = verifier.verify(tmp_path)
+        
+        # Should only find the valid link outside inline code
+        assert result.passed, f"Unexpected errors: {result.errors}"
+        assert result.details["links_found"] == 1
+        assert result.details["links_valid"] == 1
 
 
 class TestTraceabilityVerifier:

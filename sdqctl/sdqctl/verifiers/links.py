@@ -24,6 +24,12 @@ class LinksVerifier:
     # Pattern to match reference-style links: [text][ref] with [ref]: url
     REF_LINK_DEF = re.compile(r'^\s*\[([^\]]+)\]:\s*(\S+)', re.MULTILINE)
     
+    # Pattern to match code blocks start/end
+    CODE_BLOCK_PATTERN = re.compile(r'^```')
+    
+    # Pattern to strip inline code from a line before checking links
+    INLINE_CODE_PATTERN = re.compile(r'`[^`]+`')
+    
     # File extensions to scan
     SCAN_EXTENSIONS = {'.md', '.markdown', '.txt'}
     
@@ -84,9 +90,22 @@ class LinksVerifier:
                 ref_url = match.group(2)
                 ref_defs[ref_name] = ref_url
             
-            # Find all inline links
+            # Find all inline links, tracking code block state
+            in_code_block = False
             for line_num, line in enumerate(content.split('\n'), 1):
-                for match in self.LINK_PATTERN.finditer(line):
+                # Track code block state
+                if self.CODE_BLOCK_PATTERN.match(line):
+                    in_code_block = not in_code_block
+                    continue
+                
+                # Skip lines inside code blocks
+                if in_code_block:
+                    continue
+                
+                # Strip inline code before checking for links
+                line_stripped = self.INLINE_CODE_PATTERN.sub('', line)
+                
+                for match in self.LINK_PATTERN.finditer(line_stripped):
                     text, url = match.groups()
                     links_found += 1
                     
