@@ -550,31 +550,35 @@ Ideas moved from QUIRKS.md "Future Considerations":
 
 ### P0: REFCAT Directive Implementation
 
-**Status**: Partial - CLI Complete, Directive Pending  
+**Status**: ✅ Complete  
 **Proposal**: [REFCAT-DESIGN.md](REFCAT-DESIGN.md)
 
 **Completed** (2026-01-24):
 - ✅ `sdqctl refcat` CLI command with full P0/P1 feature support
 - ✅ Core module `sdqctl/core/refcat.py` with parsing, extraction, formatting
 - ✅ 46 unit tests passing
+- ✅ **REFCAT directive** in `.conv` files (implemented 2026-01-24)
+- ✅ Validation integration (`sdqctl validate` checks REFCAT refs)
+- ✅ Renderer integration (REFCAT excerpts in rendered output)
+- ✅ 14 additional tests for directive parsing, validation, and rendering
 
-**Remaining**: The corresponding **REFCAT directive** for use within `.conv` files is not implemented:
+**Usage**:
 
 ```dockerfile
-# Proposed (not yet implemented)
+# Extract specific lines into context
 REFCAT @sdqctl/core/context.py#L182-L194
 REFCAT loop:LoopKit/Sources/Algorithm.swift#L100-L200
+
+# Multiple refs on one line
+REFCAT @file1.py#L10-L20 @file2.py#L1-L50
 ```
 
-**Use case**: Precise context injection in workflows - more targeted than `CONTEXT @file` which includes entire files.
-
-**Implementation sketch**:
-1. Add `REFCAT` to `DirectiveType` enum in `conversation.py`
-2. Parse refs using existing `refcat.py` parsing logic
-3. During rendering, call `extract_content()` and inject into context
-4. Integrate with `ContextFile` dataclass's `is_partial` field
-
-**Decision**: Proceed with implementation - this is a common use case for workflows needing specific code sections.
+**Implementation** (commit `a1f1f07`):
+- `DirectiveType.REFCAT` in `conversation.py`
+- `refcat_refs` field in `ConversationFile` dataclass
+- `validate_refcat_refs()` method
+- `render_cycle()` extracts REFCAT content
+- `format_rendered_markdown()` and `format_rendered_json()` include excerpts
 
 ---
 

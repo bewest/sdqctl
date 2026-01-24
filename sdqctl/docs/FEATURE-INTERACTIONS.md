@@ -227,6 +227,24 @@ When using `--from-json` with existing template variables:
 
 ---
 
+## REFCAT Interactions
+
+REFCAT is orthogonal to control flow directives. It injects precise file excerpts into context.
+
+| Feature | Interaction | Notes |
+|---------|-------------|-------|
+| CONTEXT | ✅ Compatible | REFCAT adds partial files alongside full CONTEXT files |
+| COMPACT | ✅ Compatible | REFCAT content is compactable |
+| ELIDE | ✅ Compatible | REFCAT content available in merged prompts |
+| VERIFY | ✅ Compatible | REFCAT refs validated by `sdqctl validate` |
+
+**Key behaviors**:
+- REFCAT refs resolved at render time (not parse time)
+- Missing refs fail validation in strict mode
+- REFCAT content appears before prompts in rendered output
+
+---
+
 ## See Also
 
 - [BACKLOG.md](../proposals/BACKLOG.md) - Open design questions
