@@ -1,7 +1,8 @@
 # Error Handling Strategy
 
-> **Status**: Draft - Consolidation Needed  
+> **Status**: Implemented ✅  
 > **Created**: 2026-01-24  
+> **Updated**: 2026-01-24  
 > **Priority**: P1 (High Value)
 
 ---
@@ -36,13 +37,13 @@ This fragmentation leads to:
 | `RUN-RETRY` | Retry N times with AI fix | `RUN-RETRY 3 "Fix the error"` |
 | `VERIFY` | Log and continue | `VERIFY-ON-ERROR fail\|continue` |
 | `CONTEXT` | Fail on missing | `CONTEXT-OPTIONAL` for lenient |
+| `ON-FAILURE` block | Execute block on RUN failure | Conditional branching |
+| `ON-SUCCESS` block | Execute block on RUN success | Conditional branching |
 
 ### Not Yet Implemented
 
 | Feature | Proposal | Status |
 |---------|----------|--------|
-| `ON-FAILURE` block | RUN-BRANCHING Phase 2 | Pending |
-| `ON-SUCCESS` block | RUN-BRANCHING Phase 2 | Pending |
 | Global error handler | None | Not proposed |
 | Timeout handling | Partial (RUN-TIMEOUT) | Implemented |
 
