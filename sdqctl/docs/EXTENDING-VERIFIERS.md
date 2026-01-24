@@ -348,8 +348,9 @@ The `verify refs` command has evolved through several iterations to reduce false
 | +Connection strings | 259 | 12 (localhost:, mongo:) |
 | +Unix sockets | 258 | 1 (sock:, unix:) |
 | +Timestamps & placeholders | 251 | 7 (mm:ss, path/to/) |
+| +Doc path/to fixes | 249 | 2 (replaced antipattern) |
 
-**Current state:** 251 remaining broken refs are **real documentation issues** (short-form refs needing full paths).
+**Current state (2026-01-24):** 249 remaining broken refs are **real documentation issues** (short-form refs needing full paths).
 
 **Remaining work for zero false positives:**
 
