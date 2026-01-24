@@ -63,6 +63,8 @@ Directives control workflow behavior in `.conv` files.
 | `RUN-CWD` | Working directory | `RUN-CWD ./backend` |
 | `RUN-ENV` | Environment variable | `RUN-ENV API_KEY=secret` |
 | `ALLOW-SHELL` | Enable shell features | `ALLOW-SHELL true` |
+| `ON-FAILURE` | Block on RUN failure | `ON-FAILURE` ... `END` |
+| `ON-SUCCESS` | Block on RUN success | `ON-SUCCESS` ... `END` |
 
 ## Control Flow
 
@@ -72,6 +74,7 @@ Directives control workflow behavior in `.conv` files.
 | `ELIDE` | Merge adjacent elements | `ELIDE` |
 | `COMPACT` | Trigger compaction | `COMPACT` |
 | `REQUIRE` | Pre-flight checks | `REQUIRE @file.py cmd:git` |
+| `END` | End ON-FAILURE/ON-SUCCESS | `END` |
 
 ## Output Directives
 
@@ -344,6 +347,26 @@ RUN-RETRY 2 "Analyze test failures and fix the code"
 PROMPT Summarize fixes made this cycle.
 
 CHECKPOINT-AFTER each-cycle
+```
+
+## Conditional Branching on RUN Result
+
+```dockerfile
+# deploy-with-fallback.conv
+MODEL gpt-4
+
+RUN npm test
+ON-FAILURE
+PROMPT Analyze test failures.
+RUN git diff
+PROMPT Fix the failing tests based on the diff.
+END
+ON-SUCCESS
+PROMPT All tests passed! Deploy to staging.
+RUN npm run deploy:staging
+END
+
+PROMPT Continue with next steps.
 ```
 
 ## Multi-Component Migration
