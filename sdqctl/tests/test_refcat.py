@@ -382,3 +382,73 @@ class TestWorkspaceLockJsonAliases:
         result = _resolve_workspace_alias("loop", subdir)
         assert result is not None
         assert result == workspace_with_lock / "externals" / "LoopWorkspace"
+
+
+class TestGlobAndWorkflowPatterns:
+    """Tests for glob pattern expansion and workflow loading."""
+
+    @pytest.fixture
+    def workspace_with_docs(self, tmp_path):
+        """Create a workspace with docs and a workflow."""
+        # Create docs directory with markdown files
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "readme.md").write_text("# Readme")
+        (docs / "guide.md").write_text("# Guide")
+        (docs / "api.md").write_text("# API")
+        
+        # Create a workflow file
+        workflows = tmp_path / "workflows"
+        workflows.mkdir()
+        (workflows / "test.conv").write_text(dedent("""\
+            MODEL gpt-4
+            ADAPTER mock
+            CONTEXT @docs/*.md
+            CONTEXT @traceability/reqs.md
+            CONTEXT-OPTIONAL @optional/file.md
+            PROMPT Test prompt
+        """))
+        
+        # Create traceability file
+        trace = tmp_path / "traceability"
+        trace.mkdir()
+        (trace / "reqs.md").write_text("# Requirements")
+        
+        return tmp_path
+
+    def test_load_workflow_context_patterns(self, workspace_with_docs):
+        """Load CONTEXT patterns from workflow file."""
+        from sdqctl.commands.refcat import _load_workflow_context_patterns
+        
+        workflow = workspace_with_docs / "workflows" / "test.conv"
+        patterns = _load_workflow_context_patterns(workflow)
+        
+        assert "@docs/*.md" in patterns
+        assert "@traceability/reqs.md" in patterns
+        assert "@optional/file.md" in patterns
+        assert len(patterns) == 3
+
+    def test_expand_glob_patterns(self, workspace_with_docs):
+        """Expand glob patterns to file paths."""
+        from sdqctl.commands.refcat import _expand_glob_patterns
+        
+        refs = ["@docs/*.md", "@traceability/reqs.md"]
+        expanded = _expand_glob_patterns(refs, workspace_with_docs)
+        
+        # Should have 3 docs + 1 non-glob ref
+        paths = [p for p in expanded if isinstance(p, Path)]
+        strings = [p for p in expanded if isinstance(p, str)]
+        
+        assert len(paths) == 3  # readme.md, guide.md, api.md
+        assert len(strings) == 1  # @traceability/reqs.md (not a glob)
+
+    def test_expand_preserves_line_refs(self, workspace_with_docs):
+        """Glob expansion preserves refs with line numbers."""
+        from sdqctl.commands.refcat import _expand_glob_patterns
+        
+        refs = ["@docs/readme.md#L1-L5", "alias:path/file.py#L10"]
+        expanded = _expand_glob_patterns(refs, workspace_with_docs)
+        
+        # Should keep original strings (not expand)
+        assert all(isinstance(p, str) for p in expanded)
+        assert len(expanded) == 2
