@@ -251,9 +251,9 @@ The most effective sdqctl workflows are **backlog-driven**:
 - **Traceability**: Progress is documented in markdown files
 - **Human oversight**: Human can reprioritize backlog between runs
 
-### Example: The Quine Pattern
+### Example: Self-Improvement Workflow
 
-sdqctl improving itself:
+sdqctl improving itself (demonstrates state relay + convergence):
 
 ```bash
 # 1. Discover issues → creates backlog
