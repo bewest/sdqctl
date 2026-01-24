@@ -65,17 +65,17 @@ All 7 proposed tooling commands are **fully implemented**:
 
 | Proposal | Status | Implementation | Notes |
 |----------|--------|----------------|-------|
-| [RUN-BRANCHING](RUN-BRANCHING.md) | Ready | Phase 1-2 ✅ | RUN-RETRY + ON-FAILURE/ON-SUCCESS complete |
-| [VERIFICATION-DIRECTIVES](VERIFICATION-DIRECTIVES.md) | Ready | Phase 1-4 ✅ | All phases complete |
-| [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Ready | ✅ Complete | --from-json + schema_version implemented |
-| [STPA-INTEGRATION](STPA-INTEGRATION.md) | Draft | ✅ Core complete | Templates + traceability verifier done |
-| [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Analysis Complete | N/A | Help implemented, no gaps remaining |
+| [RUN-BRANCHING](RUN-BRANCHING.md) | Implemented | Phase 1-2 ✅ | RUN-RETRY + ON-FAILURE/ON-SUCCESS complete |
+| [VERIFICATION-DIRECTIVES](VERIFICATION-DIRECTIVES.md) | Implemented | Phase 1-4 ✅ | All phases complete |
+| [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Implemented | ✅ Complete | --from-json + schema_version implemented |
+| [STPA-INTEGRATION](STPA-INTEGRATION.md) | Partial | ✅ Core complete | Templates + traceability verifier done |
+| [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Implemented | N/A | Help implemented, no gaps remaining |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
-| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
-| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | **New** | ❌ Not started | Native SDK compaction for cycle mode |
-| [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | **New** | ❌ Not started | Resume/list/delete sessions |
-| [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Phase 2 Complete | Phase 1-2 ✅ | Adapter methods + status command enhanced |
+| [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
+| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Draft | ❌ Not started | Native SDK compaction for cycle mode |
+| [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
+| [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Implemented | Phase 1-2 ✅ | Adapter methods + status command enhanced |
 
 ---
 

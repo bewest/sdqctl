@@ -1,10 +1,27 @@
 # Proposal: STPA Integration for Workflow-Driven Safety Analysis
 
-> **Status**: Draft / Discussion  
+> **Status**: Partial Implementation ✅  
 > **Date**: 2026-01-23  
+> **Updated**: 2026-01-24  
 > **Author**: sdqctl development  
 > **Scope**: STPA hazard analysis automation, regulatory traceability support  
 > **Related**: [rag-nightscout STPA-TRACEABILITY-FRAMEWORK.md](https://github.com/bewest/rag-nightscout-ecosystem-alignment/docs/sdqctl-proposals/STPA-TRACEABILITY-FRAMEWORK.md)
+
+---
+
+## Implementation Status
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| STPA workflow templates | ✅ Complete | `examples/workflows/stpa/` |
+| Traceability verifier | ✅ Complete | `sdqctl/verifiers/traceability.py` |
+| LOSS/HAZ/UCA/SC patterns | ✅ Complete | Traceability verifier patterns |
+| Coverage reporting | ✅ Complete | `sdqctl verify traceability --coverage` |
+| STPA template variables | ❌ Future work | Not implemented |
+| VERIFY-TRACE directive | ❌ Future work | Not implemented |
+| VERIFY-COVERAGE directive | ❌ Future work | Not implemented |
+| VERIFY-IMPLEMENTED directive | ❌ Future work | Not implemented |
+| CI JSON output format | ❌ Future work | Not implemented |
 
 ---
 
