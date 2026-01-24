@@ -294,6 +294,248 @@ Gap Resolution = (GAPs closed) / (Total GAPs)
 
 ---
 
+## Enumeration Strategies
+
+This section provides guidelines for consistent, collision-free artifact ID assignment.
+
+### Core Principles
+
+1. **Uniqueness**: Every artifact ID must be unique within its scope
+2. **Stability**: Once assigned, IDs should never change
+3. **Parseability**: IDs must be machine-readable with consistent patterns
+4. **Readability**: IDs should convey meaning to humans
+5. **Traceability**: IDs must support automated linking
+
+### Numbering Schemes
+
+#### Sequential (Recommended for Single Projects)
+
+```
+REQ-001, REQ-002, REQ-003, ...
+SPEC-001, SPEC-002, ...
+```
+
+**Pros:** Simple, dense, easy to track gaps  
+**Cons:** May collide in multi-project workspaces
+
+#### Category-Scoped (Recommended for Multi-Project)
+
+```
+REQ-CGM-001    # CGM domain requirements
+REQ-BOLUS-001  # Bolus domain requirements
+GAP-SYNC-004   # Sync-related gap
+UCA-PUMP-003   # Pump control UCAs
+```
+
+**Pros:** Domain context, collision-resistant  
+**Cons:** Longer IDs, requires category taxonomy
+
+#### Project-Scoped (For Cross-Project Traceability)
+
+```
+LOOP-REQ-001   # Loop project requirement
+AAPS-REQ-001   # AAPS project requirement
+TRIO-GAP-005   # Trio project gap
+```
+
+**Pros:** Explicit project ownership  
+**Cons:** Verbose, project name changes break IDs
+
+### Recommended Strategies by Artifact Type
+
+| Type | Strategy | Format | Example |
+|------|----------|--------|---------|
+| REQ | Category-scoped | `REQ-{DOMAIN}-NNN` | REQ-CGM-010 |
+| SPEC | Sequential | `SPEC-NNN` | SPEC-042 |
+| TEST | Match SPEC | `TEST-{SPEC#}` | TEST-042 |
+| GAP | Category-scoped | `GAP-{DOMAIN}-NNN` | GAP-SYNC-004 |
+| UCA | Category-scoped | `UCA-{CONTROL}-NNN` | UCA-BOLUS-003 |
+| SC | Match UCA + suffix | `SC-{UCA#}{x}` | SC-BOLUS-003a |
+| Q | Sequential | `Q-NNN` | Q-012 |
+| BUG | Sequential | `BUG-NNN` | BUG-001 |
+| PROP | Sequential | `PROP-NNN` | PROP-007 |
+
+### Category Taxonomy
+
+Define categories before starting enumeration:
+
+```yaml
+# Example category taxonomy for AID systems
+domains:
+  CGM: Continuous Glucose Monitoring
+  BOLUS: Insulin bolus delivery
+  BASAL: Basal rate management
+  SYNC: Data synchronization
+  AUTH: Authentication/authorization
+  PUMP: Pump communication
+  UI: User interface
+  CONFIG: Configuration/settings
+```
+
+### ID Lifecycle
+
+#### Assignment Rules
+
+1. **Never reuse IDs** - Even if artifact is deleted, ID is retired
+2. **Reserve ranges** - Pre-allocate ranges for parallel work
+   ```
+   Team A: REQ-CGM-001 to REQ-CGM-099
+   Team B: REQ-CGM-100 to REQ-CGM-199
+   ```
+3. **Document retirements** - Track deleted IDs to prevent accidental reuse
+
+#### Status Progression
+
+```
+PROPOSED → ACCEPTED → IMPLEMENTED → VERIFIED → CLOSED
+                   ↘ REJECTED
+                   ↘ DEFERRED
+```
+
+#### Retirement
+
+```markdown
+### REQ-CGM-005: [RETIRED]
+**Status:** RETIRED (2026-01-15)
+**Reason:** Superseded by REQ-CGM-010
+**Successor:** REQ-CGM-010
+```
+
+### Collision Avoidance
+
+#### Single Project
+
+Use a registry file to track assigned IDs:
+
+```markdown
+# artifact-registry.md
+
+## Requirements
+| ID | Title | Status | Owner |
+|----|-------|--------|-------|
+| REQ-001 | Override Identity | Active | @alice |
+| REQ-002 | CGM Freshness | Active | @bob |
+| REQ-003 | [RETIRED] | Retired | - |
+| REQ-004 | Pump Timeout | Draft | @carol |
+```
+
+#### Multi-Project Workspace
+
+Use project prefix to namespace:
+
+```markdown
+# Nightscout Ecosystem ID Ranges
+
+| Project | REQ Range | GAP Range | UCA Range |
+|---------|-----------|-----------|-----------|
+| loop | 001-199 | LOOP-001+ | LOOP-001+ |
+| aaps | 200-399 | AAPS-001+ | AAPS-001+ |
+| trio | 400-599 | TRIO-001+ | TRIO-001+ |
+| xdrip | 600-799 | XDRIP-001+ | XDRIP-001+ |
+```
+
+Or use fully-qualified IDs:
+
+```
+LOOP-REQ-001, AAPS-REQ-001, TRIO-REQ-001
+```
+
+### Formatting Guidelines
+
+#### ID Format
+
+- **UPPERCASE** for type prefix: `REQ`, `SPEC`, `UCA`
+- **UPPERCASE** for category: `CGM`, `BOLUS`, `SYNC`
+- **Zero-padded numbers**: `001`, `042`, `100`
+- **Lowercase suffix** for variants: `a`, `b`, `c`
+- **Hyphen separator**: `REQ-CGM-001`, not `REQ_CGM_001`
+
+#### ID in Text
+
+```markdown
+# ✅ CORRECT: Backticks for inline IDs
+See `REQ-001` for the requirement.
+The gap `GAP-SYNC-004` blocks this feature.
+
+# ✅ CORRECT: Heading with ID
+### REQ-001: Override Identity
+
+# ✅ CORRECT: Table with IDs
+| ID | Title | Status |
+|----|-------|--------|
+| REQ-001 | Override Identity | Active |
+
+# ❌ INCORRECT: No backticks for inline
+See REQ-001 for the requirement.  # Harder to parse
+
+# ❌ INCORRECT: ID after title
+### Override Identity (REQ-001)  # Inconsistent
+```
+
+#### Anchor Generation
+
+IDs should generate predictable anchors:
+
+```markdown
+### REQ-001: Override Identity
+<!-- Anchor: #req-001-override-identity -->
+
+### GAP-SYNC-004: Supersession Not Tracked
+<!-- Anchor: #gap-sync-004-supersession-not-tracked -->
+```
+
+### Tooling Support
+
+#### Next ID Generation
+
+```bash
+# Find next available ID
+sdqctl artifact next REQ
+# → REQ-043
+
+sdqctl artifact next REQ-CGM
+# → REQ-CGM-011
+
+# With specific file
+sdqctl artifact next REQ --registry artifact-registry.md
+```
+
+#### Validation
+
+```bash
+# Check for ID collisions
+sdqctl verify artifacts --check-collisions
+
+# Check for orphaned IDs (defined but never referenced)
+sdqctl verify artifacts --check-orphans
+
+# Check for format violations
+sdqctl verify artifacts --check-format
+```
+
+#### Migration
+
+```bash
+# Rename artifact (updates all references)
+sdqctl artifact rename REQ-001 REQ-OVERRIDE-001
+
+# Retire artifact
+sdqctl artifact retire REQ-003 --reason "Superseded by REQ-010"
+```
+
+### Anti-Patterns
+
+| Anti-Pattern | Problem | Solution |
+|--------------|---------|----------|
+| Reusing retired IDs | Breaks historical traceability | Never reuse; always increment |
+| Inconsistent casing | `req-001` vs `REQ-001` | Always UPPERCASE type/category |
+| Gaps in sequence | Confusing: 001, 002, 005? | Document retired IDs |
+| Category drift | REQ-CGM-001 for pump feature | Reassign to correct category |
+| Overly long categories | `REQ-GLUCOSE-MONITORING-001` | Use abbreviations: `REQ-CGM-001` |
+| No category for large projects | REQ-001 to REQ-999 collisions | Add categories early |
+
+---
+
 ## Implementation
 
 ### Phase 1: Pattern Recognition
