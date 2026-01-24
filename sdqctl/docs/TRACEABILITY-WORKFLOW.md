@@ -346,11 +346,55 @@ Each phase outputs to files that the next phase references.
 
 ---
 
+## Artifact Types Quick Reference
+
+sdqctl recognizes these artifact types for traceability verification. For complete enumeration strategies, ID lifecycle, and formatting guidelines, see [ARTIFACT-TAXONOMY.md](../proposals/ARTIFACT-TAXONOMY.md).
+
+### Core Traceability Artifacts
+
+| Type | Pattern | Description |
+|------|---------|-------------|
+| **REQ** | `REQ-NNN` or `REQ-{DOMAIN}-NNN` | Requirement (e.g., `REQ-001`, `REQ-CGM-010`) |
+| **SPEC** | `SPEC-NNN` | Specification with acceptance criteria |
+| **TEST** | `TEST-NNN` | Test case that verifies a SPEC |
+| **GAP** | `GAP-{DOMAIN}-NNN` | Implementation gap (e.g., `GAP-SYNC-004`) |
+
+### STPA Safety Artifacts
+
+| Type | Pattern | Description |
+|------|---------|-------------|
+| **LOSS** | `LOSS-NNN` | System-level loss (e.g., patient harm) |
+| **HAZ** | `HAZ-NNN` | Hazard leading to loss |
+| **UCA** | `UCA-NNN` or `UCA-{CTRL}-NNN` | Unsafe Control Action (e.g., `UCA-BOLUS-003`) |
+| **SC** | `SC-NNN{x}` or `SC-{CTRL}-NNN{x}` | Safety Constraint mitigating UCA (e.g., `SC-BOLUS-003a`) |
+
+### Development Artifacts
+
+| Type | Pattern | Description |
+|------|---------|-------------|
+| **Q** | `Q-NNN` | Quirk - known surprising behavior |
+| **BUG** | `BUG-NNN` | Bug report - unintended behavior |
+| **PROP** | `PROP-NNN` | Proposal for new feature/change |
+| **IQ** | `IQ-NNN` | Implementation quality issue |
+
+### Traceability Chain
+
+The standard verification chain flows top-down:
+
+```
+LOSS → HAZ → UCA → SC → REQ → SPEC → TEST → CODE
+```
+
+Use `sdqctl verify traceability` to check coverage along this chain.
+
+---
+
 ## Next Steps
 
 - **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Go backwards: code → docs → requirements
 - **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration loops
 - **[Getting Started](GETTING-STARTED.md)** — sdqctl basics
+- **[Artifact Taxonomy](../proposals/ARTIFACT-TAXONOMY.md)** — Full artifact enumeration and ID strategies
 
 See `examples/workflows/test-discovery.conv` for a working traceability example.
 
