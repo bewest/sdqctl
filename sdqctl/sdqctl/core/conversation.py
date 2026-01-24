@@ -105,6 +105,9 @@ class DirectiveType(Enum):
     # Flow control
     PAUSE = "PAUSE"
 
+    # Help injection
+    HELP = "HELP"  # Inject help topic(s) into prologues: HELP directives workflow
+
     # Debug directives
     DEBUG = "DEBUG"  # Comma-separated debug categories (session,tool,intent,event)
     DEBUG_INTENTS = "DEBUG-INTENTS"  # true/false - enable intent tracking output
@@ -299,6 +302,9 @@ class ConversationFile:
 
     # REFCAT - Reference Catalog (line-level file excerpts)
     refcat_refs: list[str] = field(default_factory=list)  # @file.py#L10-L50
+
+    # Help topics injected via HELP directive
+    help_topics: list[str] = field(default_factory=list)  # Topics to inject into prologues
 
     # Flow control
     pause_points: list[tuple[int, str]] = field(default_factory=list)  # (after_prompt_index, message)
@@ -551,6 +557,22 @@ class ConversationFile:
         
         return errors, warnings
     
+    def validate_help_topics(self) -> list[tuple[str, str]]:
+        """Validate that all HELP topics exist.
+        
+        Returns:
+            List of (topic, error_message) for unknown topics.
+        """
+        from ..commands.help import TOPICS
+        
+        errors = []
+        for topic in self.help_topics:
+            if topic not in TOPICS:
+                known = ", ".join(sorted(TOPICS.keys()))
+                errors.append((topic, f"Unknown help topic: '{topic}'. Known topics: {known}"))
+        
+        return errors
+    
     def _check_pattern_exists(self, resolved_pattern: Path, glob_module) -> bool:
         """Check if a pattern (file or glob) resolves to existing files."""
         pattern_str = str(resolved_pattern)
@@ -631,7 +653,11 @@ class ConversationFile:
         for epilogue in self.epilogues:
             lines.append(f"EPILOGUE {epilogue}")
         
-        if self.prologues or self.epilogues:
+        # Help topic injection
+        if self.help_topics:
+            lines.append(f"HELP {' '.join(self.help_topics)}")
+        
+        if self.prologues or self.epilogues or self.help_topics:
             lines.append("")
 
         # Prompts
@@ -741,6 +767,12 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.prologues.append(directive.value)
         case DirectiveType.EPILOGUE:
             conv.epilogues.append(directive.value)
+        
+        # Help injection - inject help topics into prologues
+        case DirectiveType.HELP:
+            # HELP can have multiple topics: HELP directives workflow
+            topics = directive.value.split()
+            conv.help_topics.extend(topics)
         
         # Prompts - add to both flat list and steps
         case DirectiveType.PROMPT:

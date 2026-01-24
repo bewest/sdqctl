@@ -171,6 +171,7 @@ OUTPUT-FILE security-report.md
 | `ON-CONTEXT-LIMIT` | Action when limit reached (compact, stop) |
 | `PROLOGUE` | Prepend to first prompt of cycle (inline or @file) |
 | `EPILOGUE` | Append to last prompt of cycle (inline or @file) |
+| `HELP` | Inject help topics into prologues: `HELP directives workflow` |
 | `PROMPT` | Prompt to send (runs LLM conversation cycle) |
 | `RUN` | Execute shell command |
 | `RUN-RETRY` | Retry with AI fix: `RUN-RETRY N "prompt"` |

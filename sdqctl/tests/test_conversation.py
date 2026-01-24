@@ -1005,3 +1005,95 @@ PROMPT Analyze.
         
         # Should have an error (either parse or file not found)
         assert len(errors) == 1
+
+
+class TestHelpDirectiveParsing:
+    """Tests for HELP directive parsing."""
+
+    def test_parse_help_single_topic(self):
+        """Test parsing single HELP topic."""
+        content = """MODEL gpt-4
+HELP directives
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.help_topics) == 1
+        assert "directives" in conv.help_topics
+
+    def test_parse_help_multiple_topics(self):
+        """Test parsing multiple HELP topics on one line."""
+        content = """MODEL gpt-4
+HELP directives workflow variables
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.help_topics) == 3
+        assert "directives" in conv.help_topics
+        assert "workflow" in conv.help_topics
+        assert "variables" in conv.help_topics
+
+    def test_parse_help_multiple_directives(self):
+        """Test parsing multiple HELP directives."""
+        content = """MODEL gpt-4
+HELP directives
+HELP workflow
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.help_topics) == 2
+        assert "directives" in conv.help_topics
+        assert "workflow" in conv.help_topics
+
+    def test_help_to_string(self):
+        """Test that to_string() serializes HELP topics."""
+        content = """MODEL gpt-4
+HELP directives workflow
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        output = conv.to_string()
+        
+        assert "HELP directives workflow" in output
+
+
+class TestHelpDirectiveValidation:
+    """Tests for HELP topic validation."""
+
+    def test_validate_help_known_topics(self):
+        """Validate known HELP topics succeed."""
+        content = """MODEL gpt-4
+HELP directives adapters workflow
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        errors = conv.validate_help_topics()
+        
+        assert len(errors) == 0
+
+    def test_validate_help_unknown_topic(self):
+        """Validate unknown HELP topics fail."""
+        content = """MODEL gpt-4
+HELP nonexistent_topic
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        errors = conv.validate_help_topics()
+        
+        assert len(errors) == 1
+        assert "nonexistent_topic" in errors[0][0]
+        assert "Unknown help topic" in errors[0][1]
+
+    def test_validate_help_mixed_known_unknown(self):
+        """Validate mixed known/unknown topics returns errors for unknown only."""
+        content = """MODEL gpt-4
+HELP directives invalid_topic workflow
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content)
+        errors = conv.validate_help_topics()
+        
+        assert len(errors) == 1
+        assert "invalid_topic" in errors[0][0]

@@ -178,6 +178,15 @@ def render_cycle(
         if refcat_parts:
             refcat_content = "\n\n".join(refcat_parts)
     
+    # Resolve help topics to prologues
+    resolved_prologues = list(conv.prologues)  # Copy prologues
+    if conv.help_topics:
+        from ..commands.help import TOPICS
+        for topic in conv.help_topics:
+            if topic in TOPICS:
+                resolved_prologues.append(TOPICS[topic])
+            # Unknown topics are ignored (validation should catch them)
+    
     # Render all prompts
     base_path = conv.source_path.parent if conv.source_path else None
     rendered_prompts = []
@@ -186,7 +195,7 @@ def render_cycle(
     for i, prompt in enumerate(conv.prompts, 1):
         rendered = render_prompt(
             prompt=prompt,
-            prologues=conv.prologues,
+            prologues=resolved_prologues,
             epilogues=conv.epilogues,
             index=i,
             total_prompts=total_prompts,

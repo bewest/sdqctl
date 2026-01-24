@@ -433,6 +433,11 @@ def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, j
         for ref, msg in refcat_warnings:
             warnings.append(f"REFCAT ref invalid (allowed-missing): {ref} ({msg})")
         
+        # Check HELP topics
+        help_errors = conv.validate_help_topics()
+        for topic, msg in help_errors:
+            errors.append(f"HELP topic invalid: {msg}")
+        
         # JSON output
         if json_output:
             result = {

@@ -387,3 +387,85 @@ class TestRenderWithRefcat:
         
         assert data["cycles"][0]["refcat_content"] is not None
         assert "def bar():" in data["cycles"][0]["refcat_content"]
+
+
+class TestRenderWithHelp:
+    """Tests for HELP directive injection during rendering."""
+
+    def test_help_topics_injected_into_prologues(self):
+        """HELP topics should be injected as prologues during rendering."""
+        content = """MODEL gpt-4
+HELP directives
+PROMPT Analyze the workflow.
+"""
+        conv = ConversationFile.parse(content)
+        
+        # Create minimal context manager
+        from sdqctl.core.context import ContextManager
+        ctx = ContextManager()
+        
+        # Render cycle
+        result = render_cycle(
+            conv=conv,
+            cycle_number=1,
+            max_cycles=1,
+            context_manager=ctx,
+            base_variables={},
+            include_context=True,
+        )
+        
+        # The first prompt should have help content injected via prologues
+        assert len(result.prompts) == 1
+        # Check that "Directives" from the help topic is in the resolved prompt
+        assert "Directive" in result.prompts[0].resolved
+
+    def test_help_multiple_topics_injected(self):
+        """Multiple HELP topics should all be injected."""
+        content = """MODEL gpt-4
+HELP directives adapters
+PROMPT Analyze the workflow.
+"""
+        conv = ConversationFile.parse(content)
+        
+        from sdqctl.core.context import ContextManager
+        ctx = ContextManager()
+        
+        result = render_cycle(
+            conv=conv,
+            cycle_number=1,
+            max_cycles=1,
+            context_manager=ctx,
+            base_variables={},
+            include_context=True,
+        )
+        
+        # Should include content from both topics
+        resolved = result.prompts[0].resolved
+        assert "Directive" in resolved  # From directives topic
+        assert "Adapter" in resolved    # From adapters topic
+
+    def test_help_with_existing_prologues(self):
+        """HELP topics should be added alongside existing prologues."""
+        content = """MODEL gpt-4
+PROLOGUE My custom prologue text
+HELP directives
+PROMPT Analyze the workflow.
+"""
+        conv = ConversationFile.parse(content)
+        
+        from sdqctl.core.context import ContextManager
+        ctx = ContextManager()
+        
+        result = render_cycle(
+            conv=conv,
+            cycle_number=1,
+            max_cycles=1,
+            context_manager=ctx,
+            base_variables={},
+            include_context=True,
+        )
+        
+        resolved = result.prompts[0].resolved
+        # Should include both the custom prologue and help content
+        assert "My custom prologue text" in resolved
+        assert "Directive" in resolved

@@ -46,6 +46,7 @@ Directives control workflow behavior in `.conv` files.
 |-----------|---------|---------|
 | `PROLOGUE` | Prepend to first prompt | `PROLOGUE Current date: {{DATE}}` |
 | `EPILOGUE` | Append to last prompt | `EPILOGUE Update progress.md` |
+| `HELP` | Inject help topics | `HELP directives workflow` |
 | `HEADER` | Prepend to output | `HEADER # Report` |
 | `FOOTER` | Append to output | `FOOTER ---` |
 

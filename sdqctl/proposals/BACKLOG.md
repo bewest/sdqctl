@@ -619,8 +619,9 @@ sdqctl refcat @file.py#/pattern/:block          # Extract indentation block
 
 ### P1: HELP Directive
 
-**Status**: Ready for Implementation  
-**Proposal**: [BACKLOG.md §Help System Gap](BACKLOG.md#help-system-agent-accessibility-gap)
+**Status**: ✅ Complete  
+**Proposal**: [BACKLOG.md §Help System Gap](BACKLOG.md#help-system-agent-accessibility-gap)  
+**Implemented**: 2026-01-24
 
 A simple directive to inject built-in help content into workflow prompts:
 
@@ -632,26 +633,16 @@ HELP directives              # Inject directive reference
 HELP workflow validation     # Inject both topics
 ```
 
-**Use case**: AI agents authoring .conv workflows need to know directive syntax. Currently requires manual PROLOGUE copy/paste.
+**Use case**: AI agents authoring .conv workflows need to know directive syntax. 
 
-**Implementation**:
-```python
-# In conversation.py DirectiveType enum:
-HELP = "HELP"
+**Implementation** (2026-01-24):
+- `DirectiveType.HELP` in `conversation.py`
+- `help_topics` field in `ConversationFile` dataclass
+- Topics resolved during rendering via `render_cycle()`
+- Validation via `validate_help_topics()` method
+- 10 tests in `test_conversation.py` and `test_render_command.py`
 
-# In parser:
-case DirectiveType.HELP:
-    topics = directive.value.split()
-    for topic in topics:
-        if topic in TOPICS:
-            conv.prologues.append(TOPICS[topic])
-        else:
-            raise ValueError(f"Unknown help topic: {topic}")
-```
-
-**Note**: This is NOT `INCLUDE` - it only injects built-in help content from `help.py`, not external files or .conv fragments.
-
-**Decision**: Proceed with implementation - simple, useful, and avoids INCLUDE semantics concerns.
+**Available Topics**: directives, adapters, workflow, variables, context, examples, validation, ai
 
 ---
 
