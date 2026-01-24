@@ -268,8 +268,8 @@ class Verifier(Protocol):
 ### CLI
 
 ```bash
-# Run your verifier
-sdqctl verify links
+# Verify @-references and alias:refs
+sdqctl verify refs
 
 # With JSON output
 sdqctl verify links --json
@@ -277,6 +277,8 @@ sdqctl verify links --json
 # Specific directory
 sdqctl verify links -p examples/
 ```
+
+**Note:** The `refs` verifier supports both `@-references` (e.g., `@docs/README.md`) and workspace alias references (e.g., `loop:Loop/README.md`). Alias references are resolved using `workspace.lock.json`.
 
 ### In Workflows
 

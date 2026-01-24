@@ -162,6 +162,136 @@ class TestRefsVerifier:
         assert result.passed
 
 
+class TestRefsVerifierAliasRefs:
+    """Tests for alias:path reference verification."""
+    
+    @pytest.fixture
+    def workspace_with_lock(self, tmp_path):
+        """Create a workspace with workspace.lock.json and externals."""
+        import json
+        
+        # Create externals directory structure
+        externals = tmp_path / "externals"
+        externals.mkdir()
+        
+        # Create mock LoopWorkspace
+        loop = externals / "LoopWorkspace"
+        loop.mkdir()
+        (loop / "Loop").mkdir()
+        (loop / "Loop" / "README.md").write_text("# Loop")
+        (loop / "Loop" / "Models").mkdir()
+        (loop / "Loop" / "Models" / "Override.swift").write_text("struct Override {}")
+        
+        # Create mock cgm-remote-monitor
+        crm = externals / "cgm-remote-monitor"
+        crm.mkdir()
+        (crm / "lib").mkdir()
+        (crm / "lib" / "server.js").write_text("// server")
+        
+        # Create workspace.lock.json
+        lockfile = tmp_path / "workspace.lock.json"
+        lockfile.write_text(json.dumps({
+            "externals_dir": "externals",
+            "repos": [
+                {"alias": "loop", "name": "LoopWorkspace"},
+                {"alias": "crm", "name": "cgm-remote-monitor", "aliases": ["ns"]},
+            ]
+        }))
+        
+        return tmp_path
+    
+    def test_valid_alias_reference(self, workspace_with_lock):
+        """Test verification with valid alias:path reference."""
+        # Create file with valid alias reference
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `loop:Loop/README.md` for details")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert result.passed
+        assert result.details["alias_refs_found"] == 1
+        assert result.details["alias_refs_valid"] == 1
+        assert result.details["alias_refs_broken"] == 0
+    
+    def test_broken_alias_reference(self, workspace_with_lock):
+        """Test verification with broken alias:path reference."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `loop:Loop/NonExistent.swift` for implementation")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert not result.passed
+        assert result.details["alias_refs_broken"] == 1
+        assert len(result.errors) == 1
+        assert "loop:Loop/NonExistent.swift" in result.errors[0].message
+    
+    def test_unknown_alias(self, workspace_with_lock):
+        """Test verification with unknown alias."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `unknown:path/file.py` for details")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert not result.passed
+        assert "Unknown alias" in result.errors[0].fix_hint
+    
+    def test_alias_with_line_range(self, workspace_with_lock):
+        """Test alias reference with line range is validated (file part only)."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `loop:Loop/README.md#L1-L10` for header")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert result.passed
+        assert result.details["alias_refs_valid"] == 1
+    
+    def test_url_schemes_ignored(self, workspace_with_lock):
+        """Test that URL schemes like https:// are not treated as alias refs."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("Visit https://github.com/example/repo.git for more")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert result.passed
+        assert result.details["alias_refs_found"] == 0
+    
+    def test_mixed_refs_both_types(self, workspace_with_lock):
+        """Test file with both @-refs and alias:refs."""
+        # Create a local file for @-ref
+        readme = workspace_with_lock / "README.md"
+        readme.write_text("# Project")
+        
+        source = workspace_with_lock / "docs.md"
+        source.write_text("""
+        See @README.md for overview.
+        See `loop:Loop/Models/Override.swift` for implementation.
+        See `crm:lib/server.js` for server code.
+        """)
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert result.passed
+        assert result.details["refs_valid"] == 1
+        assert result.details["alias_refs_valid"] == 2
+    
+    def test_secondary_alias(self, workspace_with_lock):
+        """Test that secondary aliases (from 'aliases' array) work."""
+        source = workspace_with_lock / "docs.md"
+        source.write_text("See `ns:lib/server.js` for Nightscout server")
+        
+        verifier = RefsVerifier()
+        result = verifier.verify(workspace_with_lock)
+        
+        assert result.passed
+        assert result.details["alias_refs_valid"] == 1
+
+
 class TestVerifyExecutionIntegration:
     """Test VERIFY directive execution in workflows."""
 

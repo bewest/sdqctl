@@ -30,7 +30,23 @@ def verify():
 @click.option("--path", "-p", type=click.Path(exists=True), default=".", 
               help="Directory to verify")
 def verify_refs(json_output: bool, verbose: bool, path: str):
-    """Verify that @-references resolve to files."""
+    """Verify that @-references and alias:refs resolve to files.
+    
+    Scans markdown and workflow files for references and validates
+    that the referenced files exist.
+    
+    \b
+    Supported reference formats:
+      @path/to/file.md         Standard @-reference
+      alias:path/file.swift    Workspace alias (from workspace.lock.json)
+      loop:Loop/README.md      Example alias reference
+    
+    \b
+    Examples:
+      sdqctl verify refs                    # Verify current directory
+      sdqctl verify refs -p docs/           # Verify specific directory
+      sdqctl verify refs --json             # JSON output for CI
+    """
     verifier = VERIFIERS["refs"]()
     result = verifier.verify(Path(path))
     
