@@ -72,6 +72,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Analysis Complete | N/A | Help implemented, no gaps remaining |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Draft | Phase 0-0.5 ✅ | Taxonomy + enumeration strategies defined |
+| [ERROR-HANDLING](ERROR-HANDLING.md) | Draft | Phase 0-1 ✅ | `--strict` flag complete, ON-FAILURE pending |
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | **New** | ❌ Not started | Native SDK compaction for cycle mode |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | **New** | ❌ Not started | Resume/list/delete sessions |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | **New** | ❌ Not started | Status, auth, models APIs |
@@ -938,6 +939,15 @@ sdqctl cycle examples/workflows/proposal-development.conv \
   - **All quirks now resolved** - no active quirks remain
   - Commit: `d2e58df`
 
+### Session 2026-01-24 (Error Handling Phase 1)
+
+- [x] **Add `--strict` to all verify commands** - Production hardening
+  - Added `--strict` flag to `verify refs`, `verify links`, `verify all`
+  - `--strict` promotes warnings to errors for CI integration
+  - Updated ERROR-HANDLING.md Phase 1 status to Complete
+  - Added 4 tests in `test_cli.py::TestVerifyStrict`
+  - Documentation: `sdqctl verify all --strict` for CI builds
+
 ---
 
 ## References
@@ -949,3 +959,4 @@ Additional IDEAS:  LSP support, for refcat and maybe other subcommands.
 - [GLOSSARY.md](../docs/GLOSSARY.md) - Terminology definitions
 - [SYNTHESIS-CYCLES.md](../docs/SYNTHESIS-CYCLES.md) - Iterative workflow patterns
 - [VALIDATION-WORKFLOW.md](../docs/VALIDATION-WORKFLOW.md) - Validation/verification guide
+- [ERROR-HANDLING.md](ERROR-HANDLING.md) - Error handling strategy and roadmap

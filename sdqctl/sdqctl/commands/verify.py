@@ -35,6 +35,8 @@ def verify():
               help="Exclude pattern (glob syntax, can be repeated)")
 @click.option("--no-default-excludes", is_flag=True,
               help="Don't apply default exclusions (.venv, node_modules, etc.)")
+@click.option("--strict", is_flag=True,
+              help="Treat warnings as errors")
 def verify_refs(
     json_output: bool, 
     verbose: bool, 
@@ -42,6 +44,7 @@ def verify_refs(
     suggest_fixes: bool,
     exclude: tuple[str, ...],
     no_default_excludes: bool,
+    strict: bool,
 ):
     """Verify that @-references and alias:refs resolve to files.
     
@@ -77,6 +80,16 @@ def verify_refs(
     if suggest_fixes and result.errors:
         result = _add_fix_suggestions(result, Path(path))
     
+    # In strict mode, promote warnings to errors
+    if strict and result.warnings:
+        result = VerificationResult(
+            passed=False,
+            errors=result.errors + result.warnings,
+            warnings=[],
+            summary=result.summary + " (strict mode)",
+            details=result.details,
+        )
+    
     _output_result(result, json_output, verbose, "refs")
 
 
@@ -85,7 +98,9 @@ def verify_refs(
 @click.option("--verbose", "-v", is_flag=True, help="Show all findings")
 @click.option("--path", "-p", type=click.Path(exists=True), default=".",
               help="Directory to verify")
-def verify_all(json_output: bool, verbose: bool, path: str):
+@click.option("--strict", is_flag=True,
+              help="Treat warnings as errors for all verifiers")
+def verify_all(json_output: bool, verbose: bool, path: str, strict: bool):
     """Run all verifications."""
     results = {}
     all_passed = True
@@ -93,6 +108,17 @@ def verify_all(json_output: bool, verbose: bool, path: str):
     for name, verifier_cls in VERIFIERS.items():
         verifier = verifier_cls()
         result = verifier.verify(Path(path))
+        
+        # In strict mode, promote warnings to errors
+        if strict and result.warnings:
+            result = VerificationResult(
+                passed=False,
+                errors=result.errors + result.warnings,
+                warnings=[],
+                summary=result.summary + " (strict mode)",
+                details=result.details,
+            )
+        
         results[name] = result
         if not result.passed:
             all_passed = False
@@ -152,7 +178,9 @@ def _output_result(result: VerificationResult, json_output: bool, verbose: bool,
 @click.option("--verbose", "-v", is_flag=True, help="Show all findings")
 @click.option("--path", "-p", type=click.Path(exists=True), default=".",
               help="Directory to verify")
-def verify_links(json_output: bool, verbose: bool, path: str):
+@click.option("--strict", is_flag=True,
+              help="Treat warnings as errors")
+def verify_links(json_output: bool, verbose: bool, path: str, strict: bool):
     """Verify that URLs and file links are valid.
     
     Scans markdown files for internal and external links and validates
@@ -166,6 +194,17 @@ def verify_links(json_output: bool, verbose: bool, path: str):
     """
     verifier = VERIFIERS["links"]()
     result = verifier.verify(Path(path))
+    
+    # In strict mode, promote warnings to errors
+    if strict and result.warnings:
+        result = VerificationResult(
+            passed=False,
+            errors=result.errors + result.warnings,
+            warnings=[],
+            summary=result.summary + " (strict mode)",
+            details=result.details,
+        )
+    
     _output_result(result, json_output, verbose, "links")
 
 

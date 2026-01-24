@@ -169,13 +169,33 @@ Enable with `--json-errors` flag for CI integration.
 
 ## Implementation Roadmap
 
-| Phase | Feature | Effort |
-|-------|---------|--------|
-| 0 | Consolidate docs (this file) | 1 hour |
-| 1 | Add `--strict` to verify | 1 hour |
-| 2 | Implement ON-FAILURE blocks | 4 hours |
-| 3 | Add `--json-errors` output | 2 hours |
-| 4 | ON-ABORT handling | 4 hours |
+| Phase | Feature | Effort | Status |
+|-------|---------|--------|--------|
+| 0 | Consolidate docs (this file) | 1 hour | ✅ Complete |
+| 1 | Add `--strict` to verify | 1 hour | ✅ Complete (2026-01-24) |
+| 2 | Implement ON-FAILURE blocks | 4 hours | Pending |
+| 3 | Add `--json-errors` output | 2 hours | Pending |
+| 4 | ON-ABORT handling | 4 hours | Pending |
+
+### Phase 1 Implementation Notes
+
+Added `--strict` flag to all verify commands:
+
+| Command | --strict | Notes |
+|---------|----------|-------|
+| `verify refs` | ✅ | Promotes warnings to errors |
+| `verify links` | ✅ | Promotes warnings to errors |
+| `verify traceability` | ✅ | Already had --strict |
+| `verify terminology` | ✅ | Already had --strict |
+| `verify assertions` | ⚡ | Uses --require-message/--require-trace instead |
+| `verify all` | ✅ | Propagates --strict to all verifiers |
+
+**Usage for CI:**
+```bash
+# Fail CI build if any warnings
+sdqctl verify all --strict
+sdqctl verify traceability --strict
+```
 
 ---
 

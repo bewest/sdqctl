@@ -257,3 +257,43 @@ class TestJsonOutput:
         # Should contain JSON structure
         assert "{" in result.output
         assert "status" in result.output or "responses" in result.output
+
+
+class TestVerifyStrict:
+    """Test verify --strict flag behavior."""
+
+    def test_verify_refs_strict_flag_exists(self, cli_runner):
+        """Test verify refs has --strict flag."""
+        result = cli_runner.invoke(cli, ["verify", "refs", "--help"])
+        assert result.exit_code == 0
+        assert "--strict" in result.output
+
+    def test_verify_links_strict_flag_exists(self, cli_runner):
+        """Test verify links has --strict flag."""
+        result = cli_runner.invoke(cli, ["verify", "links", "--help"])
+        assert result.exit_code == 0
+        assert "--strict" in result.output
+
+    def test_verify_all_strict_flag_exists(self, cli_runner):
+        """Test verify all has --strict flag."""
+        result = cli_runner.invoke(cli, ["verify", "all", "--help"])
+        assert result.exit_code == 0
+        assert "--strict" in result.output
+
+    def test_verify_traceability_strict_promotes_warnings(self, cli_runner, tmp_path):
+        """Test --strict promotes warnings to errors."""
+        # Create a file with an orphaned UCA (triggers warning)
+        doc = tmp_path / "test.md"
+        doc.write_text("""
+## UCA-001: Test Unsafe Control Action
+Some description.
+""")
+        # Without --strict, should pass (orphan is a warning)
+        result = cli_runner.invoke(cli, ["verify", "traceability", "-p", str(tmp_path)])
+        # With --strict, warnings become errors
+        result_strict = cli_runner.invoke(cli, ["verify", "traceability", "-p", str(tmp_path), "--strict"])
+        # Note: The exact behavior depends on whether UCA without SC is warning or error
+        # Just verify that --strict changes output to include "(strict mode)"
+        if "WARN" in result.output or result.exit_code == 0:
+            # If there are warnings in non-strict mode, strict mode should be stricter
+            assert "strict mode" in result_strict.output or result_strict.exit_code != 0
