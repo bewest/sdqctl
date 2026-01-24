@@ -27,6 +27,7 @@ from .commands.render import render
 from .commands.verify import verify
 from .commands.help import help_cmd
 from .commands.refcat import refcat
+from .commands.artifact import artifact
 from .core.logging import get_logger, setup_logging
 from .core.progress import set_quiet
 
@@ -89,6 +90,7 @@ cli.add_command(status)
 cli.add_command(render)
 cli.add_command(verify)
 cli.add_command(refcat)
+cli.add_command(artifact)
 cli.add_command(help_cmd)
 
 
