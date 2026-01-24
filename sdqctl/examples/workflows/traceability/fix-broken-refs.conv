@@ -1,0 +1,154 @@
+# fix-broken-refs.conv - Iterative workflow for fixing broken code references
+#
+# Usage:
+#   sdqctl cycle examples/workflows/traceability/fix-broken-refs.conv -n 3 --session-mode fresh
+#
+# This workflow:
+# 1. Runs verify refs --suggest-fixes to identify broken refs with suggestions
+# 2. Groups fixes by file for efficiency
+# 3. Applies fixes to documentation files
+# 4. Verifies the fixes work
+#
+# Use with --prologue to target specific directories:
+#   sdqctl cycle examples/workflows/traceability/fix-broken-refs.conv \
+#     --prologue "Target: mapping/"
+
+MODEL claude-sonnet-4
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 3
+VALIDATION-MODE lenient
+
+# Documentation guidance
+CONTEXT @docs/EXTENDING-VERIFIERS.md
+CONTEXT-OPTIONAL @workspace.lock.json
+
+CONTEXT-LIMIT 60%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE tool-output errors
+
+# Tool execution
+RUN-ON-ERROR continue
+RUN-OUTPUT always
+RUN-OUTPUT-LIMIT 30K
+RUN-TIMEOUT 3m
+
+PROLOGUE Session: {{DATE}} | Fix Broken References
+PROLOGUE Objective: Update documentation to use correct code paths
+
+# === Cycle 1: Discover and Triage ===
+PROMPT ## Cycle 1: Discover Broken References
+
+Run verify refs with suggestions to identify what needs fixing.
+
+RUN sdqctl verify refs --suggest-fixes -v 2>&1 | head -100
+
+PROMPT Analyze the verification output and categorize issues:
+
+**Category 1: Fixable with Suggestions**
+Refs where `Suggestion: Found:` provides the correct path.
+
+| File:Line | Current Ref | Suggested Fix |
+|-----------|-------------|---------------|
+| [file.md:123] | `alias:old/path` | `alias:new/full/path` |
+
+**Category 2: Unknown Aliases**
+Refs with `Unknown alias 'X' - check workspace.lock.json`.
+These need the alias added to workspace.lock.json first.
+
+| File:Line | Alias | Action Needed |
+|-----------|-------|---------------|
+| [file.md:123] | CGMBLEKit | Add to workspace.lock.json |
+
+**Category 3: Missing Files**
+Refs where no suggestion is provided - file may be deleted or renamed.
+
+| File:Line | Current Ref | Status |
+|-----------|-------------|--------|
+| [file.md:123] | `alias:missing` | Investigate or remove |
+
+Select 5-10 fixable refs from Category 1 to fix this cycle.
+
+# === Cycle 2: Apply Fixes ===
+PROMPT ## Cycle 2: Apply Reference Fixes
+
+For each fixable ref identified in Cycle 1:
+
+1. **Read the file** to understand context
+2. **Update the ref** using the suggested full path
+3. **Preserve formatting** (backticks, markdown links, etc.)
+
+Example fix:
+```markdown
+# Before
+See `aaps:database/entities/Carbs.kt` for implementation.
+
+# After  
+See `aaps:database/impl/src/main/kotlin/app/aaps/database/entities/Carbs.kt` for implementation.
+```
+
+**Important:**
+- Keep the same alias prefix (don't change `aaps:` to `aaps:externals/AndroidAPS/...`)
+- Path should be relative to the alias root (as defined in workspace.lock.json)
+- If a file has multiple broken refs, fix them all in one edit
+
+Document each fix:
+| File | Line | Before | After |
+|------|------|--------|-------|
+| ... | ... | ... | ... |
+
+# === Cycle 3: Verify and Document ===
+PROMPT ## Cycle 3: Verify Fixes
+
+Run verify refs again to confirm the fixes work.
+
+RUN sdqctl verify refs 2>&1 | tail -10
+
+PROMPT Compare before and after:
+
+1. **Broken refs reduced?**
+   - Before: N broken
+   - After: M broken
+   - Fixed: N - M refs
+
+2. **Any regressions?**
+   - New errors introduced?
+   - Refs that were valid now broken?
+
+3. **Remaining issues for next cycle:**
+   - Category 2 (unknown aliases): List aliases to add
+   - Category 3 (missing files): List files to investigate
+
+**Summary:**
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| Broken refs | X | Y | -Z |
+| Files updated | - | N | +N |
+
+If tests pass and fixes verified:
+```bash
+git add -A
+git commit -m "fix(docs): update N broken refs with correct paths"
+```
+
+EPILOGUE Record progress in session notes.
+EPILOGUE List remaining work: unknown aliases, missing files.
+
+HEADER # Broken Reference Fix Report
+HEADER Session: {{DATETIME}}
+HEADER ---
+
+FOOTER ---
+FOOTER ## Next Steps
+FOOTER - Add missing aliases to workspace.lock.json
+FOOTER - Investigate missing files (deleted or moved)
+FOOTER - Run this workflow again: `sdqctl cycle ... -n 3`
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE reports/refs-fix-{{DATE}}.md
+
+CHECKPOINT-AFTER 1
+CHECKPOINT-NAME discovery
+
+CHECKPOINT-AFTER 2  
+CHECKPOINT-NAME fixes-applied

@@ -44,6 +44,15 @@ sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
 - `implement-improvements.conv` - Quine-like self-improving workflow
 - `test-discovery.conv` - Analyze code for test requirements
 
+### Traceability Workflows
+- `traceability/fix-broken-refs.conv` - Fix broken code references using `--suggest-fixes`
+- `traceability/requirements-discovery.conv` - Extract requirements from documentation
+- `traceability/verification-loop.conv` - Continuous verification cycle
+
+### Tooling Workflows
+- `tooling/refcat-improvement.conv` - 3-cycle false positive reduction
+- `tooling/verifier-test-loop.conv` - 5-cycle TDD pattern for verifier improvements
+
 ### Pattern Quick Reference
 
 | Pattern | Command | When to Use |
@@ -53,6 +62,8 @@ sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
 | **Iterative refinement** | `sdqctl cycle workflow.conv -n 3` | Multi-step improvements |
 | **Quine loop** | `sdqctl cycle implement-improvements.conv` | Self-improving workflows |
 | **Batch processing** | `sdqctl apply workflow.conv --components "*.py"` | Per-component work |
+| **Fix broken refs** | `sdqctl cycle traceability/fix-broken-refs.conv -n 3` | Update stale code references |
+| **Improve verifiers** | `sdqctl cycle tooling/verifier-test-loop.conv -n 5` | TDD for tool development |
 
 ---
 
