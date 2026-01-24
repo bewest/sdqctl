@@ -147,6 +147,149 @@ def _output_result(result: VerificationResult, json_output: bool, verbose: bool,
     raise SystemExit(0 if result.passed else 1)
 
 
+@verify.command("links")
+@click.option("--json", "json_output", is_flag=True, help="JSON output")
+@click.option("--verbose", "-v", is_flag=True, help="Show all findings")
+@click.option("--path", "-p", type=click.Path(exists=True), default=".",
+              help="Directory to verify")
+def verify_links(json_output: bool, verbose: bool, path: str):
+    """Verify that URLs and file links are valid.
+    
+    Scans markdown files for internal and external links and validates
+    that they resolve correctly.
+    
+    \b
+    Examples:
+      sdqctl verify links                     # Verify current directory
+      sdqctl verify links -p docs/            # Verify specific directory
+      sdqctl verify links --json              # JSON output for CI
+    """
+    verifier = VERIFIERS["links"]()
+    result = verifier.verify(Path(path))
+    _output_result(result, json_output, verbose, "links")
+
+
+@verify.command("traceability")
+@click.option("--json", "json_output", is_flag=True, help="JSON output")
+@click.option("--verbose", "-v", is_flag=True, help="Show all findings")
+@click.option("--path", "-p", type=click.Path(exists=True), default=".",
+              help="Directory to verify")
+@click.option("--coverage", is_flag=True, 
+              help="Show detailed coverage metrics")
+@click.option("--strict", is_flag=True,
+              help="Treat warnings as errors")
+def verify_traceability(
+    json_output: bool, 
+    verbose: bool, 
+    path: str, 
+    coverage: bool,
+    strict: bool,
+):
+    """Verify STPA/IEC 62304 traceability links.
+    
+    Scans markdown files for traceability artifacts (REQ, SPEC, TEST,
+    UCA, SC, GAP, etc.) and verifies proper linking.
+    
+    \b
+    Artifact Types:
+      LOSS-NNN, HAZ-NNN           STPA losses and hazards
+      UCA-NNN, UCA-DOMAIN-NNN     Unsafe Control Actions
+      SC-NNN, SC-DOMAIN-NNNx      Safety Constraints
+      REQ-NNN, REQ-DOMAIN-NNN     Requirements
+      SPEC-NNN, TEST-NNN          Specifications and tests
+      GAP-DOMAIN-NNN              Implementation gaps
+      Q-NNN, BUG-NNN, PROP-NNN    Development artifacts
+    
+    \b
+    Examples:
+      sdqctl verify traceability              # Basic verification
+      sdqctl verify traceability --coverage   # Show coverage metrics
+      sdqctl verify traceability --strict     # Fail on warnings
+      sdqctl verify traceability --json       # JSON output for CI
+    """
+    verifier = VERIFIERS["traceability"]()
+    result = verifier.verify(Path(path))
+    
+    # In strict mode, promote warnings to errors
+    if strict and result.warnings:
+        from ..verifiers.base import VerificationError
+        result = VerificationResult(
+            passed=False,
+            errors=result.errors + result.warnings,
+            warnings=[],
+            summary=result.summary + " (strict mode)",
+            details=result.details,
+        )
+    
+    if json_output:
+        console.print_json(json.dumps(result.to_json()))
+    else:
+        status = "[green]✓ PASSED[/green]" if result.passed else "[red]✗ FAILED[/red]"
+        console.print(f"{status}: {result.summary}")
+        
+        # Show coverage metrics if requested
+        if coverage and result.details and "coverage" in result.details:
+            cov = result.details["coverage"]
+            console.print()
+            console.print("[bold]Artifact Coverage Report[/bold]")
+            console.print("=" * 40)
+            
+            # STPA chain
+            if cov.get("total_losses", 0) > 0:
+                pct = cov.get("loss_to_haz", 0)
+                console.print(f"LOSS: {cov['total_losses']} found, {pct:.0f}% linked to HAZ")
+            if cov.get("total_hazards", 0) > 0:
+                pct = cov.get("haz_to_uca", 0)
+                console.print(f"HAZ: {cov['total_hazards']} found, {pct:.0f}% linked to UCA")
+            if cov.get("total_ucas", 0) > 0:
+                pct = cov.get("uca_to_sc", 0)
+                console.print(f"UCA: {cov['total_ucas']} found, {pct:.0f}% have SC")
+            if cov.get("total_scs", 0) > 0:
+                console.print(f"SC: {cov['total_scs']} found")
+            
+            # IEC 62304 chain
+            if cov.get("total_reqs", 0) > 0:
+                pct = cov.get("req_to_spec", 0)
+                console.print(f"REQ: {cov['total_reqs']} found, {pct:.0f}% have SPEC")
+            if cov.get("total_specs", 0) > 0:
+                pct = cov.get("spec_to_test", 0)
+                console.print(f"SPEC: {cov['total_specs']} found, {pct:.0f}% have TEST")
+            if cov.get("total_tests", 0) > 0:
+                console.print(f"TEST: {cov['total_tests']} found")
+            
+            # Development artifacts
+            dev_arts = []
+            if cov.get("total_bugs", 0) > 0:
+                dev_arts.append(f"BUG: {cov['total_bugs']}")
+            if cov.get("total_props", 0) > 0:
+                dev_arts.append(f"PROP: {cov['total_props']}")
+            if cov.get("total_quirks", 0) > 0:
+                dev_arts.append(f"Q: {cov['total_quirks']}")
+            if dev_arts:
+                console.print(f"Development: {', '.join(dev_arts)}")
+            
+            # Overall
+            overall = cov.get("overall", 0)
+            console.print()
+            console.print(f"[bold]Overall trace coverage: {overall:.0f}%[/bold]")
+        
+        # Show errors and warnings
+        if verbose or not result.passed:
+            if result.errors:
+                console.print()
+            for err in result.errors:
+                loc = f"{err.file}:{err.line}" if err.line else err.file
+                console.print(f"  [red]ERROR[/red] {loc}: {err.message}")
+                if err.fix_hint and verbose:
+                    console.print(f"        [dim]{err.fix_hint}[/dim]")
+            
+            for warn in result.warnings:
+                loc = f"{warn.file}:{warn.line}" if warn.line else warn.file
+                console.print(f"  [yellow]WARN[/yellow] {loc}: {warn.message}")
+    
+    raise SystemExit(0 if result.passed else 1)
+
+
 def _add_fix_suggestions(result: VerificationResult, root: Path) -> VerificationResult:
     """Add fix suggestions by searching for moved files."""
     import subprocess

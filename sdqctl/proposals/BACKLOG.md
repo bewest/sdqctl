@@ -86,6 +86,8 @@ All 7 proposed tooling commands are **fully implemented**:
 | Feature | Proposed | Implemented | Gap |
 |---------|----------|-------------|-----|
 | `sdqctl verify refs` CLI | Phase 2 | ✅ `commands/verify.py` | None |
+| `sdqctl verify links` CLI | Phase 2 | ✅ `commands/verify.py` | None |
+| `sdqctl verify traceability` CLI | Phase 2 | ✅ `commands/verify.py` | None |
 | `sdqctl verify all` CLI | Phase 2 | ✅ `commands/verify.py` | None |
 | `VERIFY refs` directive | Phase 3-4 | ✅ `conversation.py` | None |
 | `VERIFY-ON-ERROR` directive | Phase 3-4 | ✅ Implemented | None |
@@ -96,7 +98,9 @@ All 7 proposed tooling commands are **fully implemented**:
 | `traceability` verifier | Phase 1 | ✅ `verifiers/traceability.py` | None |
 | `assertions` verifier | Phase 1 | ❌ Not implemented | Future work |
 
-**Currently available verifiers**: `refs`, `links`, `traceability` in `sdqctl/verifiers/`
+**CLI commands available**: `sdqctl verify refs|links|traceability|all`
+
+**Verifier modules**: `refs`, `links`, `traceability` in `sdqctl/verifiers/`
 
 ### PIPELINE-ARCHITECTURE.md
 
@@ -837,9 +841,22 @@ sdqctl cycle examples/workflows/proposal-development.conv \
   - Universal backlog processor commands
   - Domain-specific alternatives
 
+### Session 2026-01-24 (Verify CLI Commands)
+
+- [x] **`sdqctl verify links`** - Added CLI command for links verifier
+  - Scans markdown files for broken internal/external links
+  - Options: `--json`, `--verbose`, `--path`
+- [x] **`sdqctl verify traceability`** - Added CLI command with full features
+  - `--coverage` flag shows detailed artifact coverage metrics
+  - `--strict` flag treats warnings as errors
+  - Coverage report format per ARTIFACT-TAXONOMY.md specification
+  - Supports all artifact types: LOSS, HAZ, UCA, SC, REQ, SPEC, TEST, GAP, BUG, PROP, Q, IQ
+- [x] **BACKLOG.md** - Updated verify command table with new CLI entries
+
 ---
 
 ## References
+IMPORTANT: remember to cross reference our generic backlog against other task lists and backlogs.  Some quirk proposals become backlog items!
 
 - [PHILOSOPHY.md](../docs/PHILOSOPHY.md) - Workflow design principles
 - [GLOSSARY.md](../docs/GLOSSARY.md) - Terminology definitions
