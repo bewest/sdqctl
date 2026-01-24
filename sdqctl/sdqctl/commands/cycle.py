@@ -797,21 +797,25 @@ async def _cycle_async(
                             prompt_idx += 1
                         
                         elif step_type == "compact":
-                            # Execute inline COMPACT directive
-                            console.print("[yellow]🗜  Compacting conversation...[/yellow]")
-                            progress_print("  🗜  Compacting conversation...")
-                            
-                            preserve = step.preserve if hasattr(step, 'preserve') else []
-                            all_preserve = conv.compact_preserve + preserve
-                            compact_prompt = session.get_compaction_prompt()
-                            if all_preserve:
-                                compact_prompt = f"Preserve these items: {', '.join(all_preserve)}\n\n{compact_prompt}"
-                            
-                            compact_response = await ai_adapter.send(adapter_session, compact_prompt)
-                            session.add_message("system", f"[Compaction summary]\n{compact_response}")
-                            
-                            console.print("[green]🗜  Compaction complete[/green]")
-                            progress_print("  🗜  Compaction complete")
+                            # Execute inline COMPACT directive (conditional on threshold)
+                            if session.needs_compaction(min_compaction_density):
+                                console.print("[yellow]🗜  Compacting conversation...[/yellow]")
+                                progress_print("  🗜  Compacting conversation...")
+                                
+                                preserve = step.preserve if hasattr(step, 'preserve') else []
+                                all_preserve = conv.compact_preserve + preserve
+                                compact_prompt = session.get_compaction_prompt()
+                                if all_preserve:
+                                    compact_prompt = f"Preserve these items: {', '.join(all_preserve)}\n\n{compact_prompt}"
+                                
+                                compact_response = await ai_adapter.send(adapter_session, compact_prompt)
+                                session.add_message("system", f"[Compaction summary]\n{compact_response}")
+                                
+                                console.print("[green]🗜  Compaction complete[/green]")
+                                progress_print("  🗜  Compaction complete")
+                            else:
+                                console.print("[dim]📊 Skipping COMPACT - context below threshold[/dim]")
+                                progress_print("  📊 Skipping COMPACT - context below threshold")
                         
                         elif step_type == "checkpoint":
                             # Save checkpoint mid-cycle

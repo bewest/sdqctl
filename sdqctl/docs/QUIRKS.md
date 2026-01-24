@@ -10,7 +10,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| [Q-012](#q-012-compact-directive-is-unconditional) | COMPACT directive triggers unconditionally | P2 | 🔶 KNOWN |
+| (none) | All known quirks resolved | - | ✅ |
 
 ### Resolved Quirks
 
@@ -23,6 +23,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-005 | Tool names show "unknown" in verbose logs | ✅ FIXED | Added `_get_tool_name()` helper |
 | Q-010 | COMPACT directive ignored by cycle command | ✅ FIXED | Refactored to iterate `conv.steps` |
 | Q-011 | Compaction threshold options not fully wired | ✅ FIXED | `--min-compaction-density` now wired to `needs_compaction()` |
+| Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold | |
 
 ---
 
@@ -76,62 +77,38 @@ Several compaction threshold options were **declared but not functionally implem
 
 **Priority:** P2 - Low Impact  
 **Discovered:** 2026-01-23  
-**Status:** 🔶 KNOWN - Documented for future implementation
+**Status:** ✅ FIXED (2026-01-24)
 
-### Description
+### Resolution
 
-The `COMPACT` directive in workflow files **always triggers compaction**, regardless of:
-- Current context utilization
-- `--min-compaction-density` setting
-- Whether compaction would provide any benefit
-
-### Expected Mental Model
-
-```dockerfile
-# User expectation: COMPACT only runs if context > 50% full
-CONTEXT-LIMIT 50%
-PROMPT "First task..."
-COMPACT                    # Expected: skip if context < 50% full
-PROMPT "Second task..."
-```
-
-### Actual Behavior
+The `COMPACT` directive now respects the `--min-compaction-density` threshold:
 
 ```python
-# run.py lines 885-899
+# run.py and cycle.py - Updated COMPACT handling
 elif step_type == "compact":
-    # Request compaction from the AI - NO threshold check!
-    logger.info("🗜  COMPACTING conversation...")
-    compact_prompt = session.get_compaction_prompt()
-    response = await ai_adapter.send(adapter_session, compact_prompt)
-```
-
-The `COMPACT` step executes **unconditionally** - no check against `limit_threshold` or `min_compaction_density`.
-
-### Impact
-
-- **Unnecessary compaction calls** when context is light
-- **Wasted tokens** on compaction prompts that provide no benefit
-- **Mismatch with automatic compaction** (which IS conditional at cycle boundaries)
-
-### Workaround
-
-Don't place `COMPACT` directives unless you know compaction is needed. Use multi-cycle workflows with `cycle -n N` instead - those get automatic conditional compaction.
-
-### Future Implementation
-
-Add conditional check before COMPACT execution:
-
-```python
-elif step_type == "compact":
-    if session.needs_compaction():  # Check threshold
+    if session.needs_compaction(min_compaction_density):
         logger.info("🗜  COMPACTING conversation...")
         # ... execute compaction
     else:
         logger.info("📊 Skipping COMPACT - context below threshold")
 ```
 
-Or introduce `COMPACT-IF-NEEDED` vs `COMPACT` (forced) directives.
+**What was fixed:**
+- `COMPACT` directive now checks `session.needs_compaction(min_compaction_density)` before executing
+- Skips compaction when context is below the minimum density threshold
+- Shows "Skipping COMPACT - context below threshold" message when skipped
+
+**Behavior:**
+- `--min-compaction-density 0` (default): COMPACT executes based on `needs_compaction()` logic
+- `--min-compaction-density 50`: COMPACT skips if context < 50% full
+- Consistent with automatic compaction at cycle boundaries
+
+### Original Description (Historical)
+
+The `COMPACT` directive in workflow files **always triggered compaction**, regardless of:
+- Current context utilization
+- `--min-compaction-density` setting
+- Whether compaction would provide any benefit
 
 ---
 

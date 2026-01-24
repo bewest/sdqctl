@@ -395,7 +395,8 @@ def run(
         allow_files, deny_files, allow_dir, deny_dir,
         prologue, epilogue, header, footer,
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
-        verbosity=verbosity, show_prompt=show_prompt_flag
+        verbosity=verbosity, show_prompt=show_prompt_flag,
+        min_compaction_density=min_compaction_density
     ))
 
 
@@ -420,6 +421,7 @@ async def _run_async(
     stop_file_nonce: Optional[str] = None,
     verbosity: int = 0,
     show_prompt: bool = False,
+    min_compaction_density: int = 0,
 ) -> None:
     """Async implementation of run command."""
     from ..core.conversation import (
@@ -883,20 +885,24 @@ async def _run_async(
                         logger.debug("No git changes to commit")
             
                 elif step_type == "compact":
-                    # Request compaction from the AI
-                    logger.info("🗜  COMPACTING conversation...")
-                    progress("  🗜  Compacting conversation...")
-                    
-                    preserve = step.preserve if hasattr(step, 'preserve') else []
-                    compact_prompt = session.get_compaction_prompt()
-                    if preserve:
-                        compact_prompt = f"Preserve these items: {', '.join(preserve)}\n\n{compact_prompt}"
-                    
-                    response = await ai_adapter.send(adapter_session, compact_prompt)
-                    session.add_message("system", f"[Compaction summary]\n{response}")
-                    
-                    logger.debug("Conversation compacted")
-                    progress("  🗜  Compaction complete")
+                    # Request compaction from the AI (conditional on threshold)
+                    if session.needs_compaction(min_compaction_density):
+                        logger.info("🗜  COMPACTING conversation...")
+                        progress("  🗜  Compacting conversation...")
+                        
+                        preserve = step.preserve if hasattr(step, 'preserve') else []
+                        compact_prompt = session.get_compaction_prompt()
+                        if preserve:
+                            compact_prompt = f"Preserve these items: {', '.join(preserve)}\n\n{compact_prompt}"
+                        
+                        response = await ai_adapter.send(adapter_session, compact_prompt)
+                        session.add_message("system", f"[Compaction summary]\n{response}")
+                        
+                        logger.debug("Conversation compacted")
+                        progress("  🗜  Compaction complete")
+                    else:
+                        logger.info("📊 Skipping COMPACT - context below threshold")
+                        progress("  📊 Skipping COMPACT - context below threshold")
             
                 elif step_type == "new_conversation":
                     # End current session, start fresh

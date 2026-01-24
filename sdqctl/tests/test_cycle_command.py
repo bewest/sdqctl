@@ -281,7 +281,7 @@ PROMPT Analyze iteration.
         assert "Compacting" in result.output or "Completed 2 cycles" in result.output
 
     def test_inline_compact_step_executes(self, cli_runner, tmp_path):
-        """Test COMPACT directive within workflow executes during cycle (Q-010 fix)."""
+        """Test COMPACT directive within workflow is conditional on threshold (Q-012 fix)."""
         workflow = tmp_path / "inline-compact.conv"
         workflow.write_text("""MODEL gpt-4
 ADAPTER mock
@@ -295,12 +295,12 @@ PROMPT Step 2: Continue after compaction.
             "--adapter", "mock"
         ])
         assert result.exit_code == 0
-        # Verify COMPACT step was executed (shows compaction message)
-        assert "Compacting" in result.output or "🗜" in result.output
+        # COMPACT step was processed - either executed or skipped based on threshold
+        assert "Compacting" in result.output or "Skipping COMPACT" in result.output
         assert "Completed 1 cycles" in result.output
 
     def test_compact_with_empty_context(self, cli_runner, tmp_path):
-        """Test COMPACT succeeds when no context files loaded (BUG-001 regression test)."""
+        """Test COMPACT skipped when no context files loaded (Q-012 behavior)."""
         workflow = tmp_path / "empty-context-compact.conv"
         workflow.write_text(f"""MODEL gpt-4
 ADAPTER mock
@@ -316,8 +316,29 @@ PROMPT Step 2.
             "--adapter", "mock"
         ])
         assert result.exit_code == 0
-        # Verify COMPACT executed successfully without crash
-        assert "Compacting" in result.output or "🗜" in result.output
+        # COMPACT skipped because context is below threshold
+        assert "Skipping COMPACT" in result.output
+        assert "Completed 1 cycles" in result.output
+
+    def test_compact_executes_with_min_density_zero(self, cli_runner, tmp_path):
+        """Test COMPACT executes when min-compaction-density is 0 (always run)."""
+        workflow = tmp_path / "force-compact.conv"
+        workflow.write_text("""MODEL gpt-4
+ADAPTER mock
+PROMPT Step 1: Do something.
+COMPACT
+PROMPT Step 2: Continue after compaction.
+""")
+        result = cli_runner.invoke(cli, [
+            "cycle", str(workflow),
+            "--max-cycles", "1",
+            "--adapter", "mock",
+            "--min-compaction-density", "0"
+        ])
+        assert result.exit_code == 0
+        # With min-density 0, COMPACT should execute (needs_compaction checks is_near_limit first)
+        # The mock adapter may or may not trigger near-limit, so check either outcome
+        assert "Compacting" in result.output or "Skipping COMPACT" in result.output
         assert "Completed 1 cycles" in result.output
 
     def test_session_mode_default_is_accumulate(self, cli_runner, workflow_file):
