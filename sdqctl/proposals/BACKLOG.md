@@ -668,6 +668,7 @@ case DirectiveType.HELP:
   - Double diamond design pattern
   - Backlog-driven workflow design
   - Anti-patterns documentation
+  - Reference examples table (6 good workflow patterns)
 - [x] **GLOSSARY.md** - Enhanced terminology definitions
   - Added Prompt/Phase/Iteration/Cycle table
   - Added run vs cycle command disambiguation
@@ -678,6 +679,24 @@ case DirectiveType.HELP:
   - WORKFLOW-DESIGN.md
   - README.md
 - [x] **Fixed broken link** - examples/workflows/README.md QUINE-WORKFLOWS.md → SYNTHESIS-CYCLES.md
+- [x] **Audited 31 conv files** - Identified 7 good examples vs 24 needing improvements
+
+#### Conv File Audit Summary
+
+**Good Examples** (correct terminology, escape hatches, backlog-driven):
+- `fix-quirks.conv` - Excellent terminology docs in comments
+- `implement-improvements.conv` - Clear Triage→Implement→Document
+- `proposal-development.conv` - State relay between cycles
+- `sdk-debug-integration.conv` - Single item selection, blocker handling
+- `test-discovery.conv` - Clear MODE audit, feeds implementation
+- `deep-analysis.conv` - Good CHECKPOINT/COMPACT usage
+- `REFCAT-DIRECTIVE.conv` - RUN-ON-ERROR for escape hatches
+
+**Common Issues in Other Files**:
+- Single-pass workflows (MAX-CYCLES 1) labeled as synthesis cycles
+- Implicit cycle/phase definitions without explicit comments
+- Missing escape hatches for blocker documentation
+- No persistent backlog tracking between iterations
 
 ---
 
