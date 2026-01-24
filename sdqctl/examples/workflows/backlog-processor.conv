@@ -1,0 +1,250 @@
+# backlog-processor.conv - Universal backlog iteration workflow
+#
+# A reusable workflow for processing ANY backlog via --prologue injection.
+# Works across domains: proposals, quirks, documentation, artifacts, etc.
+#
+# Usage:
+#   # Process main proposal backlog
+#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#     --prologue proposals/BACKLOG.md \
+#     --adapter copilot -n 5
+#
+#   # Process quirks backlog
+#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#     --prologue docs/QUIRKS.md \
+#     --adapter copilot -n 3
+#
+#   # Process multiple backlogs in priority order
+#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#     --prologue proposals/BACKLOG.md \
+#     --prologue proposals/REFCAT-DESIGN.md \
+#     --prologue proposals/ARTIFACT-TAXONOMY.md \
+#     --adapter copilot -n 10
+#
+#   # With philosophy context for terminology work
+#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#     --prologue docs/PHILOSOPHY.md \
+#     --prologue docs/GLOSSARY.md \
+#     --prologue proposals/BACKLOG.md \
+#     --adapter copilot -n 5
+#
+# Terminology:
+#   - ITERATION/CYCLE = one complete pass through all 4 phases (works ONE item)
+#   - PHASE = each prompt within an iteration (select → execute → verify → triage)
+#
+# Design principles:
+#   1. No hardcoded file paths - reads from injected --prologue content
+#   2. Generic selection criteria - P0 > P1 > P2, unblocked > blocked
+#   3. Escape hatch built-in - surface blockers, add to backlog, stop cleanly
+#   4. COMPACT after each cycle - critical for -n 10+ runs
+#   5. Git commit per meaningful change - state persists across cycles
+
+MODEL claude-sonnet-4-20250514
+ADAPTER copilot
+MODE implement
+MAX-CYCLES 1
+
+# === Context Management ===
+# Aggressive compaction for long cycle runs
+CONTEXT-LIMIT 60%
+ON-CONTEXT-LIMIT compact
+COMPACT-PRESERVE prompts,errors,tool-results
+
+# === Role Clarification ===
+PROLOGUE You are an implementation assistant processing a backlog of work items.
+PROLOGUE Your job is to:
+PROLOGUE 1. Select ONE item from the injected backlog(s)
+PROLOGUE 2. Implement the change directly (EDIT FILES, don't just describe)
+PROLOGUE 3. Verify your changes work
+PROLOGUE 4. Update tracking documents and commit
+PROLOGUE 
+PROLOGUE When blocked by missing information, document the blocker and STOP.
+PROLOGUE Do not work around blockers - surface them for human review.
+
+# === Session Context ===
+PROLOGUE ---
+PROLOGUE Session: {{DATETIME}} | Branch: {{GIT_BRANCH}}
+PROLOGUE Working directory: {{CWD}}
+PROLOGUE ---
+
+# === Implementation Reminders ===
+EPILOGUE ---
+EPILOGUE Remember:
+EPILOGUE - ONE item per cycle (do not batch multiple items)
+EPILOGUE - Research blockers → document in backlog and stop
+EPILOGUE - Implementation ready → edit files directly
+EPILOGUE - Test changes before marking complete
+EPILOGUE - Commit after each meaningful change
+EPILOGUE - Update the source backlog to reflect progress
+
+# === Phase 1: Select and Assess ===
+PROMPT ## Phase 1: Work Selection
+
+Review the backlog content injected via --prologue above.
+
+**Your task:** Select the SINGLE highest-priority actionable item.
+
+**Selection criteria (in order):**
+1. **P0 items** - Critical/blocking work
+2. **P1 items** - High value, unblocked
+3. **P2/P3 items** - Only if P0/P1 are clear or blocked
+4. **Unblocked over blocked** - Skip items needing research you can't do
+5. **Clear scope over ambiguous** - Pick items with defined deliverables
+
+**Scan for these backlog markers:**
+- `[ ]` unchecked items (ready to work)
+- `❌` not implemented
+- `🔶` known issues/quirks
+- `P0`, `P1`, `P2` priority labels
+- `Ready`, `Draft`, `Blocked` status labels
+- Tables with Status columns
+
+**Output format:**
+```
+### Selected: [Item ID or Name]
+**Source:** [Which --prologue file contains this item]
+**Priority:** P0/P1/P2/P3
+**Type:** Implementation | Documentation | Design Decision | Bug Fix | Refactor
+**Current State:** [What exists now]
+**Goal:** [What we're trying to achieve]
+**Approach:** [Specific steps to take]
+**Files to modify:** [List specific files]
+**Estimated effort:** Low/Medium/High
+**Blockers:** None | [List any blockers]
+```
+
+If ALL items are blocked, list the top 3 blockers and stop.
+
+# === Phase 2: Execute ===
+PROMPT ## Phase 2: Execute
+
+Based on your Phase 1 selection, do the work now.
+
+**For Implementation tasks:**
+1. Read the relevant source files
+2. Make minimal, surgical changes
+3. Follow existing code patterns
+4. Add or update tests if applicable
+
+**For Documentation tasks:**
+1. Read existing docs for style/structure
+2. Make changes consistent with surrounding content
+3. Update cross-references if needed
+4. Verify links work
+
+**For Design Decisions:**
+1. State the question clearly
+2. Enumerate options with trade-offs
+3. Make a recommendation with rationale
+4. Document in appropriate file (proposal, FEATURE-INTERACTIONS, etc.)
+
+**For Bug Fixes / Quirks:**
+1. Reproduce or understand the issue
+2. Implement the fix
+3. Add regression test if possible
+4. Update QUIRKS.md or issue tracker
+
+**CRITICAL: Actually edit files. Do not just describe changes.**
+
+If you encounter a blocker that prevents progress:
+1. Document the blocker clearly
+2. Add it to the appropriate backlog
+3. Stop and report in Phase 3
+
+# Run tests if applicable
+RUN-ON-ERROR continue
+RUN-OUTPUT on-error
+RUN-TIMEOUT 2m
+RUN python -m pytest tests/ -v --tb=short -x 2>/dev/null || echo "No pytest or tests skipped"
+
+# Compact after implementation to free context for verification
+COMPACT
+
+# === Phase 3: Verify and Document ===
+ELIDE
+PROMPT ## Phase 3: Verify
+
+Review the test output above (if any) and verify your changes.
+
+**Verification checklist:**
+- [ ] Changes compile/parse without errors
+- [ ] Tests pass (or no tests affected)
+- [ ] Documentation is accurate
+- [ ] No unintended side effects
+
+**If tests failed:**
+1. Analyze the failure
+2. Fix if straightforward (< 5 min)
+3. If complex, document as new backlog item and stop
+
+**Update tracking:**
+1. Mark the item complete in source backlog (change `[ ]` to `[x]`, `❌` to `✅`, etc.)
+2. Add completion notes if helpful
+
+**Output format:**
+```
+### Phase 3 Result
+**Item:** [What was worked on]
+**Outcome:** Completed | Partial | Blocked
+**Files changed:** [List with brief description]
+**Tests:** Pass | Fail | N/A
+**Backlog updated:** Yes/No
+**Notes:** [Any important context]
+```
+
+COMPACT
+
+# === Phase 4: Commit and Triage ===
+ELIDE
+PROMPT ## Phase 4: Commit and Triage
+
+**Section 1: Commit**
+If meaningful changes were made, commit them now:
+```bash
+git add -A
+git commit -m "[type]: [brief description]"
+```
+
+Use conventional commit types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+**Section 2: Triage for Next Cycle**
+Review the backlog(s) for the next iteration:
+
+1. **New items discovered?** Add them to appropriate backlog with priority
+2. **Blockers to escalate?** Document for human review
+3. **Priority changes?** Note if something became more/less urgent
+4. **Dependencies resolved?** Note items that are now unblocked
+
+**Output format:**
+```
+### Cycle Complete
+**Committed:** [commit hash or "no changes"]
+**Items remaining:** ~N items in backlog
+**Next priority:** [ID/Name of next item]
+**Blockers for human:** [List or "None"]
+**New items added:** N (list if any)
+```
+
+**If this is the final cycle (-n limit reached):**
+Summarize overall progress and recommend next `sdqctl cycle` command.
+
+COMPACT
+
+# === Output Configuration ===
+OUTPUT-FORMAT markdown
+
+# === Notes ===
+# This workflow intentionally:
+# - Has NO hardcoded file paths (reads from --prologue)
+# - Uses 4 PHASES per cycle: select → execute → verify → triage
+# - COMPACTs aggressively for long -n runs
+# - Commits after each meaningful change
+# - Surfaces blockers instead of working around them
+# - Works across domains: proposals, quirks, docs, artifacts, etc.
+#
+# Anti-patterns avoided:
+# - Batching multiple items (ONE item per cycle)
+# - Describing changes instead of making them
+# - Continuing past blockers
+# - Skipping verification
+# - Forgetting to update tracking

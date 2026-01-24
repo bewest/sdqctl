@@ -368,12 +368,42 @@ Well-designed workflows that demonstrate these principles:
 
 | Workflow | Pattern | Why It's Effective |
 |----------|---------|-------------------|
+| [`backlog-processor.conv`](../examples/workflows/backlog-processor.conv) | **Universal** | Reusable across domains via `--prologue` injection |
 | [`fix-quirks.conv`](../examples/workflows/fix-quirks.conv) | Synthesis cycle | Clear terminology docs, escape hatches, backlog-driven |
 | [`implement-improvements.conv`](../examples/workflows/implement-improvements.conv) | Synthesis cycle | Triage→Implement→Document with COMPACT between phases |
 | [`proposal-development.conv`](../examples/workflows/proposal-development.conv) | State relay | Assess→Work→Commit with backlog persistence |
 | [`sdk-debug-integration.conv`](../examples/workflows/sdk-debug-integration.conv) | Backlog-driven | Single item selection, blocker acknowledgment |
 | [`test-discovery.conv`](../examples/workflows/test-discovery.conv) | Discovery | Clear MODE audit, feeds into implementation workflows |
 | [`deep-analysis.conv`](../examples/workflows/deep-analysis.conv) | Multi-phase | CHECKPOINT and COMPACT for context management |
+
+### The Backlog Processor Pattern
+
+The most reusable workflow pattern uses `--prologue` to inject context while keeping the conversation file domain-agnostic:
+
+```bash
+# Same workflow, different backlogs:
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue proposals/BACKLOG.md \
+  --adapter copilot -n 10
+
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue docs/QUIRKS.md \
+  --adapter copilot -n 5
+
+# Multiple backlogs in priority order:
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue proposals/BACKLOG.md \
+  --prologue proposals/REFCAT-DESIGN.md \
+  --prologue proposals/ARTIFACT-TAXONOMY.md \
+  --adapter copilot -n 10
+```
+
+**Key design principles:**
+1. **No hardcoded paths** — Prompts say "the injected backlog" not specific files
+2. **Generic selection** — P0 > P1 > P2, unblocked > blocked
+3. **COMPACT after each phase** — Essential for `-n 10+` runs
+4. **Git commit per change** — State persists across cycles
+5. **Built-in escape hatch** — Surface blockers, add to backlog, stop cleanly
 
 **Anti-pattern note**: Single-pass audit workflows (`MAX-CYCLES 1`, `MODE audit`) are valid for analysis tasks but should not be confused with synthesis cycles. They produce reports; they don't iterate on improvements.
 

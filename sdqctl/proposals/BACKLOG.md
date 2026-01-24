@@ -778,25 +778,67 @@ docs/
 
 #### Recommended Next Commands
 
-To continue improving conv file consistency with PHILOSOPHY.md:
+**Universal Backlog Processor** (new - works across all domains):
 
 ```bash
-# Option 1: Use fix-quirks pattern for remaining conv file improvements
-sdqctl cycle examples/workflows/fix-quirks.conv \
+# Process main proposal backlog (10 cycles)
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue proposals/BACKLOG.md \
+  --adapter copilot -n 10
+
+# Process quirks backlog
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue docs/QUIRKS.md \
+  --adapter copilot -n 5
+
+# Process multiple domains in one run
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue proposals/BACKLOG.md \
+  --prologue proposals/REFCAT-DESIGN.md \
+  --prologue proposals/ARTIFACT-TAXONOMY.md \
+  --adapter copilot -n 10
+
+# With philosophy context for terminology work
+sdqctl cycle examples/workflows/backlog-processor.conv \
   --prologue docs/PHILOSOPHY.md \
   --prologue docs/GLOSSARY.md \
+  --prologue proposals/BACKLOG.md \
+  --adapter copilot -n 5
+```
+
+**Domain-Specific Alternatives**:
+
+```bash
+# Fix quirks specifically
+sdqctl cycle examples/workflows/fix-quirks.conv \
+  --prologue docs/PHILOSOPHY.md \
   --adapter copilot -n 3
 
-# Option 2: Documentation sync to catch remaining inconsistencies
+# Documentation sync
 sdqctl run examples/workflows/documentation-sync.conv \
-  --prologue @docs/PHILOSOPHY.md \
+  --prologue docs/PHILOSOPHY.md \
   --adapter copilot
 
-# Option 3: Proposal development for design decisions (run→invoke rename)
+# Proposal development for design decisions
 sdqctl cycle examples/workflows/proposal-development.conv \
-  --prologue @proposals/CLI-ERGONOMICS.md \
+  --prologue proposals/CLI-ERGONOMICS.md \
   --adapter copilot
 ```
+
+### Session 2026-01-24 (Unified Backlog Processor)
+
+- [x] **backlog-processor.conv** - Created universal backlog iteration workflow
+  - Works across ALL domains via `--prologue` injection
+  - 4-phase pattern: select → execute → verify → triage
+  - Aggressive COMPACT for long `-n 10+` runs
+  - Git commit per meaningful change
+  - No hardcoded file paths - fully reusable
+- [x] **PHILOSOPHY.md** - Added Backlog Processor Pattern section
+  - Documented universal workflow pattern
+  - Added usage examples with multiple `--prologue` combinations
+- [x] **BACKLOG.md** - Updated recommended commands
+  - Universal backlog processor commands
+  - Domain-specific alternatives
 
 ---
 
