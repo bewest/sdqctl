@@ -70,8 +70,8 @@ All 8 proposed tooling commands are **fully implemented**:
 |----------|------|--------|-------|
 | P2 | ~~Add `refcat` to GETTING-STARTED.md~~ | Low | ✅ 2026-01-25 |
 | P2 | [MODEL-REQUIREMENTS Phase 3](MODEL-REQUIREMENTS.md) | Medium | Adapter integration |
-| P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) |
-| P2 | Create `docs/COMMANDS.md` | Medium | Detailed command reference |
+| P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
+| P2 | ~~Create `docs/COMMANDS.md`~~ | Medium | ✅ 2026-01-25 |
 | P3 | STPA template variables | Low | Future work |
 | P3 | CI/CD workflow examples | Low | GitHub Actions integration |
 
