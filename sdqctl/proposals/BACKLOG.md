@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (CI/CD examples added; doc deep dive complete)  
+> **Last Updated**: 2026-01-25 (ELIDE patterns example added; all doc/example items complete)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -14,7 +14,7 @@
 **Q-014/Q-015 Fix**: 2026-01-25 | Event handler leak fixed, accumulate mode stable
 **Q-016/Q-017 Fix**: 2026-01-25 | 5 F821 bugs fixed, 1,797 linting issues auto-fixed
 **Security Docs**: 2026-01-25 | `docs/SECURITY-MODEL.md` created with cross-refs
-**Doc Deep Dive**: 2026-01-25 | Session modes ✅, Verbose logging ✅, Troubleshooting ✅, CI/CD examples ✅
+**Doc Deep Dive**: 2026-01-25 | All doc/example gaps complete (6 items)
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
