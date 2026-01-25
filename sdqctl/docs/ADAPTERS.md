@@ -171,9 +171,50 @@ MODEL gpt-4-turbo-preview
 
 ---
 
-## Model Selection with MODEL-REQUIRES
+## Model Selection Guide
 
-Use abstract model requirements for portable workflows:
+Choose the right model for your workflow based on task requirements, context needs, and cost.
+
+### When to Use Each Model
+
+| Model | Best For | Context | Cost | Notes |
+|-------|----------|---------|------|-------|
+| **gpt-4** | Complex reasoning, code generation | 8k-128k | $$$ | High accuracy, slower |
+| **gpt-4-turbo** | Long documents, large codebases | 128k | $$ | Faster than gpt-4 |
+| **claude-3-opus** | Deep analysis, nuanced writing | 200k | $$$ | Excellent reasoning |
+| **claude-3-sonnet** | Balanced tasks, daily use | 200k | $$ | Good cost/performance |
+| **claude-sonnet-4** | Tool use, code editing | 200k | $$ | Latest Sonnet |
+
+### Practical Examples
+
+**Code refactoring (moderate context)**
+```dockerfile
+MODEL gpt-4-turbo
+# Good for: understanding codebase, making targeted edits
+```
+
+**Large codebase analysis (high context)**
+```dockerfile
+MODEL claude-3-opus
+# Good for: reading 100+ files, producing comprehensive analysis
+```
+
+**Daily workflow automation (balanced)**
+```dockerfile
+MODEL claude-3-sonnet
+# Good for: routine tasks, cost-effective automation
+```
+
+**Iteration-heavy synthesis (many turns)**
+```dockerfile
+MODEL claude-sonnet-4
+INFINITE-SESSIONS enabled
+# Good for: multi-cycle workflows that need context management
+```
+
+### Abstract Selection with MODEL-REQUIRES
+
+Use requirements instead of hardcoding models for portable workflows:
 
 ```dockerfile
 # Instead of hardcoding models:
@@ -191,6 +232,28 @@ MODEL-REQUIRES context:50k reasoning:strong
 | `vision:` | Image understanding | `required`, `optional` |
 
 The adapter selects the best available model matching requirements.
+
+### Decision Tree
+
+```
+What's your task?
+├── Quick edit, simple fix → gpt-4-turbo or claude-3-sonnet
+├── Large codebase (50k+ tokens) → claude-3-opus or MODEL-REQUIRES context:50k
+├── Many iterations (10+ cycles) → claude-sonnet-4 + INFINITE-SESSIONS
+├── Cost-sensitive automation → claude-3-sonnet or MODEL-PREFERS cost:low
+└── Testing workflows → mock adapter (no AI cost)
+```
+
+### Model Preferences
+
+When multiple models could work, use `MODEL-PREFERS` to express soft preferences:
+
+```dockerfile
+MODEL-REQUIRES context:50k reasoning:strong
+MODEL-PREFERS cost:low latency:fast
+```
+
+The adapter will select a model that meets requirements while optimizing for preferences.
 
 ---
 

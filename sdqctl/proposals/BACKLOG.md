@@ -620,7 +620,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | ~~`flow` command minimal docs~~ | docs/COMMANDS.md | Enhanced with options table, use cases, tips | ✅ 2026-01-25 |
 | ~~`init` command not documented~~ | docs/GETTING-STARTED.md | Added "Initialize a Project" section with config example | ✅ 2026-01-25 |
 | ~~Adapter configuration~~ | `docs/ADAPTERS.md` | How to configure each adapter (env vars, auth) | ✅ 2026-01-25 |
-| Model selection guide | docs/ | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples | 🔲 Open (see ADAPTERS.md §MODEL-REQUIRES) |
+| ~~Model selection guide~~ | docs/ADAPTERS.md | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples | ✅ 2026-01-25 |
 
 ### P3: Cross-Reference Improvements
 
@@ -713,6 +713,18 @@ The security model for shell execution and file handling is now documented.
 | ~~`resume` vs `sessions resume` clarity~~ | P2 | Clarified in docs/COMMANDS.md with comparison notes | ✅ 2026-01-25 |
 | ~~`artifact` user-facing guide~~ | P2 | Added section in docs/GETTING-STARTED.md | ✅ 2026-01-25 |
 | QUIRKS.md → all resolved | - | All quirks Q-001 through Q-015 now ✅ FIXED | ✅ 2026-01-25 |
+
+### Gaps Added (2026-01-25 Documentation Deep Dive)
+
+| Gap | Priority | Notes | Status |
+|-----|----------|-------|--------|
+| ~~Model selection guide~~ | P2 | When to use gpt-4 vs claude vs sonnet; practical examples | ✅ 2026-01-25 |
+| E501 line too long (192 issues) | P3 | Requires manual refactoring during normal development | 🔲 Open |
+| F841 unused variables (5 issues) | P3 | Needs code review | 🔲 Open |
+| Split `run()` function | P1 | ~1000 lines, extract step handlers | 🔲 Open |
+| Circular import renderer→help | P2 | Move TOPICS to core/constants | 🔲 Open |
+| CONSULT workflow example | P3 | Show human-in-loop consultation pattern | 🔲 Open |
+| CI/CD integration examples | P3 | GitHub Actions / GitLab CI using verify + render | 🔲 Open |
 
 ---
 
