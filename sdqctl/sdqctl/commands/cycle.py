@@ -109,6 +109,12 @@ def build_infinite_session_config(
               default="accumulate", help="Session handling: accumulate (grow context), compact (summarize each cycle), fresh (new session each cycle)")
 @click.option("--adapter", "-a", default=None, help="AI adapter override")
 @click.option("--model", "-m", default=None, help="Model override")
+@click.option("--context", "-c", multiple=True, help="Additional context files")
+@click.option("--allow-files", multiple=True, help="Glob pattern for allowed files (can be repeated)")
+@click.option("--deny-files", multiple=True, help="Glob pattern for denied files (can be repeated)")
+@click.option("--allow-dir", multiple=True, help="Directory to allow (can be repeated)")
+@click.option("--deny-dir", multiple=True, help="Directory to deny (can be repeated)")
+@click.option("--session-name", default=None, help="Named session for resumability (resumes if exists)")
 @click.option("--checkpoint-dir", type=click.Path(), default=None, help="Checkpoint directory")
 @click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
 @click.option("--epilogue", multiple=True, help="Append to each prompt (inline text or @file)")
@@ -138,6 +144,12 @@ def cycle(
     session_mode: str,
     adapter: Optional[str],
     model: Optional[str],
+    context: tuple[str, ...],
+    allow_files: tuple[str, ...],
+    deny_files: tuple[str, ...],
+    allow_dir: tuple[str, ...],
+    deny_dir: tuple[str, ...],
+    session_name: Optional[str],
     checkpoint_dir: Optional[str],
     prologue: tuple[str, ...],
     epilogue: tuple[str, ...],
@@ -271,7 +283,9 @@ def cycle(
     json_errors = ctx.obj.get("json_errors", False) if ctx.obj else False
 
     run_async(_cycle_async(
-        workflow, max_cycles, session_mode, adapter, model, checkpoint_dir,
+        workflow, max_cycles, session_mode, adapter, model,
+        context, allow_files, deny_files, allow_dir, deny_dir, session_name,
+        checkpoint_dir,
         prologue, epilogue, header, footer,
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag,
@@ -475,6 +489,12 @@ async def _cycle_async(
     session_mode: str,
     adapter_name: Optional[str],
     model: Optional[str],
+    extra_context: tuple[str, ...],
+    allow_files: tuple[str, ...],
+    deny_files: tuple[str, ...],
+    allow_dir: tuple[str, ...],
+    deny_dir: tuple[str, ...],
+    session_name: Optional[str],
     checkpoint_dir: Optional[str],
     cli_prologues: tuple[str, ...],
     cli_epilogues: tuple[str, ...],
@@ -564,6 +584,19 @@ async def _cycle_async(
     if cli_footers:
         conv.footers = list(cli_footers) + conv.footers
 
+    # Add extra context files from CLI (Phase 1 feature from run.py)
+    for ctx in extra_context:
+        conv.context_files.append(f"@{ctx}")
+
+    # Merge CLI file restrictions with file-defined ones
+    # CLI allow patterns replace file patterns, CLI deny patterns add to file patterns
+    if allow_files or deny_files or allow_dir or deny_dir:
+        conv.file_restrictions = conv.file_restrictions.merge_with_cli(
+            list(allow_files) + list(f"{d}/**" for d in allow_dir),
+            list(deny_files) + list(f"{d}/**" for d in deny_dir),
+        )
+        logger.info(f"File restrictions: allow={conv.file_restrictions.allow_patterns}, deny={conv.file_restrictions.deny_patterns}")
+
     # Create session for checkpointing
     session_dir = Path(checkpoint_dir) if checkpoint_dir else None
     session = Session(conv, session_dir=session_dir)
@@ -648,16 +681,34 @@ async def _cycle_async(
             conv_compaction_threshold=conv.compaction_threshold,
         )
 
-        adapter_session = await ai_adapter.create_session(
-            AdapterConfig(
-                model=conv.model,
-                streaming=True,
-                debug_categories=conv.debug_categories,
-                debug_intents=conv.debug_intents,
-                event_log=effective_event_log,
-                infinite_sessions=infinite_config,
-            )
+        adapter_config = AdapterConfig(
+            model=conv.model,
+            streaming=True,
+            debug_categories=conv.debug_categories,
+            debug_intents=conv.debug_intents,
+            event_log=effective_event_log,
+            infinite_sessions=infinite_config,
         )
+
+        # Determine session name: CLI overrides workflow directive
+        effective_session_name = session_name or conv.session_name
+
+        # Create or resume adapter session based on session name
+        if effective_session_name:
+            # Named session: resume if exists, otherwise create new
+            try:
+                adapter_session = await ai_adapter.resume_session(effective_session_name, adapter_config)
+                logger.info(f"Resumed session: {effective_session_name}")
+                if verbosity > 0:
+                    console.print(f"[dim]Resumed session: {effective_session_name}[/dim]")
+            except Exception as e:
+                # Session doesn't exist, create new with session name
+                logger.debug(f"Could not resume session '{effective_session_name}': {e}, creating new")
+                adapter_session = await ai_adapter.create_session(adapter_config)
+                if verbosity > 0:
+                    console.print(f"[dim]Created new session: {effective_session_name}[/dim]")
+        else:
+            adapter_session = await ai_adapter.create_session(adapter_config)
         session.sdk_session_id = adapter_session.sdk_session_id  # Q-018 fix
 
         try:
