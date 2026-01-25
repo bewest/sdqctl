@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (Verbose logging reference added; 1 P3 doc gap remains)  
+> **Last Updated**: 2026-01-25 (Troubleshooting guide created; 3 identified doc gaps complete)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -14,7 +14,7 @@
 **Q-014/Q-015 Fix**: 2026-01-25 | Event handler leak fixed, accumulate mode stable
 **Q-016/Q-017 Fix**: 2026-01-25 | 5 F821 bugs fixed, 1,797 linting issues auto-fixed
 **Security Docs**: 2026-01-25 | `docs/SECURITY-MODEL.md` created with cross-refs
-**Doc Deep Dive**: 2026-01-25 | Session modes ✅, Verbose logging ✅; 1 P3 doc gap remains
+**Doc Deep Dive**: 2026-01-25 | Session modes ✅, Verbose logging ✅, Troubleshooting ✅
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
@@ -123,7 +123,7 @@ Handler uses session-level `_send_*` state that resets each `send()` call.
 | **P3** | ELIDE chains example | Documentation |
 | **P3** | Default verbosity key actions | Feature |
 | **P3** | Test quality improvements | Testing |
-| **P3** | Troubleshooting guide | Documentation |
+| ~~**P3**~~ | ~~Troubleshooting guide~~ | ~~Documentation~~ | ✅ 2026-01-25 |
 | ~~**P3**~~ | ~~Session modes comparison table~~ | ~~Documentation~~ | ✅ 2026-01-25 |
 | ~~**P3**~~ | ~~Verbose logging quick reference~~ | ~~Documentation~~ | ✅ 2026-01-25 |
 
@@ -754,7 +754,7 @@ The security model for shell execution and file handling is now documented.
 
 | Gap | Priority | Notes | Status |
 |-----|----------|-------|--------|
-| Troubleshooting guide | P3 | Common errors + fixes; currently scattered across QUIRKS.md | 🔲 Open |
+| ~~Troubleshooting guide~~ | ~~P3~~ | ~~Common errors + fixes; currently scattered across QUIRKS.md~~ | ✅ 2026-01-25 |
 | ~~Session modes comparison table~~ | ~~P3~~ | ~~`accumulate` vs `compact` vs `fresh` decision guide with use cases~~ | ✅ 2026-01-25 |
 | ~~Verbose logging quick reference~~ | ~~P3~~ | ~~One-page reference for `-v` through `-vvv` with what each shows~~ | ✅ 2026-01-25 |
 

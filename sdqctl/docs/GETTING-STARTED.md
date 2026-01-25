@@ -650,6 +650,7 @@ Once comfortable with `run`, explore:
 6. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
 7. **[Commands Reference](COMMANDS.md)** — Complete CLI command documentation
 8. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
+9. **[Troubleshooting](TROUBLESHOOTING.md)** — Common issues and solutions
 
 See `examples/workflows/` for ready-to-use templates, including:
 - `examples/workflows/stpa/` — STPA safety analysis workflows
