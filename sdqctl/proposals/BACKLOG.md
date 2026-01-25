@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (MODEL-REQUIREMENTS Phase 2 ✅)  
+> **Last Updated**: 2026-01-25 (Documentation gaps added)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -567,6 +567,60 @@ Key decisions with ADRs:
 
 All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DECISIONS.md).
 
+
+---
+
+## Documentation Gaps (P2-P3)
+
+> **Added**: 2026-01-25 | **Purpose**: Track documentation improvements identified during codebase review
+
+### P2: Missing/Incomplete Documentation
+
+| Gap | Location | Notes |
+|-----|----------|-------|
+| `refcat` command not in GETTING-STARTED.md | `docs/GETTING-STARTED.md` | Only mention in Quick Reference; no tutorial section |
+| `artifact` command undocumented | README.md, docs/ | ARTIFACT-TAXONOMY.md proposal exists but no user-facing docs |
+| `resume` command separate from `sessions` | README.md | `resume` vs `sessions resume` - which is canonical? |
+| `flow` command minimal docs | docs/ | Only 2 lines in README; no dedicated page |
+| `init` command not documented | docs/ | Mentioned in README but no details on what it creates |
+| Adapter configuration | docs/ | How to configure each adapter (env vars, auth) |
+| Model selection guide | docs/ | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples |
+
+### P3: Cross-Reference Improvements
+
+| Gap | Files Affected | Notes |
+|-----|----------------|-------|
+| CONSULT not in README | README.md | CONSULT directive implemented but missing from directive table |
+| SESSION-NAME not in README | README.md | Directive implemented but not documented in main reference |
+| INFINITE-SESSIONS directives not in README | README.md | COMPACTION-MIN, COMPACTION-THRESHOLD undocumented |
+| DEBUG directives not documented | README.md, docs/ | DEBUG, DEBUG-INTENTS, EVENT-LOG in "Currently Implemented" but no examples |
+| HELP directive examples | docs/GETTING-STARTED.md | `HELP directives workflow` syntax not shown |
+
+### P3: Workflow Examples Gap
+
+| Gap | Suggested Location | Notes |
+|-----|-------------------|-------|
+| CONSULT workflow example | `examples/workflows/` | Show human-in-loop consultation pattern |
+| refcat usage patterns | `examples/workflows/` | Cross-repo context injection example |
+| ELIDE chains example | `examples/workflows/` | Multi-ELIDE optimized workflows |
+| CI/CD integration | `examples/ci/` | GitHub Actions / GitLab CI examples using verify + render |
+
+### Actionable Next Steps
+
+1. **Quick wins** (< 30 min each):
+   - Add CONSULT/SESSION-NAME to README directive table
+   - Add DEBUG directives to README
+   - Add `refcat` section to GETTING-STARTED.md
+   
+2. **Medium effort** (1-2 hours):
+   - Create `docs/COMMANDS.md` with detailed command reference
+   - Add adapter configuration guide
+   
+3. **Future consideration**:
+   - LSP support for refcat (mentioned in References)
+   - Interactive docs via `sdqctl help --interactive`
+
+---
 
 ## References
 IMPORTANT: remember to cross reference our generic backlog against other task lists and backlogs.  Some quirk proposals become backlog items!
