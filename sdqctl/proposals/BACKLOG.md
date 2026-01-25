@@ -16,18 +16,23 @@ No critical items.
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Split `run()` function (~1000 lines) | High | Extract step handlers to `core/executor.py` |
+| ~~Split `run()` function (~1000 lines)~~ | ~~High~~ | Superseded by iterate consolidation |
 
 ### P2: Medium
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Extract StepExecutor from run.py/cycle.py | Medium | See [Architecture Roadmap](#architecture-roadmap) |
+| **Consolidate run+cycle → iterate** | Medium | See [ITERATE-CONSOLIDATION.md](ITERATE-CONSOLIDATION.md) ✅ Ready |
+| Extract StepExecutor from iterate.py | Medium | See [Architecture Roadmap](#architecture-roadmap) |
 | Create shared ExecutionContext dataclass | Low | Unify adapter initialization |
 | Audit refcat.py path handling | Low | Verify traversal prevention |
 | Add RUN-ENV secret masking | Low | Mask env vars in logs |
 | CONSULT-DIRECTIVE Phase 4 | Low | Timeout, partial save refinements |
 | claude/openai adapter stubs | Medium | Implement or clarify scope in ADAPTERS.md |
+| Fix RUN-ASYNC process cleanup leak | Low | Add finally block to terminate orphan processes |
+| Extract common utilities (`utils/io.py`) | Low | Deduplicate ~50 JSON output + 65 file I/O patterns |
+| Enhance VerifierBase with shared scanning | Low | Move repeated file scanning logic to base class |
+| Add error handling decorator pattern | Low | `@handle_io_errors` for common exception wrapping |
 
 ### P3: Low
 
@@ -42,6 +47,10 @@ No critical items.
 | Default verbosity key actions | Low | Q-004: show key actions without `-v` |
 | Test parametrization and markers | Low | `@pytest.mark.unit/integration` |
 | Performance benchmark suite | Medium | Track regressions |
+| Add `test_exceptions.py` | Low | Test exit codes, JSON serialization |
+| Add `test_renderer_core.py` | Low | Unit tests for RenderedPrompt, RenderedCycle |
+| Add `test_command_utils.py` | Low | Test `run_async()` function |
+| Error path test coverage | Medium | File I/O errors, permissions, timeouts |
 
 ### Future (Unstarted)
 
@@ -159,6 +168,7 @@ adapters/copilot/
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | ✅ Complete | --from-json + schema_version |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | ✅ Complete | Templates + traceability verifier |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | ✅ Complete | Help implemented |
+| [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | 🟡 Ready | run+cycle → iterate |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | ✅ Complete | All 4 phases |
 | [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | Partial | Phase 4 pending (timeout, partial save) |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | ✅ Complete | Taxonomy + CLI |
@@ -179,6 +189,7 @@ Documented in [`docs/SECURITY-MODEL.md`](../docs/SECURITY-MODEL.md).
 | Path traversal (refcat.py) | MEDIUM | Audit pending (P2) |
 | RUN_ENV allows LD_PRELOAD | MEDIUM | Consider whitelist |
 | OUTPUT-FILE path injection | LOW | Validate paths |
+| RUN-ASYNC resource leak | MEDIUM | Orphan processes; fix pending (P2) |
 
 ---
 
@@ -190,6 +201,9 @@ Documented in [`docs/SECURITY-MODEL.md`](../docs/SECURITY-MODEL.md).
 | Missing parametrization | Incomplete variant coverage | 🔲 Open |
 | No test markers | Can't run selective tests | 🔲 Open |
 | Fixtures not scoped | Slow test runs | 🔲 Open |
+| No `test_exceptions.py` | Exit codes untested | 🔲 Open |
+| No `test_renderer_core.py` | Renderer logic untested | 🔲 Open |
+| No `test_command_utils.py` | `run_async()` untested | 🔲 Open |
 
 ---
 
