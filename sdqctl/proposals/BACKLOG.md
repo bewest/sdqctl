@@ -605,7 +605,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | ~~`refcat` command not in GETTING-STARTED.md~~ | `docs/GETTING-STARTED.md` | Has "Precise Context with refcat" section | ✅ 2026-01-25 |
 | `artifact` command undocumented | README.md, docs/ | ARTIFACT-TAXONOMY.md proposal exists but no user-facing docs | 🔲 Open |
 | ~~`resume` command separate from `sessions`~~ | README.md, docs/COMMANDS.md | Clarified difference with comparison notes | ✅ 2026-01-25 |
-| `flow` command minimal docs | docs/ | Only 2 lines in README; no dedicated page | 🔲 Open |
+| ~~`flow` command minimal docs~~ | docs/COMMANDS.md | Enhanced with options table, use cases, tips | ✅ 2026-01-25 |
 | ~~`init` command not documented~~ | docs/GETTING-STARTED.md | Added "Initialize a Project" section with config example | ✅ 2026-01-25 |
 | ~~Adapter configuration~~ | `docs/ADAPTERS.md` | How to configure each adapter (env vars, auth) | ✅ 2026-01-25 |
 | Model selection guide | docs/ | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples | 🔲 Open (see ADAPTERS.md §MODEL-REQUIRES) |
@@ -668,7 +668,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 
 | Gap | Priority | Notes | Status |
 |-----|----------|-------|--------|
-| `flow` command full documentation | P2 | Only 2 lines in README; COMMANDS.md has more but no tutorial | 🔲 Open |
+| ~~`flow` command full documentation~~ | P2 | Enhanced in docs/COMMANDS.md with options table, use cases | ✅ 2026-01-25 |
 | ~~`resume` vs `sessions resume` clarity~~ | P2 | Clarified in docs/COMMANDS.md with comparison notes | ✅ 2026-01-25 |
 | `artifact` user-facing guide | P2 | COMMANDS.md has reference; needs GETTING-STARTED section | 🔲 Open |
 | QUIRKS.md → all resolved | - | All quirks Q-001 through Q-015 now ✅ FIXED | ✅ 2026-01-25 |

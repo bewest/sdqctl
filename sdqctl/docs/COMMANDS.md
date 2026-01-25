@@ -169,11 +169,24 @@ sdqctl apply audit.conv --from-discovery components.json
 
 ## flow
 
-Execute batch/parallel workflows.
+Execute batch/parallel workflows across multiple files.
 
 ```bash
 sdqctl flow PATTERNS... [OPTIONS]
 ```
+
+**Use Cases:**
+- Run the same workflow on many components in parallel
+- Batch-process multiple workflow files
+- CI/CD integration for automated analysis
+
+**Key Options:**
+| Option | Description |
+|--------|-------------|
+| `-p, --parallel N` | Run up to N workflows concurrently |
+| `--continue-on-error` | Don't stop if a workflow fails |
+| `--dry-run` | Show what would run without executing |
+| `-o, --output-dir PATH` | Collect all outputs in a directory |
 
 **Examples:**
 ```bash
@@ -183,12 +196,21 @@ sdqctl flow workflows/*.conv
 # Parallel execution (4 at a time)
 sdqctl flow workflows/*.conv --parallel 4
 
-# Continue on error
+# Continue on error (useful for CI)
 sdqctl flow workflows/*.conv --continue-on-error
 
-# Output to directory
-sdqctl flow workflows/*.conv -o reports/
+# Output to directory with JSON summary
+sdqctl flow workflows/*.conv -o reports/ --json
+
+# Preview what would run
+sdqctl flow workflows/*.conv --dry-run
+
+# With shared prologue/epilogue
+sdqctl flow audits/*.conv --prologue @context.md --parallel 2
 ```
+
+> **Tip:** Use `flow` for batch operations. Use `apply` when iterating
+> the same workflow across components with variable expansion.
 
 ---
 
