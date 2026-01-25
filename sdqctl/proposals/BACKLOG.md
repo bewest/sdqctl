@@ -612,13 +612,13 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 
 ### P3: Cross-Reference Improvements
 
-| Gap | Files Affected | Notes |
-|-----|----------------|-------|
-| CONSULT not in README | README.md | CONSULT directive implemented but missing from directive table |
-| SESSION-NAME not in README | README.md | Directive implemented but not documented in main reference |
-| INFINITE-SESSIONS directives not in README | README.md | COMPACTION-MIN, COMPACTION-THRESHOLD undocumented |
-| DEBUG directives not documented | README.md, docs/ | DEBUG, DEBUG-INTENTS, EVENT-LOG in "Currently Implemented" but no examples |
-| HELP directive examples | docs/GETTING-STARTED.md | `HELP directives workflow` syntax not shown |
+| Gap | Files Affected | Notes | Status |
+|-----|----------------|-------|--------|
+| ~~CONSULT not in README~~ | README.md | CONSULT directive now in directive table | ✅ 2026-01-25 |
+| ~~SESSION-NAME not in README~~ | README.md | Directive now in directive table | ✅ 2026-01-25 |
+| ~~INFINITE-SESSIONS directives not in README~~ | README.md | COMPACTION-MIN, COMPACTION-THRESHOLD now documented | ✅ 2026-01-25 |
+| ~~DEBUG directives not documented~~ | README.md | DEBUG, DEBUG-INTENTS, EVENT-LOG now in directive table | ✅ 2026-01-25 |
+| HELP directive examples | docs/GETTING-STARTED.md | `HELP directives workflow` syntax not shown | 🔲 Open |
 
 ### P3: Workflow Examples Gap
 
@@ -651,7 +651,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 
 | Gap | Priority | Notes | Status |
 |-----|----------|-------|--------|
-| HELP directive not in GETTING-STARTED examples | P3 | Show `HELP directives workflow` syntax | 🔲 Open |
+| ~~HELP directive not in GETTING-STARTED examples~~ | P3 | Duplicate of §P3 Cross-Reference | See above |
 | ~~Adapter env vars not documented~~ | P2 | COPILOT_SDK_AUTH, ANTHROPIC_API_KEY, OPENAI_API_KEY | ✅ docs/ADAPTERS.md |
 | ~~Q-014/Q-015 research blockers~~ | P0 | **FIXED**: Handler registered once per session | ✅ 2026-01-25 |
 | `ON-FAILURE`/`ON-SUCCESS` not in GETTING-STARTED | P3 | Branching directives implemented but not in tutorials | 🔲 Open |
