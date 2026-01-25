@@ -1,7 +1,7 @@
 # Proposal: Model Requirements - Abstract Model Selection
 
 **Date:** 2026-01-23  
-**Status:** Partial (Phase 1 Complete)  
+**Status:** Partial (Phase 2 Complete)  
 **Author:** Generated via sdqctl planning session  
 **Related:** Metadata directives (MODEL, ADAPTER)
 
@@ -361,9 +361,10 @@ MODEL @reasoning @100k-context
 
 ### Phase 2: CLI Integration
 
-- [ ] Add `sdqctl status --models` command
-- [ ] Add `sdqctl validate --check-model` flag
-- [ ] Resolved model appears in `--verbose` output
+- [x] Add `sdqctl status --models` command (already existed)
+- [x] Add `sdqctl validate --check-model` flag
+- [x] Resolved model appears in validate output
+- [x] Tests: 2 CLI integration tests added
 
 ### Phase 3: Adapter Integration
 

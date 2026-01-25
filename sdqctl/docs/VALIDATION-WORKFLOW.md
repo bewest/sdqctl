@@ -36,6 +36,9 @@ sdqctl validate workflow.conv --allow-missing
 # Exclude patterns from validation
 sdqctl validate workflow.conv -e "*.yaml" -e "external/**"
 
+# Validate MODEL-REQUIRES can be resolved
+sdqctl validate workflow.conv --check-model
+
 # JSON output for CI/CD
 sdqctl validate workflow.conv --json
 ```
@@ -45,6 +48,7 @@ sdqctl validate workflow.conv --json
 - ✓ `MODEL` directive present
 - ✓ At least one `PROMPT` directive exists
 - ✓ `CONTEXT` patterns resolve to files (unless `--allow-missing`)
+- ✓ `MODEL-REQUIRES` can be resolved (with `--check-model`)
 - ✓ Directive syntax is correct
 
 **When to use**:

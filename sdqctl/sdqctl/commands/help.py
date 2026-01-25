@@ -890,6 +890,7 @@ Validate a ConversationFile (no AI calls).
 sdqctl validate workflow.conv
 sdqctl validate workflow.conv --allow-missing
 sdqctl validate workflow.conv --strict
+sdqctl validate workflow.conv --check-model
 ```
 
 ## Key Options
@@ -898,6 +899,7 @@ sdqctl validate workflow.conv --strict
 |--------|-------------|
 | `--allow-missing` | Warn on missing context files |
 | `--strict` | Fail on any issue |
+| `--check-model` | Validate MODEL-REQUIRES can be resolved |
 | `--exclude` | Patterns to exclude from validation |
 | `--json` | JSON output format |
 
@@ -909,6 +911,9 @@ sdqctl validate workflow.conv
 
 # Allow missing optional files
 sdqctl validate workflow.conv --allow-missing
+
+# Verify model requirements can be satisfied
+sdqctl validate workflow.conv --check-model
 
 # CI mode with JSON
 sdqctl validate workflow.conv --json

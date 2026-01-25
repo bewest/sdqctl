@@ -378,8 +378,9 @@ done
 @click.option("--allow-missing", is_flag=True, help="Warn on missing context files instead of failing")
 @click.option("--exclude", "-e", multiple=True, help="Patterns to exclude from validation (can be repeated)")
 @click.option("--strict", is_flag=True, help="Fail on any issue (overrides VALIDATION-MODE)")
+@click.option("--check-model", is_flag=True, help="Validate MODEL-REQUIRES can be resolved")
 @click.option("--json", "json_output", is_flag=True, help="Output results as JSON")
-def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, json_output: bool) -> None:
+def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, check_model: bool, json_output: bool) -> None:
     """Validate a ConversationFile.
     
     Checks syntax and references without executing.
@@ -460,12 +461,29 @@ def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, j
         for req, msg in require_errors:
             errors.append(f"REQUIRE failed: {msg}")
         
+        # Check MODEL-REQUIRES resolution if requested
+        resolved_model = None
+        model_req_count = 0
+        if conv.model_requirements:
+            model_req_count = len(conv.model_requirements.requirements)
+            if check_model:
+                from .core.models import resolve_model
+                resolved_model = resolve_model(conv.model_requirements, fallback=conv.model)
+                if resolved_model is None and not conv.model:
+                    errors.append("MODEL-REQUIRES cannot be resolved to any known model")
+            else:
+                # Just report we have model requirements
+                from .core.models import resolve_model
+                resolved_model = resolve_model(conv.model_requirements, fallback=conv.model)
+        
         # JSON output
         if json_output:
             result = {
                 "valid": len(errors) == 0,
                 "workflow": str(workflow),
                 "model": conv.model,
+                "resolved_model": resolved_model,
+                "model_requirements": model_req_count,
                 "adapter": conv.adapter,
                 "mode": conv.mode,
                 "validation_mode": "lenient" if is_lenient else "strict",
@@ -507,6 +525,13 @@ def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, j
             # Build requirements line if any
             req_line = f"Requirements: {req_count} (all passed)\n" if req_count > 0 else ""
             
+            # Build model requirements line if any
+            model_req_line = ""
+            if model_req_count > 0:
+                model_req_line = f"Model requirements: {model_req_count}\n"
+                if resolved_model:
+                    model_req_line += f"Resolved model: {resolved_model}\n"
+            
             console.print(Panel.fit(
                 f"Model: {conv.model}\n"
                 f"Adapter: {conv.adapter}\n"
@@ -517,6 +542,7 @@ def validate(workflow: str, allow_missing: bool, exclude: tuple, strict: bool, j
                 f"Context excludes: {exclude_count}\n"
                 f"Context files found: {session.context.get_status()['files_loaded']}\n"
                 f"{req_line}"
+                f"{model_req_line}"
                 f"{validation_mode_str}",
                 title="[green]✓ Valid ConversationFile[/green]"
             ))

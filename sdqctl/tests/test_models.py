@@ -248,3 +248,49 @@ PROMPT Analyze security vulnerabilities.
         assert reqs.get_tier_requirement() == CostTier.STANDARD
         assert len(reqs.preferences) == 1
         assert reqs.policy == ResolutionPolicy.BEST_FIT
+
+
+class TestValidateCheckModel:
+    """Tests for sdqctl validate --check-model CLI integration."""
+
+    def test_validate_check_model_json_output(self, tmp_path):
+        """Test that --check-model adds resolved_model to JSON output."""
+        import json
+        from click.testing import CliRunner
+        from sdqctl.cli import cli
+        
+        conv_file = tmp_path / "test.conv"
+        conv_file.write_text("""MODEL claude-sonnet-4.5
+ADAPTER mock
+MODEL-REQUIRES context:50k
+MODEL-REQUIRES tier:standard
+PROMPT Test workflow
+""")
+        
+        runner = CliRunner()
+        result = runner.invoke(cli, ["validate", str(conv_file), "--check-model", "--json"])
+        
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["valid"] is True
+        assert data["model_requirements"] == 2
+        assert data["resolved_model"] is not None
+
+    def test_validate_shows_model_requirements_count(self, tmp_path):
+        """Test that validate output includes model requirements count."""
+        from click.testing import CliRunner
+        from sdqctl.cli import cli
+        
+        conv_file = tmp_path / "test.conv"
+        conv_file.write_text("""MODEL gpt-4
+ADAPTER mock
+MODEL-REQUIRES context:50k
+MODEL-PREFERS vendor:openai
+PROMPT Test.
+""")
+        
+        runner = CliRunner()
+        result = runner.invoke(cli, ["validate", str(conv_file)])
+        
+        assert result.exit_code == 0
+        assert "Model requirements: 1" in result.output
