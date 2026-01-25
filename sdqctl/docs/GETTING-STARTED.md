@@ -358,7 +358,8 @@ Once comfortable with `run`, explore:
 3. **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration patterns
 4. **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Requirements → code → verification
 5. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
-6. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
+6. **[Commands Reference](COMMANDS.md)** — Complete CLI command documentation
+7. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
 
 See `examples/workflows/` for ready-to-use templates, including:
 - `examples/workflows/stpa/` — STPA safety analysis workflows
