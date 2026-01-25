@@ -69,9 +69,9 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
-| 🔴 P0 | [Q-014: Event handler multiplexing](../docs/QUIRKS.md#q-014-event-handler-multiplexing-in-accumulate-mode) | Research | Critical - causes duplicate tools, log spam, token explosion |
-| 🔴 P0 | [Q-015: Duplicate tool calls](../docs/QUIRKS.md#q-015-duplicate-tool-calls-at-session-termination) | Research | Related to Q-014 |
-| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | SDK 2 intent reading hypothesis |
+| 🔴 P0 | [Q-014: Event handler multiplexing](../docs/QUIRKS.md#q-014-event-handler-multiplexing-in-accumulate-mode) | **Low** | ✅ ROOT CAUSE FOUND: `send()` registers handlers without cleanup |
+| 🔴 P0 | [Q-015: Duplicate tool calls](../docs/QUIRKS.md#q-015-duplicate-tool-calls-at-session-termination) | N/A | Symptom of Q-014 - will be fixed by Q-014 fix |
+| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | May be related to Q-014 event corruption |
 | P2 | Document `artifact` command | Medium | User-facing docs for traceability IDs |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | P3 | STPA template variables | Low | Future work |
@@ -82,14 +82,22 @@ All 8 proposed tooling commands are **fully implemented**:
 - ~~Create `docs/COMMANDS.md`~~ ✅ (already complete)
 - ~~Create `docs/ADAPTERS.md`~~ ✅ 2026-01-25
 - ~~MODEL-REQUIREMENTS Phase 3-4~~ ✅ 2026-01-25
+- ~~Q-014/Q-015 root cause analysis~~ ✅ 2026-01-25 (Line 655 handler leak)
 
 ### Research Items (2026-01-25)
 
-| ID | Topic | Hypothesis | Evidence |
-|----|-------|------------|----------|
-| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix |
-| R-002 | Accumulate mode stability | Event handlers may accumulate across cycles | 25x log duplication, 3667 turns for 5 cycles |
-| R-003 | Event subscription cleanup | `_subscribe_events()` may lack cleanup | Multiplexed handlers in longer sessions |
+| ID | Topic | Hypothesis | Evidence | Status |
+|----|-------|------------|----------|--------|
+| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix | 🔬 Open |
+| R-002 | Accumulate mode stability | Event handlers accumulate across cycles | 25x log duplication, 3667 turns for 5 cycles | ✅ **CONFIRMED** |
+| R-003 | Event subscription cleanup | `send()` lacks handler cleanup | Line 655: `.on(on_event)` called each send, never `.off()` | ✅ **ROOT CAUSE** |
+
+**Root cause (confirmed 2026-01-25):** `CopilotAdapter.send()` registers `copilot_session.on(on_event)` 
+on every prompt but never removes handlers. In accumulate mode, N prompts = N registered handlers = N× events.
+
+**Fix required:** Either:
+1. Register handler once at session creation (not per-send)
+2. Or call `copilot_session.off(on_event)` after `done.wait()` completes
 
 **Session evidence**: 30m47s accumulate session (5 cycles) vs 88m44s fresh session (10 cycles)
 - Accumulate: 276M input tokens, 3,878 tools, 3,535 unknown
@@ -651,8 +659,10 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 |-----|----------|-------|--------|
 | HELP directive not in GETTING-STARTED examples | P3 | Show `HELP directives workflow` syntax | 🔲 Open |
 | ~~Adapter env vars not documented~~ | P2 | COPILOT_SDK_AUTH, ANTHROPIC_API_KEY, OPENAI_API_KEY | ✅ docs/ADAPTERS.md |
-| Q-014/Q-015 research blockers | P1 | Event multiplexing + duplicate tools need investigation | 🔬 Research |
+| ~~Q-014/Q-015 research blockers~~ | P0 | **ROOT CAUSE FOUND**: Line 655 `copilot_session.on(on_event)` never removed | ✅ Diagnosed |
 | `ON-FAILURE`/`ON-SUCCESS` not in GETTING-STARTED | P3 | Branching directives implemented but not in tutorials | 🔲 Open |
+| Accumulate mode stability warning | P2 | Document known issue with `--session-mode=accumulate` until Q-014 fixed | 🔲 Open |
+| Event handler lifecycle docs | P2 | Document SDK event subscription/cleanup pattern in ADAPTERS.md | 🔲 Open |
 
 ---
 

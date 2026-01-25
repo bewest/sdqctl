@@ -10,7 +10,9 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| *None* | All quirks resolved | - | ✅ |
+| Q-014 | Event handler multiplexing in accumulate mode | 🔴 P0 | ✅ ROOT CAUSE FOUND |
+| Q-015 | Duplicate tool calls at session termination | 🔴 P0 | ⏳ Blocked by Q-014 fix |
+| Q-013 | Tool name shows "unknown" in completion logs | 🟡 P1 | ⚠️ REGRESSION |
 
 ### Resolved Quirks
 
@@ -24,57 +26,171 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-010 | COMPACT directive ignored by cycle command | ✅ FIXED | Refactored to iterate `conv.steps` |
 | Q-011 | Compaction threshold options not fully wired | ✅ FIXED | `--min-compaction-density` now wired to `needs_compaction()` |
 | Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold |
-| Q-013 | Tool name shows "unknown" in completion logs | ✅ FIXED | Use stored name from start event on complete |
+| Q-013 | Tool name shows "unknown" in completion logs | ⚠️ REGRESSION | See Q-014 - SDK 2 intent reading? |
+
+---
+
+## Q-014: Event Handler Multiplexing in Accumulate Mode
+
+**Priority:** P0 - Critical  
+**Discovered:** 2026-01-25  
+**Status:** 🔬 RESEARCH
+
+### Description
+
+When using `--session-mode=accumulate` with the `cycle` command, event handlers appear to register multiple times, causing exponential log duplication and duplicate tool execution.
+
+### Evidence
+
+From a 30-minute, 5-cycle session with `--session-mode=accumulate`:
+
+```
+21:51:47 [INFO] Turn 132 started
+21:51:47 [INFO] Turn 133 started
+21:51:47 [INFO] Turn 134 started
+21:51:47 [DEBUG] Context: 69,669/128,000 tokens (54%), 103 messages
+21:51:47 [DEBUG] Context: 69,669/128,000 tokens (54%), 103 messages
+```
+
+Three turns "starting" at the same millisecond is impossible - indicates 3 event handlers firing for one event.
+
+By session end (cycle 5):
+```
+20:01:04 [INFO] Turn 3667 ended  # Repeated 25x
+20:01:04 [DEBUG] Context: 37,823/128,000 tokens (29%), 178 messages  # Repeated 25x
+20:01:09 [INFO] Tokens: 51987 in / 240 out  # Repeated 25x
+```
+
+### Metrics Comparison
+
+| Metric | Accumulate (5 cycles) | Fresh (10 cycles) | Expected |
+|--------|----------------------|-------------------|----------|
+| Duration | 30m 48s | 88m 44s | ~45m |
+| Turns logged | 3,667 | ~1,400 | ~150 |
+| Tool calls | 3,878 | 137 | ~200 |
+| Input tokens | 276M | 7M | ~15M |
+| "unknown" tools | 3,535 | 1,695 | 0 |
+
+### Root Cause (Confirmed 2026-01-25)
+
+**Location:** `sdqctl/adapters/copilot.py`, line 655
+
+```python
+# In CopilotAdapter.send() method:
+copilot_session.on(on_event)  # Called every prompt, NEVER removed!
+```
+
+Each `send()` call registers a new event handler via `.on(on_event)`, but handlers are **never removed**. 
+In accumulate mode with N prompts, there are N handlers all firing for each event.
+
+**Fix options:**
+1. Register handler once at session creation, not per-send
+2. Call `copilot_session.off(on_event)` after `done.wait()` completes
+
+### Research Questions (Answered)
+
+1. ~~Does `CopilotAdapter._subscribe_events()` get called multiple times per session?~~ 
+   → **Yes:** `send()` calls `.on(on_event)` on every prompt
+2. ~~Are event subscriptions cleaned up between prompts in accumulate mode?~~ 
+   → **No:** No `.off()` call exists anywhere in the codebase
+3. ~~Does SDK 2 have different event subscription semantics?~~ 
+   → **Not relevant:** Bug is in our adapter code
+
+### Related
+
+- Q-015: Duplicate tool calls (symptom of this issue)
+- Q-013: Unknown tool names (corrupted by multiplexed events)
+
+---
+
+## Q-015: Duplicate Tool Calls at Session Termination
+
+**Priority:** P0 - Critical  
+**Discovered:** 2026-01-25  
+**Status:** 🔬 RESEARCH
+
+### Description
+
+When agent creates STOPAUTOMATION file to halt automation, the same tool call is executed 15+ times:
+
+```
+20:01:02 [INFO] 🔧 Tool: bash  # Same command
+20:01:02 [INFO] 🔧 Tool: bash  # ...repeated 15+ times
+20:01:02 [INFO] 🔧 Tool: bash
+...
+20:01:04 [INFO] ✓ bash (1.3s) → Created STOPAUTOMATION file
+20:01:04 [INFO] ✓ unknown → Created STOPAUTOMATION file  # 24 more completions
+```
+
+### Impact
+
+- File created successfully (single write wins)
+- But 15+ bash processes spawned unnecessarily
+- Resource waste and potential race conditions
+- Corrupts tool tracking (explains "unknown" names)
+
+### Root Cause
+
+Likely a symptom of Q-014 (event handler multiplexing). Each handler fires the same tool call independently.
+
+### Workaround
+
+Use `--session-mode=fresh` instead of `accumulate` for multi-cycle runs.
+
+---
+
+## Q-013: Tool Name Shows "unknown" in Completion Logs
+
+**Priority:** P1 - Medium Impact  
+**Discovered:** 2026-01-25  
+**Status:** ⚠️ REGRESSION (was marked FIXED)
+
+### Regression Details (2026-01-25)
+
+Despite the fix below, a 30-minute accumulate-mode session showed **3,535 "unknown" tool entries** out of 3,878 total tool calls (91%).
+
+**Evidence:**
+```
+20:01:04 [INFO] ✓ bash (1.3s) → Created STOPAUTOMATION file
+20:01:04 [INFO] ✓ unknown → Created STOPAUTOMATION file  # 24 more
+```
+
+### Regression Hypothesis: SDK 2 Intent Reading
+
+The regression may be related to SDK 2 changes in how tool/intent information is provided:
+
+1. **Event structure changes** - SDK 2 may emit `tool.execution_complete` with different field structure
+2. **Intent tool interaction** - `report_intent` tool may affect event ordering
+3. **Event multiplexing** - See Q-014, multiplexed handlers corrupt `tool_call_id` tracking
+
+### Research Questions
+
+- Does SDK 2 provide tool info in `tool_requests` differently?
+- Is `stats.active_tools` being corrupted by duplicate event handlers (Q-014)?
+- Does accumulate mode specifically trigger this regression?
+
+### Original Fix (2026-01-24, may be insufficient)
+
+Used the stored tool name from the start event when direct extraction fails:
+
+```python
+if tool_call_id and tool_call_id in stats.active_tools:
+    tool_info = stats.active_tools.pop(tool_call_id)
+    duration = datetime.now() - tool_info["start_time"]
+    duration_str = f" ({duration.total_seconds():.1f}s)"
+    # Use stored name if direct extraction failed (Q-013 fix)
+    if tool_name == "unknown" and tool_info.get("name"):
+        tool_name = tool_info["name"]
+```
+
+### Related
+
+- Q-014: Event handler multiplexing (likely root cause)
+- Q-005: Original "unknown" tool name issue (different cause)
 
 ---
 
 ## Q-011: Compaction Threshold Options Not Fully Wired
-
-**Priority:** P1 - Medium Impact  
-**Discovered:** 2026-01-23  
-**Status:** ✅ FIXED (2026-01-24)
-
-### Resolution
-
-The `--min-compaction-density` option is now wired into the compaction logic:
-
-```python
-# session.py - Updated needs_compaction()
-def needs_compaction(self, min_density: float = 0) -> bool:
-    """Check if context window is near limit and above minimum density."""
-    if min_density > 0:
-        min_threshold = min_density / 100 if min_density > 1 else min_density
-        if self.context.window.usage_percent < min_threshold:
-            return False  # Skip compaction - below minimum density
-    return self.context.window.is_near_limit
-
-# cycle.py - Now passes min_compaction_density
-if session.needs_compaction(min_compaction_density):
-    # compact
-```
-
-**What was fixed:**
-- `--min-compaction-density` now controls whether automatic compaction is skipped
-- Setting `--min-compaction-density 50` skips compaction if context < 50% full
-
-**What remains as-designed:**
-- Automatic compaction only at cycle boundaries (not per-turn)
-- `COMPACT` directive is unconditional (see Q-012)
-- Single threshold model (no two-tier operating/max thresholds)
-
-### Original Description (Historical)
-
-Several compaction threshold options were **declared but not functionally implemented**:
-
-| Option | CLI Location | Implementation Status |
-|--------|--------------|----------------------|
-| `--min-compaction-density` | run.py:289, cycle.py:73 | ✅ **NOW WIRED** - skips compaction if below threshold |
-| `CONTEXT-LIMIT N%` | conversation.py:673 | ✅ Sets threshold, checked at cycle boundaries |
-| Automatic compaction | cycle.py:638-650 | ⚠️ **Partial** - only at cycle boundaries, not per-turn |
-
----
-
-## Q-012: COMPACT Directive Triggers Unconditionally
 
 **Priority:** P2 - Low Impact  
 **Discovered:** 2026-01-23  
