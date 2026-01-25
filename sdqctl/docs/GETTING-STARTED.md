@@ -614,6 +614,8 @@ jobs:
         run: sdqctl verify all --json > verification-report.json
 ```
 
+> **Ready-to-use examples:** See [`examples/ci/`](../examples/ci/) for complete GitHub Actions workflows including artifact upload and error reporting.
+
 ### Strict Mode
 
 Use `--strict` to fail on any issue (overrides `VALIDATION-MODE` directive):
