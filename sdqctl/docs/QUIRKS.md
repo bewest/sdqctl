@@ -10,7 +10,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| Q-013 | Tool name shows "unknown" in completion logs | P2 | 🔶 Open |
+| *None* | All quirks resolved | - | ✅ |
 
 ### Resolved Quirks
 
@@ -23,7 +23,8 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-005 | Tool names show "unknown" in verbose logs | ✅ FIXED | Added `_get_tool_name()` helper |
 | Q-010 | COMPACT directive ignored by cycle command | ✅ FIXED | Refactored to iterate `conv.steps` |
 | Q-011 | Compaction threshold options not fully wired | ✅ FIXED | `--min-compaction-density` now wired to `needs_compaction()` |
-| Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold | |
+| Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold |
+| Q-013 | Tool name shows "unknown" in completion logs | ✅ FIXED | Use stored name from start event on complete |
 
 ---
 
@@ -159,60 +160,42 @@ sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot
 
 **Priority:** P2 - Low Impact  
 **Discovered:** 2026-01-25  
-**Status:** 🔶 Open
+**Status:** ✅ FIXED (2026-01-25)
 
 ### Description
 
-Despite Q-005 being marked fixed, tool completion logs still show "unknown" in many cases. A 88-minute session revealed **1,695 entries** with `✓ unknown` instead of the actual tool name:
+Despite Q-005 being marked fixed, tool completion logs still showed "unknown" in many cases. A 88-minute session revealed **1,695 entries** with `✓ unknown` instead of the actual tool name:
 
 ```
 15:43:02 [INFO] sdqctl.adapters.copilot: [backlog-processor:10/10:P4/4]   ✓ unknown (0.3s) → 906 chars
 15:43:10 [INFO] sdqctl.adapters.copilot: [backlog-processor:10/10:P4/4]   ✓ unknown (0.3s) → 109 chars
 ```
 
-The tools execute correctly (output sizes and timing are captured), but the name is not being extracted from `tool.execution_complete` events.
+### Root Cause
 
-### Difference from Q-005
-
-Q-005 addressed `tool.execution_start` events where `tool_requests` contained the tool info. Q-013 affects `tool.execution_complete` events which use a different structure:
-
-- **Start events**: Tool info in `data.tool_requests[0].name` → Q-005 fixed
-- **Complete events**: Should match via `tool_call_id` → Not working
-
-### Root Cause Analysis
+The `tool.execution_complete` handler called `_get_tool_name(data)` which returns "unknown" for complete events (they don't have `tool_requests`), but then **failed to use the stored name** from `stats.active_tools` even when the tool_call_id matched.
 
 ```python
-elif event_type == "tool.execution_complete":
-    tool_call_id = _get_field(data, "tool_call_id", None)
-    
-    if tool_call_id in stats.active_tools:
-        tool_info = stats.active_tools.pop(tool_call_id)
-        # Uses tool_info["name"] - works if matched
-    else:
-        # Falls through to "unknown" - this is happening 1,695 times
+# Before fix - stored name not used
+if tool_call_id and tool_call_id in stats.active_tools:
+    tool_info = stats.active_tools.pop(tool_call_id)
+    duration = datetime.now() - tool_info["start_time"]
+    # tool_info["name"] was available but never used!
 ```
 
-**Possible causes:**
-1. `tool_call_id` in start differs from complete (SDK field naming)
-2. Event ordering (complete before start in some cases)
-3. Multiple start events for batch calls, single complete
-4. Race condition in event processing
+### Resolution
 
-### Recommended Fix
-
-Add debug logging to capture when matching fails:
+Use the stored tool name from the start event when direct extraction fails:
 
 ```python
-if tool_call_id not in stats.active_tools:
-    logger.debug(f"Tool complete without matching start: id={tool_call_id}, "
-                 f"active_ids={list(stats.active_tools.keys())}")
+if tool_call_id and tool_call_id in stats.active_tools:
+    tool_info = stats.active_tools.pop(tool_call_id)
+    duration = datetime.now() - tool_info["start_time"]
+    duration_str = f" ({duration.total_seconds():.1f}s)"
+    # Use stored name if direct extraction failed (Q-013 fix)
+    if tool_name == "unknown" and tool_info.get("name"):
+        tool_name = tool_info["name"]
 ```
-
-Then analyze logs to determine the mismatch pattern.
-
-### Workaround
-
-The current behavior is cosmetic — tools execute correctly. For now, `unknown` in logs doesn't indicate a functional problem.
 
 ---
 

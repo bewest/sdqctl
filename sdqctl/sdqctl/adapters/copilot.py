@@ -520,6 +520,9 @@ class CopilotAdapter(AdapterBase):
                     tool_info = stats.active_tools.pop(tool_call_id)
                     duration = datetime.now() - tool_info["start_time"]
                     duration_str = f" ({duration.total_seconds():.1f}s)"
+                    # Use stored name if direct extraction failed (Q-013 fix)
+                    if tool_name == "unknown" and tool_info.get("name"):
+                        tool_name = tool_info["name"]
                 
                 # Track success/failure counts
                 if success:
