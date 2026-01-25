@@ -73,7 +73,7 @@ All 8 proposed tooling commands are **fully implemented**:
 | P2 | Model selection guide | Medium | When to use gpt-4 vs claude vs sonnet |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | P3 | HELP directive examples | Low | Add to GETTING-STARTED.md |
-| P3 | ON-FAILURE/ON-SUCCESS tutorial | Low | Branching directives need tutorial |
+| ~~P3~~ | ~~ON-FAILURE/ON-SUCCESS tutorial~~ | ~~Low~~ | ✅ Added "Error Handling & Branching" section |
 | P3 | `validate` command tutorial | Low | CI/CD integration section |
 | P3 | Copilot skill files docs | Low | Explain purpose of init-created skills |
 
@@ -89,6 +89,7 @@ All 8 proposed tooling commands are **fully implemented**:
 - ~~Q-014: Event handler multiplexing~~ ✅ 2026-01-25 (Handler registered once per session)
 - ~~Q-015: Duplicate tool calls~~ ✅ 2026-01-25 (Fixed by Q-014)
 - ~~Q-013: Unknown tool names regression~~ ✅ 2026-01-25 (Root cause was Q-014)
+- ~~ON-FAILURE/ON-SUCCESS tutorial~~ ✅ Added to docs/GETTING-STARTED.md
 
 ### Research Items (2026-01-25)
 
@@ -624,7 +625,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | ~~INFINITE-SESSIONS directives not in README~~ | README.md | COMPACTION-MIN, COMPACTION-THRESHOLD now documented | ✅ 2026-01-25 |
 | ~~DEBUG directives not documented~~ | README.md | DEBUG, DEBUG-INTENTS, EVENT-LOG now in directive table | ✅ 2026-01-25 |
 | HELP directive examples | docs/GETTING-STARTED.md | `HELP directives workflow` syntax not shown | 🔲 Open |
-| ON-FAILURE/ON-SUCCESS examples | docs/GETTING-STARTED.md | Branching directives implemented but no tutorial | 🔲 Open |
+| ~~ON-FAILURE/ON-SUCCESS examples~~ | docs/GETTING-STARTED.md | Added "Error Handling & Branching" section with patterns | ✅ 2026-01-25 |
 | `validate` command tutorial | docs/GETTING-STARTED.md | Referenced in CI/CD but no hands-on section | 🔲 Open |
 | Copilot skill files explained | docs/GETTING-STARTED.md | `sdqctl init` creates skills but purpose unclear | 🔲 Open |
 

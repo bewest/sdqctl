@@ -303,6 +303,8 @@ OUTPUT-FILE report.md          # Save output
 |-----------|---------|
 | `PROMPT` | Send a message to the AI |
 | `RUN` | Execute a shell command |
+| `ON-FAILURE` | Block executed if preceding RUN fails (non-zero exit) |
+| `ON-SUCCESS` | Block executed if preceding RUN succeeds (zero exit) |
 | `CONTEXT` | Include file(s) in context |
 | `PROLOGUE` | Prepend to first prompt of cycle |
 | `EPILOGUE` | Append to last prompt of cycle |
@@ -399,6 +401,72 @@ sdqctl run security-audit.conv --adapter mock --dry-run
 # Run for real
 sdqctl run security-audit.conv --adapter copilot
 ```
+
+---
+
+## Error Handling & Branching
+
+When shell commands fail, you can adapt the workflow using `ON-FAILURE` and `ON-SUCCESS` blocks:
+
+### Basic Pattern: Test → Fix → Retry
+
+```dockerfile
+# test-and-fix.conv
+MODEL gpt-4
+ADAPTER copilot
+
+RUN npm test
+ON-FAILURE
+  PROMPT Analyze the test failures above and fix them.
+  RUN npm test
+ON-SUCCESS
+  PROMPT Tests passed! Generate a coverage summary.
+
+PROMPT Continue with remaining tasks...
+```
+
+**Behavior:**
+- `ON-FAILURE` executes only if the preceding `RUN` exits non-zero
+- `ON-SUCCESS` executes only if the preceding `RUN` exits zero
+- After the block, workflow continues normally
+- Both blocks are optional (use either, both, or neither)
+
+### RUN-RETRY for Simple Retries
+
+For commands that may need multiple attempts:
+
+```dockerfile
+# Retry up to 3 times with AI intervention
+RUN-RETRY 3 npm test
+ELIDE
+PROMPT If tests failed, analyze and fix the issues.
+```
+
+### When to Use Each Pattern
+
+| Scenario | Directive | Why |
+|----------|-----------|-----|
+| Flaky test, let AI fix | `RUN` + `ON-FAILURE` | Full control over recovery |
+| Network request retry | `RUN-RETRY 3` | Simple retry, no AI intervention |
+| Different actions for pass/fail | `ON-SUCCESS` + `ON-FAILURE` | Conditional branching |
+| Lint + auto-fix | `RUN npm run lint` + `ON-FAILURE` | Pattern: check → fix → recheck |
+
+### Important Constraints
+
+**No nesting:** `ON-FAILURE` blocks cannot contain their own branching:
+
+```dockerfile
+# ❌ INVALID - parse error
+RUN npm test
+ON-FAILURE
+  RUN npm run fix
+  ON-FAILURE          # Nested branching not allowed
+    PROMPT Cannot auto-fix
+```
+
+**No ELIDE in blocks:** ELIDE cannot span across branching constructs.
+
+See [FEATURE-INTERACTIONS.md](FEATURE-INTERACTIONS.md) for complete interaction rules.
 
 ---
 
