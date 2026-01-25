@@ -87,7 +87,7 @@ All 8 proposed tooling commands are **fully implemented**:
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Implemented | ✅ Complete | --from-json + schema_version implemented |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | Partial | ✅ Core complete | Templates + traceability verifier done |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Implemented | N/A | Help implemented, no gaps remaining |
-| [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Partial | Phase 1-2 ✅ | Registry + validate --check-model |
+| [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Partial | Phase 1-3 ✅ | Registry + validate --check-model + Adapter integration |
 | [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | Partial | Phase 1-3 ✅ | CONSULT directive + prompt injection on resume |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
