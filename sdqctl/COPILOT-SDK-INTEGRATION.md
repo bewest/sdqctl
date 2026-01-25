@@ -443,6 +443,7 @@ This is functional but:
 ## Notes
 
 - SDK is in **technical preview** - API may change
+- **SDK v2 is available locally** at `../../copilot-sdk/python` with Protocol Version 2
 - Events auto-generated from schema (forward-compatible via `UNKNOWN`)
 - Permission handler is async-capable (can prompt user)
 - Intent is ephemeral (not persisted) - must capture explicitly
@@ -739,13 +740,13 @@ The Copilot SDK has been updated to Protocol Version 2 with significant new feat
 
 | Feature | SDK API | Status | Proposal |
 |---------|---------|--------|----------|
-| **Infinite Sessions** | `infinite_sessions` config | Not integrated | [SDK-INFINITE-SESSIONS](proposals/SDK-INFINITE-SESSIONS.md) |
-| **Session Resume** | `client.resume_session(id)` | Not integrated | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
-| **Session List** | `client.list_sessions()` | Not integrated | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
-| **Session Delete** | `client.delete_session(id)` | Not integrated | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
-| **Get Status** | `client.get_status()` | Not integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
-| **Get Auth Status** | `client.get_auth_status()` | Not integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
-| **List Models** | `client.list_models()` | Not integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
+| **Infinite Sessions** | `infinite_sessions` config | ✅ Integrated | [SDK-INFINITE-SESSIONS](proposals/SDK-INFINITE-SESSIONS.md) |
+| **Session Resume** | `client.resume_session(id)` | ✅ Adapter methods | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
+| **Session List** | `client.list_sessions()` | ✅ Adapter methods | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
+| **Session Delete** | `client.delete_session(id)` | ✅ Adapter methods | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
+| **Get Status** | `client.get_status()` | ✅ Integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
+| **Get Auth Status** | `client.get_auth_status()` | ✅ Integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
+| **List Models** | `client.list_models()` | ✅ Integrated | [SDK-METADATA-APIS](proposals/SDK-METADATA-APIS.md) |
 | **Workspace Path** | `session.workspace_path` | Not captured | [SDK-INFINITE-SESSIONS](proposals/SDK-INFINITE-SESSIONS.md) |
 | **Custom Session IDs** | `session_id="name"` | Not integrated | [SDK-SESSION-PERSISTENCE](proposals/SDK-SESSION-PERSISTENCE.md) |
 
@@ -778,6 +779,25 @@ print(session.workspace_path)  # ~/.copilot/session-state/{session_id}/
 
 ### Session Persistence APIs
 
+**Status**: Phase 1 Complete (2026-01-25) - Adapter methods implemented
+
+```python
+# sdqctl adapter usage (implemented):
+adapter = CopilotAdapter()
+await adapter.start()
+
+# List all sessions
+sessions = await adapter.list_sessions()
+# Returns: [{"id": ..., "start_time": ..., "modified_time": ..., "summary": ..., "is_remote": ...}, ...]
+
+# Resume existing session
+session = await adapter.resume_session("my-analysis", config)
+
+# Delete session permanently
+await adapter.delete_session("my-analysis")
+```
+
+**SDK direct usage:**
 ```python
 # List all sessions
 sessions = await client.list_sessions()
@@ -790,8 +810,8 @@ session = await client.resume_session("my-analysis")
 await client.delete_session("my-analysis")
 ```
 
-**Impact on sdqctl:**
-- `sdqctl status --sessions` could list active sessions
+**Remaining work (Phase 2-4):**
+- `sdqctl sessions list/delete/cleanup` CLI commands
 - `sdqctl resume SESSION_ID` for multi-day workflows
 - Named sessions via `SESSION-NAME` directive
 
