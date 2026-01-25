@@ -297,3 +297,4 @@ OUTPUT-FILE reports/progress-{{DATE}}.md
 - `sdqctl help ai` - AI agent guidance
 - `sdqctl help workflow` - Directive reference
 - `sdqctl help examples` - Example patterns
+- [SECURITY-MODEL.md](SECURITY-MODEL.md) - Shell execution and path handling security

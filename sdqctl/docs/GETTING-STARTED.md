@@ -522,6 +522,8 @@ ON-FAILURE
 
 See [FEATURE-INTERACTIONS.md](FEATURE-INTERACTIONS.md) for complete interaction rules.
 
+> **Security Note:** Shell commands run with user permissions. See [SECURITY-MODEL.md](SECURITY-MODEL.md) for safe patterns, CI/CD hardening, and environment variable handling.
+
 ---
 
 ## Artifact ID Management

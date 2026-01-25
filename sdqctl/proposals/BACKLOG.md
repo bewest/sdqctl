@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (P3 documentation gaps completed)  
+> **Last Updated**: 2026-01-25 (P2 security documentation complete, cross-refs added)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -12,6 +12,7 @@
 **SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence** ✅, Metadata APIs ✅)
 **MODEL-REQUIREMENTS**: 2026-01-25 | All 4 phases complete (Registry → CLI → Adapter → Operator config)
 **Q-014/Q-015 Fix**: 2026-01-25 | Event handler leak fixed, accumulate mode stable
+**Security Docs**: 2026-01-25 | `docs/SECURITY-MODEL.md` created with cross-refs
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
@@ -70,6 +71,7 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
+| P2 | ~~Security model documentation~~ | Medium | ✅ `docs/SECURITY-MODEL.md` created 2026-01-25 |
 | P2 | Model selection guide | Medium | When to use gpt-4 vs claude vs sonnet |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | ~~P3~~ | ~~HELP directive examples~~ | ~~Low~~ | ✅ Added section with syntax and workflow-assistant example |
@@ -632,6 +634,23 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | ~~`validate` command tutorial~~ | docs/GETTING-STARTED.md | Added "Validation & CI/CD" section with GH Actions, pre-commit | ✅ 2026-01-25 |
 | ~~Copilot skill files explained~~ | docs/GETTING-STARTED.md | Added "GitHub Copilot Integration Files" section | ✅ 2026-01-25 |
 
+### P2: Security Documentation Gap (Added 2026-01-25)
+
+> **Status**: ✅ Complete - `docs/SECURITY-MODEL.md` created 2026-01-25
+>
+> **Source**: QUIRKS.md Code Quality Review §Security Concerns + BACKLOG line 768
+
+The security model for shell execution and file handling is now documented.
+
+| Topic | Risk | Location | Docs |
+|-------|------|----------|------|
+| `ALLOW-SHELL` directive | HIGH | `run.py:68` | ✅ SECURITY-MODEL.md §ALLOW-SHELL |
+| Path traversal | MEDIUM | `conversation.py:188-202` | ✅ SECURITY-MODEL.md §Path Handling |
+| `RUN_ENV` + `LD_PRELOAD` | MEDIUM | `conversation.py:1290` | ✅ SECURITY-MODEL.md §RUN_ENV |
+| `OUTPUT-FILE` paths | LOW | `run.py:1039` | ✅ SECURITY-MODEL.md §OUTPUT-FILE |
+
+**Deliverable**: [`docs/SECURITY-MODEL.md`](../docs/SECURITY-MODEL.md)
+
 ### P3: Workflow Examples Gap
 
 > **Status**: All P3 documentation gaps resolved. Remaining items are example workflows.
@@ -642,6 +661,14 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | refcat usage patterns | `examples/workflows/` | Cross-repo context injection example |
 | ELIDE chains example | `examples/workflows/` | Multi-ELIDE optimized workflows |
 | CI/CD integration | `examples/ci/` | GitHub Actions / GitLab CI examples using verify + render |
+
+### P3: Future Research Items
+
+| Topic | Source | Notes |
+|-------|--------|-------|
+| LSP support for refcat | BACKLOG References | Language Server Protocol for IDE integration |
+| Interactive docs (`sdqctl help --interactive`) | BACKLOG §Future | Browsable help system |
+| Model selection practical guide | ADAPTERS.md | When to use gpt-4 vs claude vs sonnet with examples |
 
 ### Actionable Next Steps
 
@@ -684,6 +711,89 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | ~~`resume` vs `sessions resume` clarity~~ | P2 | Clarified in docs/COMMANDS.md with comparison notes | ✅ 2026-01-25 |
 | ~~`artifact` user-facing guide~~ | P2 | Added section in docs/GETTING-STARTED.md | ✅ 2026-01-25 |
 | QUIRKS.md → all resolved | - | All quirks Q-001 through Q-015 now ✅ FIXED | ✅ 2026-01-25 |
+
+---
+
+## Code Quality Review (2026-01-25)
+
+> **Added**: 2026-01-25 | **Purpose**: Track code quality issues for future iterations
+
+### Critical: Undefined Name Bugs (F821)
+
+**5 bugs found** - variables used before definition or missing imports:
+
+| Location | Variable | Root Cause | Fix |
+|----------|----------|------------|-----|
+| `run.py:568` | `quiet` | Not passed to function scope | Add parameter or use context variable |
+| `run.py:1172` | `restrictions` | Not defined in RUN-RETRY block | Pass from outer scope |
+| `run.py:1173` | `show_streaming` | Not defined in RUN-RETRY block | Pass from outer scope |
+| `run.py:1376` | `pending_context` | Not defined in VERIFY step handler | Define or remove usage |
+| `copilot.py:1001` | `ModelRequirements` | Forward ref string but no import | Add `from sdqctl.core.models import ModelRequirements` in TYPE_CHECKING |
+
+**Priority**: P0 - These are runtime bugs that will cause NameError exceptions.
+
+### High: Linting Issues (1994 total)
+
+| Category | Count | Auto-fixable | Priority |
+|----------|-------|--------------|----------|
+| W293 (whitespace in blank lines) | 1,617 | ✅ Yes | P3 |
+| E501 (line too long >100) | 193 | ⚠️ Manual | P3 |
+| W291 (trailing whitespace) | 63 | ✅ Yes | P3 |
+| F541 (f-string no placeholders) | 41 | ✅ Yes | P2 |
+| F401 (unused imports) | 35 | ✅ Yes | P2 |
+| I001 (unsorted imports) | 34 | ✅ Yes | P3 |
+| F841 (unused variables) | 5 | ⚠️ Review | P2 |
+| F811 (redefinition) | 1 | ⚠️ Review | P2 |
+
+**Quick fix**: `ruff check sdqctl/ --fix` resolves 1,450 issues automatically.
+
+### High: Code Complexity
+
+| File | Lines | Functions | Avg Lines/Function | Concern |
+|------|-------|-----------|-------------------|---------|
+| `commands/run.py` | 1,513 | 7 | ~216 | **run()** is ~1000 lines - should split |
+| `core/conversation.py` | 1,768 | 17 | ~104 | **ConversationFile** class too large |
+| `adapters/copilot.py` | 1,121 | - | - | **send()** method very long |
+
+**Recommendation**: Extract command setup, step execution, and subprocess handling to shared utilities.
+
+### High: Architecture Issues
+
+| Issue | Severity | Location | Recommendation |
+|-------|----------|----------|----------------|
+| Commands→core→commands circular import | High | `core/renderer.py` → `commands/help.py` | Move TOPICS to core/constants |
+| Duplicated command setup | High | `run.py`, `cycle.py`, `apply.py` | Extract WorkflowCommand base |
+| ConversationFile does too much | Medium | `conversation.py` | Split into Parser/Model/Validator |
+| Adapter ownership unclear | Medium | Session receives but doesn't own adapter | Make Session own lifecycle |
+
+### Medium: Security Concerns
+
+| Issue | Severity | Location | Mitigation |
+|-------|----------|----------|------------|
+| Shell injection via ALLOW-SHELL | HIGH | `run.py:68` | Document risk, consider removal |
+| Path traversal (no canonicalization) | MEDIUM | `conversation.py:188-202` | Use `.resolve()` before checks |
+| RUN_ENV allows LD_PRELOAD | MEDIUM | `conversation.py:1290` | Whitelist safe env vars |
+| OUTPUT-FILE path injection | LOW | `run.py:1039` | Validate paths don't escape base |
+
+**Note**: These are acceptable for a developer tool with explicit user control, but should be documented.
+
+### Medium: Test Quality Gaps
+
+| Gap | Impact | Recommendation |
+|-----|--------|----------------|
+| No error path tests | Unknown failure behavior | Add malformed .conv tests |
+| Missing parametrization | Incomplete variant coverage | Use `@pytest.mark.parametrize` |
+| No test markers | Can't run selective tests | Add `@pytest.mark.unit/integration` |
+| Fixtures not scoped | Slow test runs | Add session-scoped fixtures |
+
+### Action Items
+
+- [ ] **P0**: Fix 5 F821 undefined name bugs (runtime errors)
+- [ ] **P1**: Run `ruff check --fix` to clean 1,450 auto-fixable issues
+- [ ] **P1**: Split `run()` function into smaller units
+- [ ] **P2**: Fix circular import in renderer→help
+- [x] **P2**: Document security model for shell execution → `docs/SECURITY-MODEL.md` (2026-01-25)
+- [ ] **P3**: Add test parametrization and markers
 
 ---
 
