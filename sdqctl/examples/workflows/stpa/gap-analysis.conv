@@ -2,7 +2,7 @@
 #
 # Usage:
 #   sdqctl run examples/workflows/stpa/gap-analysis.conv
-#   sdqctl cycle examples/workflows/stpa/gap-analysis.conv -n 5 --session-mode fresh
+#   sdqctl iterate examples/workflows/stpa/gap-analysis.conv -n 5 --session-mode fresh
 #
 # Analyzes gaps in STPA coverage and generates remediation plans.
 # Use synthesis cycles to iteratively close gaps.

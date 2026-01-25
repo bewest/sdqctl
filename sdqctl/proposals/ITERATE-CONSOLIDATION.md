@@ -1,4 +1,4 @@
-# Proposal: Command Consolidation - `run` + `cycle` → `iterate`
+# Proposal: Command Consolidation - `run` + `iterate` → `iterate`
 
 > **Status**: Ready for Implementation  
 > **Date**: 2026-01-25  
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-Consolidate the `run` and `cycle` commands into a single `iterate` command. The new command:
+Consolidate the `run` and `iterate` commands into a single `iterate` command. The new command:
 - Defaults to single execution (`-n 1`), preserving `run` behavior
 - Supports multi-cycle execution with `-n N`
 - Merges unique features from both commands
@@ -29,15 +29,15 @@ Two commands with overlapping functionality:
 
 ```bash
 sdqctl run workflow.conv           # Single execution
-sdqctl cycle workflow.conv -n 5    # Multi-cycle execution
+sdqctl iterate workflow.conv -n 5    # Multi-cycle execution
 ```
 
 ### Issues
 
 1. **Conceptual overlap**: `run` is essentially `cycle -n 1`
-2. **Feature fragmentation**: Some features only in `run`, others only in `cycle`
+2. **Feature fragmentation**: Some features only in `run`, others only in `iterate`
 3. **Maintenance burden**: ~2,500 lines of duplicated logic across two files
-4. **User confusion**: When to use `run` vs `cycle`?
+4. **User confusion**: When to use `run` vs `iterate`?
 
 ### Desired State
 
@@ -64,7 +64,7 @@ sdqctl iterate "Audit this module"     # Inline prompt support
 | Named sessions | `--session-name` | Resume by name |
 | Compaction default | `min-compaction-density=0` | No automatic compaction |
 
-### Features ONLY in `cycle` (already in `iterate`)
+### Features ONLY in `iterate` (already in `iterate`)
 
 | Feature | CLI Option | Description |
 |---------|------------|-------------|
@@ -180,7 +180,7 @@ Change default for `--max-cycles`:
 #### Step 2.1: Rename `cycle.py` → `iterate.py`
 
 ```bash
-git mv sdqctl/commands/cycle.py sdqctl/commands/iterate.py
+git mv sdqctl/commands/iterate.py sdqctl/commands/iterate.py
 ```
 
 Update the command decorator:
@@ -217,7 +217,7 @@ def cycle_alias(ctx, **kwargs):
     """[DEPRECATED] Use 'sdqctl iterate' instead."""
     import click
     click.secho(
-        "⚠ 'sdqctl cycle' is deprecated. Use 'sdqctl iterate' instead.",
+        "⚠ 'sdqctl iterate' is deprecated. Use 'sdqctl iterate' instead.",
         fg="yellow", err=True
     )
     ctx.invoke(iterate, **kwargs)
@@ -271,7 +271,7 @@ def create_deprecated_alias(new_name: str, old_name: str, target_command):
 
 **Primary documentation (16 files):**
 
-| File | `run` refs | `cycle` refs | Action |
+| File | `run` refs | `iterate` refs | Action |
 |------|-----------|--------------|--------|
 | `docs/GETTING-STARTED.md` | 9 | 4 | Update all |
 | `docs/COMMANDS.md` | ~10 | ~5 | Update all |
@@ -320,16 +320,16 @@ def create_deprecated_alias(new_name: str, old_name: str, target_command):
 find docs examples proposals -name "*.md" -o -name "*.conv" | \
   xargs sed -i 's/sdqctl run /sdqctl iterate /g'
 
-# Replace 'sdqctl cycle' with 'sdqctl iterate'  
+# Replace 'sdqctl iterate' with 'sdqctl iterate'  
 find docs examples proposals -name "*.md" -o -name "*.conv" | \
-  xargs sed -i 's/sdqctl cycle /sdqctl iterate /g'
+  xargs sed -i 's/sdqctl iterate /sdqctl iterate /g'
 
 # Handle variations
 find docs examples proposals -name "*.md" -o -name "*.conv" | \
   xargs sed -i 's/`run`/`iterate`/g'
 
 find docs examples proposals -name "*.md" -o -name "*.conv" | \
-  xargs sed -i 's/`cycle`/`iterate`/g'
+  xargs sed -i 's/`iterate`/`iterate`/g'
 
 # Update command references in tables
 find docs examples proposals -name "*.md" | \
@@ -380,7 +380,7 @@ EXAMPLES:
     sdqctl iterate implement-feature.conv -n 5 -s fresh
 
 DEPRECATION NOTICE:
-    'sdqctl run' and 'sdqctl cycle' are deprecated aliases.
+    'sdqctl run' and 'sdqctl iterate' are deprecated aliases.
     They will be removed in a future version.
 """,
 }
@@ -389,14 +389,14 @@ DEPRECATION NOTICE:
 GUIDANCE_TOPICS["iterate-vs-run-cycle"] = """
 ## Migrating from run/cycle to iterate
 
-The `iterate` command combines the functionality of both `run` and `cycle`:
+The `iterate` command combines the functionality of both `run` and `iterate`:
 
 | Old Command | New Command |
 |-------------|-------------|
 | `sdqctl run workflow.conv` | `sdqctl iterate workflow.conv` |
 | `sdqctl run "prompt"` | `sdqctl iterate "prompt"` |
-| `sdqctl cycle workflow.conv -n 5` | `sdqctl iterate workflow.conv -n 5` |
-| `sdqctl cycle workflow.conv -s fresh` | `sdqctl iterate workflow.conv -s fresh` |
+| `sdqctl iterate workflow.conv -n 5` | `sdqctl iterate workflow.conv -n 5` |
+| `sdqctl iterate workflow.conv -s fresh` | `sdqctl iterate workflow.conv -s fresh` |
 
 The old commands still work but show a deprecation warning.
 """
@@ -606,7 +606,7 @@ class TestMigrationCompatibility:
 ### Version N (Current + 1): Introduction
 
 - Add `iterate` as primary command
-- Add `run` and `cycle` as deprecated aliases (with warnings)
+- Add `run` and `iterate` as deprecated aliases (with warnings)
 - Update all documentation to prefer `iterate`
 - Aliases are NOT hidden in help (visible for discoverability)
 
@@ -619,7 +619,7 @@ class TestMigrationCompatibility:
 ### Version N+2 (or 1.0): Removal
 
 - Remove `run` alias
-- Remove `cycle` alias
+- Remove `iterate` alias
 - Clean up alias code from `cli.py`
 
 ---
@@ -655,11 +655,11 @@ class TestMigrationCompatibility:
 
 ### Phase 2: Rename (Day 1-2)
 
-- [ ] `git mv sdqctl/commands/cycle.py sdqctl/commands/iterate.py`
+- [ ] `git mv sdqctl/commands/iterate.py sdqctl/commands/iterate.py`
 - [ ] Update command decorator to `@click.command("iterate")`
 - [ ] Update `sdqctl/commands/__init__.py`
 - [ ] Update `sdqctl/cli.py` imports
-- [ ] Create deprecated aliases for `run` and `cycle`
+- [ ] Create deprecated aliases for `run` and `iterate`
 - [ ] Delete `sdqctl/commands/run.py`
 - [ ] Run tests
 
@@ -684,7 +684,7 @@ class TestMigrationCompatibility:
 
 - [ ] Run `sdqctl iterate --help`
 - [ ] Run `sdqctl run --help` (verify alias + warning)
-- [ ] Run `sdqctl cycle --help` (verify alias + warning)
+- [ ] Run `sdqctl iterate --help` (verify alias + warning)
 - [ ] Test example workflows
 - [ ] Run lint/type checks
 

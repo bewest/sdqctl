@@ -4,7 +4,7 @@
 # Does NOT invoke SDK-heavy commands - focuses on local analysis.
 #
 # Usage:
-#   sdqctl cycle examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
+#   sdqctl iterate examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
 #
 # Deliverables:
 #   - Gap analysis in proposals/CLI-ERGONOMICS.md
@@ -183,5 +183,5 @@ FOOTER ---
 FOOTER ## Next Steps
 FOOTER Run the rename assessment workflow:
 FOOTER ```bash
-FOOTER sdqctl cycle examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
+FOOTER sdqctl iterate examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
 FOOTER ```

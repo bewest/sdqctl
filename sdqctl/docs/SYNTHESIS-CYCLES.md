@@ -169,7 +169,7 @@ Summarize:
 
 ```bash
 # Hint at the backlog file in the prompt, don't inject it
-sdqctl cycle examples/workflows/implement-improvements.conv \
+sdqctl iterate examples/workflows/implement-improvements.conv \
   --adapter copilot \
   -n 3
 ```
@@ -184,7 +184,7 @@ The agent will read `reports/improvements-tracker.md` when it needs context, rat
 
 ❌ **Over-priming** (wastes context):
 ```bash
-sdqctl cycle workflow.conv --prologue @reports/full-analysis.md
+sdqctl iterate workflow.conv --prologue @reports/full-analysis.md
 ```
 
 ✅ **Hinting** (agent reads on demand):
@@ -249,7 +249,7 @@ End each session with a "next command":
 ```dockerfile
 PROMPT Output the exact command for the next session:
   ```bash
-  sdqctl cycle examples/workflows/implement-improvements.conv \
+  sdqctl iterate examples/workflows/implement-improvements.conv \
     --adapter copilot -n 3
   ```
 ```
@@ -262,13 +262,13 @@ PROMPT Output the exact command for the next session:
 
 ```bash
 # Fresh: Each cycle starts clean, re-reads files (for file editing)
-sdqctl cycle workflow.conv -n 5 --session-mode fresh
+sdqctl iterate workflow.conv -n 5 --session-mode fresh
 
 # Accumulate: Context grows until limit, then compacts
-sdqctl cycle workflow.conv -n 5 --session-mode accumulate
+sdqctl iterate workflow.conv -n 5 --session-mode accumulate
 
 # Compact: Summarize after each cycle
-sdqctl cycle workflow.conv -n 10 --session-mode compact
+sdqctl iterate workflow.conv -n 10 --session-mode compact
 ```
 
 ### When to Use Each Mode
@@ -293,7 +293,7 @@ sdqctl run examples/workflows/test-discovery.conv --adapter copilot
 ### Step 2: Run Improvement Cycles
 
 ```bash
-sdqctl cycle examples/workflows/implement-improvements.conv \
+sdqctl iterate examples/workflows/implement-improvements.conv \
   --adapter copilot -n 3
 ```
 
@@ -307,7 +307,7 @@ The workflow:
 
 The final output includes the command for the next session:
 ```bash
-sdqctl cycle examples/workflows/implement-improvements.conv \
+sdqctl iterate examples/workflows/implement-improvements.conv \
   --adapter copilot -n 3
 ```
 
@@ -524,9 +524,9 @@ Structured workflows with clear specifications tend to produce **more output tha
 
 **If you want minimal output**: Scope prompts explicitly ("implement only the core function, no extras") or use MODE audit for analysis-only tasks.
 
-### Lesson #31: CHECKPOINT Requires `cycle`
+### Lesson #31: CHECKPOINT Requires `iterate`
 
-The CHECKPOINT directive is **only processed by `sdqctl cycle`**, not `sdqctl run`.
+The CHECKPOINT directive is **only processed by `sdqctl iterate`**, not `sdqctl run`.
 
 ```dockerfile
 PROMPT Do some work.
@@ -534,9 +534,9 @@ CHECKPOINT phase-1    # ← Ignored by 'run', saved by 'cycle'
 PROMPT Continue work.
 ```
 
-If your workflow needs resumability, use `cycle`:
+If your workflow needs resumability, use `iterate`:
 ```bash
-sdqctl cycle workflow.conv --adapter copilot  # ✅ Checkpoints work
+sdqctl iterate workflow.conv --adapter copilot  # ✅ Checkpoints work
 sdqctl run workflow.conv --adapter copilot    # ❌ Checkpoints ignored
 ```
 
@@ -563,7 +563,7 @@ PROLOGUE Prioritize by: P0 > P1 > P2 across ALL documents, not just the first.
 Adding an evaluation prefix to multi-prologue workflows improves cross-document awareness:
 
 ```bash
-sdqctl cycle workflow.conv \
+sdqctl iterate workflow.conv \
   --prologue "EVALUATE ALL following documents for cohesiveness." \
   --prologue proposals/BACKLOG.md \
   --prologue proposals/REFCAT-DESIGN.md

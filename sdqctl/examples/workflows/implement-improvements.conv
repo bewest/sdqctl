@@ -6,7 +6,7 @@
 #
 # Usage:
 #   cd /path/to/sdqctl
-#   sdqctl cycle examples/workflows/implement-improvements.conv \
+#   sdqctl iterate examples/workflows/implement-improvements.conv \
 #     --prologue reports/test-discovery-2026-01-20.md \
 #     --adapter copilot
 #
@@ -127,7 +127,7 @@ For each of the next 3 most impactful items:
 **Section 5: Next Session Command**
 Provide the exact command to run the next improvement session:
 ```bash
-sdqctl cycle examples/workflows/progress-tracker.conv \
+sdqctl iterate examples/workflows/progress-tracker.conv \
   --prologue reports/[updated-report].md \
   --adapter copilot
 ```
@@ -145,7 +145,7 @@ FOOTER that uses sdqctl to improve sdqctl.
 FOOTER 
 FOOTER To continue improvement:
 FOOTER ```bash
-FOOTER sdqctl cycle examples/workflows/progress-tracker.conv \
+FOOTER sdqctl iterate examples/workflows/progress-tracker.conv \
 FOOTER   --prologue reports/test-discovery-{{DATE}}.md \
 FOOTER   --adapter copilot
 FOOTER ```

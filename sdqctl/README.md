@@ -25,7 +25,7 @@ sdqctl apply audit.conv --components "lib/plugins/*.js" \
   --epilogue "Update progress.md with findings"
 
 # Multi-cycle iteration with explicit context control
-sdqctl cycle migration.conv -n 5 --session-mode fresh
+sdqctl iterate migration.conv -n 5 --session-mode fresh
 ```
 
 The `--prologue` and `--epilogue` options (and their ConversationFile equivalents) frame each conversation cycle: prologues are prepended to the first prompt, epilogues are appended to the last. This enables **trivial iteration over facets or topics** while ensuring the same conversation structure and tool use in a repeatable way. Template variables like `{{COMPONENT_NAME}}`, `{{CYCLE_NUMBER}}`, and `{{DATE}}` make each iteration context-aware.
@@ -71,7 +71,7 @@ sdqctl run "Audit authentication module for security issues"
 sdqctl run workflows/security-audit.conv
 
 # Multi-cycle workflow with compaction
-sdqctl cycle workflows/migration.conv --max-cycles 5
+sdqctl iterate workflows/migration.conv --max-cycles 5
 
 # Batch execution
 sdqctl flow workflows/*.conv --parallel 4
@@ -106,7 +106,7 @@ sdqctl -P run workflow.conv
 sdqctl -P run workflow.conv 2> prompts.log
 
 # Full debugging: prompts + streaming response
-sdqctl -vv -P cycle workflow.conv
+sdqctl -vv -P iterate workflow.conv
 ```
 
 Prompts are displayed with context:
@@ -462,14 +462,14 @@ sdqctl run workflow.conv --dry-run
 sdqctl run workflow.conv --render-only  # Preview prompts, no AI calls
 ```
 
-### `sdqctl cycle`
+### `sdqctl iterate`
 
 Multi-cycle execution with compaction:
 
 ```bash
-sdqctl cycle workflow.conv --max-cycles 5
-sdqctl cycle workflow.conv --checkpoint-dir ./checkpoints
-sdqctl cycle workflow.conv -n 3 --render-only  # Preview all cycles
+sdqctl iterate workflow.conv --max-cycles 5
+sdqctl iterate workflow.conv --checkpoint-dir ./checkpoints
+sdqctl iterate workflow.conv -n 3 --render-only  # Preview all cycles
 ```
 
 #### Pipeline Input (`--from-json`)
@@ -478,15 +478,15 @@ Execute workflow from pre-rendered JSON, enabling external transformation:
 
 ```bash
 # Round-trip: render, transform, execute
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq '.cycles[0].prompts[0].resolved += " (modified)"' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 
 # Load from file
-sdqctl cycle --from-json rendered.json
+sdqctl iterate --from-json rendered.json
 
 # Dry run to validate
-sdqctl cycle --from-json - --dry-run < workflow.json
+sdqctl iterate --from-json - --dry-run < workflow.json
 ```
 
 This enables powerful composition patterns:
@@ -506,10 +506,10 @@ The `--session-mode` option controls how context is managed across cycles:
 
 ```bash
 # Fresh mode: each cycle sees file changes from previous cycles
-sdqctl cycle workflow.conv -n 5 --session-mode fresh
+sdqctl iterate workflow.conv -n 5 --session-mode fresh
 
 # Compact mode: summarize between cycles to manage token usage
-sdqctl cycle workflow.conv -n 10 --session-mode compact
+sdqctl iterate workflow.conv -n 10 --session-mode compact
 ```
 
 ### `sdqctl render`
@@ -523,8 +523,8 @@ sdqctl render run workflow.conv --plan    # Show @file refs only
 sdqctl render run workflow.conv --json    # JSON output
 
 # Render for cycle command (multi-cycle)
-sdqctl render cycle workflow.conv --max-cycles 5
-sdqctl render cycle workflow.conv -n 3 -s fresh -o rendered/
+sdqctl render iterate workflow.conv --max-cycles 5
+sdqctl render iterate workflow.conv -n 3 -s fresh -o rendered/
 
 # Render for apply command
 sdqctl render apply workflow.conv --components "lib/*.js"
@@ -550,8 +550,8 @@ epilogues expanded. Useful for:
 - Using sdqctl as a prompt templating engine
 - CI/CD validation of workflow content
 
-> **Note:** `--render-only` flag on `run` and `cycle` commands is deprecated.
-> Use `sdqctl render run` or `sdqctl render cycle` instead.
+> **Note:** `--render-only` flag on `run` and `iterate` commands is deprecated.
+> Use `sdqctl render run` or `sdqctl render iterate` instead.
 
 ### `sdqctl flow`
 

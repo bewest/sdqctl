@@ -86,7 +86,7 @@ Warning: Context at 95%, compaction required
 
 2. **Use fresh session mode**:
    ```bash
-   sdqctl cycle workflow.conv -n 5 --session-mode fresh
+   sdqctl iterate workflow.conv -n 5 --session-mode fresh
    ```
 
 3. **Add explicit COMPACT**:
@@ -228,7 +228,7 @@ Error: Session 'abc123' not found
 
 2. **Use fresh session mode**:
    ```bash
-   sdqctl cycle workflow.conv -n 3 --session-mode fresh
+   sdqctl iterate workflow.conv -n 3 --session-mode fresh
    ```
 
 3. **Add explicit instructions in PROLOGUE**:
@@ -266,7 +266,7 @@ See [QUIRKS.md Q-001](QUIRKS.md#q-001-workflow-filename-influences-agent-behavio
 
 3. **Use compact session mode** for long workflows:
    ```bash
-   sdqctl cycle workflow.conv -n 10 --session-mode compact
+   sdqctl iterate workflow.conv -n 10 --session-mode compact
    ```
 
 ---
@@ -316,7 +316,7 @@ sdqctl help
 
 # Command-specific help
 sdqctl help run
-sdqctl help cycle
+sdqctl help iterate
 
 # Topic help
 sdqctl help directives

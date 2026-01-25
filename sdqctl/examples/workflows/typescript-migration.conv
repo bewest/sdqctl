@@ -1,5 +1,5 @@
 # TypeScript Migration Workflow
-# Run: sdqctl cycle examples/workflows/typescript-migration.conv --max-cycles 5
+# Run: sdqctl iterate examples/workflows/typescript-migration.conv --max-cycles 5
 
 MODEL gpt-4
 ADAPTER copilot

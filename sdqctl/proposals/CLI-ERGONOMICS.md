@@ -50,7 +50,7 @@ Two-tier help structure:
 # Level 1: Command-specific help
 sdqctl help                     # Overview + list of topics
 sdqctl help run                 # Detailed help for 'run' command
-sdqctl help cycle               # Detailed help for 'cycle' command
+sdqctl help iterate               # Detailed help for 'cycle' command
 
 # Level 2: Guidance topics (conceptual documentation)
 sdqctl help guidance            # List all guidance topics
@@ -107,7 +107,7 @@ These commands send prompts to AI and require API access:
 | Command | Description | Typical Use |
 |---------|-------------|-------------|
 | `run` | Single prompt/workflow | Quick tasks |
-| `cycle` | Multi-cycle with compaction | Extended analysis |
+| `iterate` | Multi-cycle with compaction | Extended analysis |
 | `apply` | Workflow across components | Multi-file changes |
 | `flow` | Parallel batch execution | Batch processing |
 

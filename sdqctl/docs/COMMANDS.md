@@ -9,7 +9,7 @@ Complete reference for all sdqctl CLI commands.
 | Command | Purpose | Example |
 |---------|---------|---------|
 | `run` | Execute single workflow | `sdqctl run workflow.conv` |
-| `cycle` | Multi-cycle iteration | `sdqctl cycle workflow.conv -n 5` |
+| `iterate` | Multi-cycle iteration | `sdqctl iterate workflow.conv -n 5` |
 | `apply` | Apply to multiple components | `sdqctl apply workflow.conv -c "lib/*.js"` |
 | `flow` | Batch/parallel execution | `sdqctl flow workflows/*.conv --parallel 4` |
 | `render` | Preview prompts (no AI) | `sdqctl render run workflow.conv` |
@@ -87,30 +87,30 @@ sdqctl run "Analyze code" --allow-files "./lib/*" --deny-files "./lib/special"
 
 ---
 
-## cycle
+## iterate
 
 Run multi-cycle workflow with compaction and checkpointing.
 
 ```bash
-sdqctl cycle [WORKFLOW] [OPTIONS]
+sdqctl iterate [WORKFLOW] [OPTIONS]
 ```
 
 **Examples:**
 ```bash
 # 5 cycles with default settings
-sdqctl cycle workflow.conv -n 5
+sdqctl iterate workflow.conv -n 5
 
 # Fresh session each cycle (for file editing workflows)
-sdqctl cycle workflow.conv -n 3 --session-mode fresh
+sdqctl iterate workflow.conv -n 3 --session-mode fresh
 
 # Compact between cycles (token management)
-sdqctl cycle workflow.conv -n 10 --session-mode compact
+sdqctl iterate workflow.conv -n 10 --session-mode compact
 
 # From pre-rendered JSON
-sdqctl cycle --from-json rendered.json
+sdqctl iterate --from-json rendered.json
 
 # Pipeline mode
-sdqctl render cycle workflow.conv --json | jq '...' | sdqctl cycle --from-json -
+sdqctl render iterate workflow.conv --json | jq '...' | sdqctl iterate --from-json -
 ```
 
 **Key Options:**
@@ -226,7 +226,7 @@ sdqctl render SUBCOMMAND [OPTIONS]
 | Subcommand | Purpose |
 |------------|---------|
 | `render run` | Single-cycle render |
-| `render cycle` | Multi-cycle render |
+| `render iterate` | Multi-cycle render |
 | `render apply` | Per-component render |
 
 **Examples:**
@@ -238,7 +238,7 @@ sdqctl render run workflow.conv
 sdqctl render run workflow.conv --plan
 
 # JSON output for pipeline
-sdqctl render cycle workflow.conv -n 3 --json
+sdqctl render iterate workflow.conv -n 3 --json
 
 # Render specific prompt
 sdqctl render run workflow.conv --prompt 2
@@ -550,7 +550,7 @@ sdqctl help
 
 # Command help
 sdqctl help run
-sdqctl help cycle
+sdqctl help iterate
 
 # Topic help
 sdqctl help directives

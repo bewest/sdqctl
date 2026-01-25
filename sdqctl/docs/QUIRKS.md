@@ -128,7 +128,7 @@ Implemented Option A: Store SDK session UUID in checkpoint metadata.
 - `sdqctl/adapters/copilot.py` - Capture SDK session ID on session creation
 - `sdqctl/core/session.py` - Store/load `sdk_session_id` in checkpoint
 - `sdqctl/commands/run.py` - Wire up SDK session ID, update resume messages
-- `sdqctl/commands/cycle.py` - Wire up SDK session ID
+- `sdqctl/commands/iterate.py` - Wire up SDK session ID
 
 **Before:**
 ```bash
@@ -264,7 +264,7 @@ Comprehensive ruff linting revealed issues across the codebase. Auto-fix applied
 
 ### Description
 
-When using `--session-mode=accumulate` with the `cycle` command, event handlers were registered multiple times, causing exponential log duplication and duplicate tool execution.
+When using `--session-mode=accumulate` with the `iterate` command, event handlers were registered multiple times, causing exponential log duplication and duplicate tool execution.
 
 ### Evidence
 
@@ -450,7 +450,7 @@ The `COMPACT` directive in workflow files **always triggered compaction**, regar
 
 ### Description
 
-The `COMPACT` directive was parsed correctly and added to `conv.steps`, but the `cycle` command only iterated through `conv.prompts`, effectively ignoring COMPACT, CHECKPOINT, and other step-based directives.
+The `COMPACT` directive was parsed correctly and added to `conv.steps`, but the `iterate` command only iterated through `conv.prompts`, effectively ignoring COMPACT, CHECKPOINT, and other step-based directives.
 
 ### Root Cause
 
@@ -473,13 +473,13 @@ Refactored `cycle.py` to iterate `conv.steps` instead of just `conv.prompts`:
 2. Handle `prompt`, `compact`, and `checkpoint` step types
 3. Added backward compatibility fallback for legacy files without steps
 
-**Files modified:** `sdqctl/commands/cycle.py`
+**Files modified:** `sdqctl/commands/iterate.py`
 
 ### Verification
 
 ```bash
 # COMPACT directives now execute during cycle
-sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot
+sdqctl iterate examples/workflows/fix-quirks.conv --adapter copilot
 # 🗜  Compacting conversation... (now appears after phase 2)
 ```
 

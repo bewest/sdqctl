@@ -8,7 +8,7 @@
 # This workflow does deep analysis that may exceed context limits.
 #
 # Usage:
-#   sdqctl cycle workflows/deep-analysis.conv --max-cycles 3
+#   sdqctl iterate workflows/deep-analysis.conv --max-cycles 3
 
 MODEL claude-sonnet-4.5
 ADAPTER copilot

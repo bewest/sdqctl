@@ -2,7 +2,7 @@
 #
 # Usage:
 #   sdqctl run examples/workflows/stpa/trace-verification.conv
-#   sdqctl cycle examples/workflows/stpa/trace-verification.conv -n 3
+#   sdqctl iterate examples/workflows/stpa/trace-verification.conv -n 3
 #
 # Verifies that UCAs are properly linked to requirements, specs, and tests.
 # Identifies gaps in the traceability chain.

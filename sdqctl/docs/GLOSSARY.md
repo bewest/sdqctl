@@ -50,7 +50,7 @@ These terms describe different levels of workflow structure:
 | **Prompt** | A single `PROMPT` directive; one agent turn | `PROMPT Analyze the code.` |
 | **Phase** | A logical grouping of prompts within one iteration | "Phase 1: Select", "Phase 2: Execute" |
 | **Iteration** | One complete pass through ALL prompts in a workflow | Running all 4 phases once |
-| **Cycle** | Synonym for iteration (used in `sdqctl cycle` command) | `sdqctl cycle -n 3` = 3 iterations |
+| **Cycle** | Synonym for iteration (used in `sdqctl iterate` command) | `sdqctl iterate -n 3` = 3 iterations |
 
 **Key insight**: Phases are NOT selectable steps. The agent processes all prompts sequentially during each iteration. Phases are organizational labels, not menu options.
 
@@ -198,11 +198,11 @@ Both commands execute workflows, but with different iteration counts:
 - Good for: Testing, priming, single-spike work
 - Example: `sdqctl run workflow.conv --adapter copilot`
 
-**`sdqctl cycle`** — Executes workflow **N times** (N iterations).
+**`sdqctl iterate`** — Executes workflow **N times** (N iterations).
 - Good for: Iterative refinement, backlog processing
-- Example: `sdqctl cycle workflow.conv -n 3 --adapter copilot`
+- Example: `sdqctl iterate workflow.conv -n 3 --adapter copilot`
 
-**Note**: The name `cycle` can be confusing—it sounds singular but means "iterate N times." See [Philosophy](PHILOSOPHY.md#command-roles) for details and [CLI-ERGONOMICS.md](../proposals/CLI-ERGONOMICS.md) for potential rename options.
+**Note**: The name `iterate` can be confusing—it sounds singular but means "iterate N times." See [Philosophy](PHILOSOPHY.md#command-roles) for details and [CLI-ERGONOMICS.md](../proposals/CLI-ERGONOMICS.md) for potential rename options.
 
 ---
 

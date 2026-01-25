@@ -558,9 +558,9 @@ See [PIPELINE-ARCHITECTURE.md](./PIPELINE-ARCHITECTURE.md) for how VERIFY integr
 ```bash
 # Verify, export, transform, execute
 sdqctl verify refs --json > verify-results.json
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq --slurpfile v verify-results.json '. + {verification: $v[0]}' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ---

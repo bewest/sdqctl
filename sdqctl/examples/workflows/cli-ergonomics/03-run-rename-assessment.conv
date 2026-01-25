@@ -4,7 +4,7 @@
 # Investigation only - does NOT implement any changes.
 #
 # Usage:
-#   sdqctl cycle examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
+#   sdqctl iterate examples/workflows/cli-ergonomics/03-run-rename-assessment.conv --adapter copilot
 #
 # Deliverables:
 #   - Impact report in proposals/CLI-ERGONOMICS.md

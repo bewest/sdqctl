@@ -37,7 +37,7 @@ An **iteration** (or **cycle**) is one complete pass through all prompts in a co
 | `cycle -n N` | Executes workflow **N times** (N iterations) | Iterative refinement, backlog processing |
 | `apply` | Executes workflow once **per component** | Batch processing across files |
 
-**Note on naming**: The command names can be confusing. `run` performs one iteration, while `cycle` performs multiple. The name `cycle` suggests singularity but means "iterate N times." See [CLI-ERGONOMICS.md](../proposals/CLI-ERGONOMICS.md) for potential rename options (`do`/`invoke`).
+**Note on naming**: The command names can be confusing. `run` performs one iteration, while `iterate` performs multiple. The name `iterate` suggests singularity but means "iterate N times." See [CLI-ERGONOMICS.md](../proposals/CLI-ERGONOMICS.md) for potential rename options (`do`/`invoke`).
 
 ---
 
@@ -49,7 +49,7 @@ An **iteration** (or **cycle**) is one complete pass through all prompts in a co
 | **Phase** | A logical grouping of prompts (e.g., "Phase 1: Select") |
 | **Iteration/Cycle** | One complete pass through ALL prompts |
 | **`run` command** | Execute workflow once (1 iteration) |
-| **`cycle` command** | Execute workflow N times (N iterations) |
+| **`iterate` command** | Execute workflow N times (N iterations) |
 
 **Key distinction**: Phases are *logical* groupings within the conversation file. They are NOT selectable steps—the agent processes all prompts in sequence during each iteration.
 
@@ -230,7 +230,7 @@ PROMPT ## Phase 3: Execution (was step3.conv)
 # Discovery → Implementation is a natural break
 sdqctl run test-discovery.conv --adapter copilot
 # Human reviews findings, then:
-sdqctl cycle implement-improvements.conv -n 3 --adapter copilot
+sdqctl iterate implement-improvements.conv -n 3 --adapter copilot
 ```
 
 ---
@@ -260,10 +260,10 @@ sdqctl improving itself (demonstrates state relay + convergence):
 sdqctl run test-discovery.conv --adapter copilot
 
 # 2. Iterate through backlog items
-sdqctl cycle implement-improvements.conv -n 3 --adapter copilot
+sdqctl iterate implement-improvements.conv -n 3 --adapter copilot
 
 # 3. Review progress, adjust priorities, continue
-sdqctl cycle implement-improvements.conv -n 3 --adapter copilot
+sdqctl iterate implement-improvements.conv -n 3 --adapter copilot
 ```
 
 ---
@@ -382,16 +382,16 @@ The most reusable workflow pattern uses `--prologue` to inject context while kee
 
 ```bash
 # Same workflow, different backlogs:
-sdqctl cycle examples/workflows/backlog-processor.conv \
+sdqctl iterate examples/workflows/backlog-processor.conv \
   --prologue proposals/BACKLOG.md \
   --adapter copilot -n 10
 
-sdqctl cycle examples/workflows/backlog-processor.conv \
+sdqctl iterate examples/workflows/backlog-processor.conv \
   --prologue docs/QUIRKS.md \
   --adapter copilot -n 5
 
 # Multiple backlogs in priority order:
-sdqctl cycle examples/workflows/backlog-processor.conv \
+sdqctl iterate examples/workflows/backlog-processor.conv \
   --prologue proposals/BACKLOG.md \
   --prologue proposals/REFCAT-DESIGN.md \
   --prologue proposals/ARTIFACT-TAXONOMY.md \

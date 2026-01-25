@@ -7,7 +7,7 @@
 
 ## Documentation Gaps Identified
 
-### 1. CHECKPOINT Only Works with `cycle` ❗
+### 1. CHECKPOINT Only Works with `iterate` ❗
 
 **Gap**: Not clearly documented that `run` ignores CHECKPOINT directives.
 
@@ -16,8 +16,8 @@
 **Recommendation**: Add explicit callout:
 
 ```markdown
-> **Note**: CHECKPOINT directives are only processed by `cycle`. 
-> Use `sdqctl run` for quick tests, but switch to `cycle` for 
+> **Note**: CHECKPOINT directives are only processed by `iterate`. 
+> Use `sdqctl run` for quick tests, but switch to `iterate` for 
 > workflows where you need resumability.
 ```
 

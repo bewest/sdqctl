@@ -240,9 +240,9 @@ External transformation for STPA scope selection:
 
 ```bash
 # Select only Tier 1 projects for rigorous analysis
-sdqctl render cycle stpa-audit.conv --json \
+sdqctl render iterate stpa-audit.conv --json \
   | jq '.template_variables.SEVERITY_TIER = "tier1"' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ### VERIFICATION-DIRECTIVES

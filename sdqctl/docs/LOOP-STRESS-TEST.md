@@ -153,7 +153,7 @@ Stop file instructions are now **automatically injected** on the first prompt of
 ```bash
 # Disable automatic stop file instructions
 sdqctl run workflow.conv --no-stop-file-prologue
-sdqctl cycle workflow.conv --no-stop-file-prologue
+sdqctl iterate workflow.conv --no-stop-file-prologue
 sdqctl apply workflow.conv --components "*.py" --no-stop-file-prologue
 ```
 
@@ -282,18 +282,18 @@ All commands support stop file configuration:
 
 ```bash
 # Default: stop file instruction injected with random nonce
-sdqctl cycle workflow.conv
+sdqctl iterate workflow.conv
 
 # Disable stop file instruction
-sdqctl cycle workflow.conv --no-stop-file-prologue
+sdqctl iterate workflow.conv --no-stop-file-prologue
 
 # Pin nonce for testing/reproducibility
-sdqctl cycle workflow.conv --stop-file-nonce=testrun123
+sdqctl iterate workflow.conv --stop-file-nonce=testrun123
 ```
 
 ### Recommendations
 
-1. **For sdqctl cycle command**: Keep using `LoopDetector` as the primary loop detection mechanism
+1. **For sdqctl iterate command**: Keep using `LoopDetector` as the primary loop detection mechanism
 2. **For stricter detection**: Configure `LoopDetector(identical_threshold=1, min_response_length=150)`
 3. **For agent-initiated stops**: The `${STOP_FILE}` instruction is injected automatically on first prompt
 4. **For research**: The `--event-log` output provides rich data for analyzing AI behavior

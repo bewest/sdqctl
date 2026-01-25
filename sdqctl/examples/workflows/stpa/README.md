@@ -23,7 +23,7 @@ sdqctl run examples/workflows/stpa/trace-verification.conv
 
 # Iterative gap closure (synthesis cycles)
 echo "## Progress\n\nNo gaps addressed yet." > progress.md
-sdqctl cycle examples/workflows/stpa/gap-analysis.conv -n 5 --session-mode fresh
+sdqctl iterate examples/workflows/stpa/gap-analysis.conv -n 5 --session-mode fresh
 ```
 
 ## Workflow Details

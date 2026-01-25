@@ -1,7 +1,7 @@
 # fix-broken-refs.conv - Iterative workflow for fixing broken code references
 #
 # Usage:
-#   sdqctl cycle examples/workflows/traceability/fix-broken-refs.conv -n 3 --session-mode fresh
+#   sdqctl iterate examples/workflows/traceability/fix-broken-refs.conv -n 3 --session-mode fresh
 #
 # This workflow:
 # 1. Runs verify refs --suggest-fixes to identify broken refs with suggestions
@@ -10,7 +10,7 @@
 # 4. Verifies the fixes work
 #
 # Use with --prologue to target specific directories:
-#   sdqctl cycle examples/workflows/traceability/fix-broken-refs.conv \
+#   sdqctl iterate examples/workflows/traceability/fix-broken-refs.conv \
 #     --prologue "Target: mapping/"
 
 MODEL claude-sonnet-4
@@ -142,7 +142,7 @@ FOOTER ---
 FOOTER ## Next Steps
 FOOTER - Add missing aliases to workspace.lock.json
 FOOTER - Investigate missing files (deleted or moved)
-FOOTER - Run this workflow again: `sdqctl cycle ... -n 3`
+FOOTER - Run this workflow again: `sdqctl iterate ... -n 3`
 
 OUTPUT-FORMAT markdown
 OUTPUT-FILE reports/refs-fix-{{DATE}}.md

@@ -1,7 +1,7 @@
 # refcat-implementation.conv - Multi-phase implementation workflow for REFCAT
 # Created: 2026-01-23
 # Context: Identified during Nightscout ecosystem evaluation
-# Run: sdqctl cycle proposals/REFCAT-DIRECTIVE.conv --adapter copilot --max-cycles 4
+# Run: sdqctl iterate proposals/REFCAT-DIRECTIVE.conv --adapter copilot --max-cycles 4
 #
 # Design Principle: This workflow references proposals/REFCAT-DESIGN.md for specs.
 # The .conv file orchestrates work phases; the .md file holds the details.

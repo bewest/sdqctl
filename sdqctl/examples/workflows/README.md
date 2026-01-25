@@ -24,7 +24,7 @@ sdqctl run examples/workflows/security-audit.conv --adapter mock --verbose
 sdqctl run examples/workflows/security-audit.conv --adapter copilot
 
 # Multi-cycle workflow
-sdqctl cycle examples/workflows/typescript-migration.conv --max-cycles 3
+sdqctl iterate examples/workflows/typescript-migration.conv --max-cycles 3
 
 # Batch execution
 sdqctl flow examples/workflows/*.conv --parallel 2
@@ -60,12 +60,12 @@ sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
 |---------|---------|-------------|
 | **Testing a workflow** | `sdqctl run workflow.conv --dry-run` | Before committing to cycles |
 | **Single execution** | `sdqctl run workflow.conv` | One-off tasks, priming |
-| **Iterative refinement** | `sdqctl cycle workflow.conv -n 3` | Multi-step improvements |
-| **Quine loop** | `sdqctl cycle implement-improvements.conv` | Self-improving workflows |
+| **Iterative refinement** | `sdqctl iterate workflow.conv -n 3` | Multi-step improvements |
+| **Quine loop** | `sdqctl iterate implement-improvements.conv` | Self-improving workflows |
 | **Batch processing** | `sdqctl apply workflow.conv --components "*.py"` | Per-component work |
 | **Human consultation** | `sdqctl run consult-design.conv` | Design decisions needing human input |
-| **Fix broken refs** | `sdqctl cycle traceability/fix-broken-refs.conv -n 3` | Update stale code references |
-| **Improve verifiers** | `sdqctl cycle tooling/verifier-test-loop.conv -n 5` | TDD for tool development |
+| **Fix broken refs** | `sdqctl iterate traceability/fix-broken-refs.conv -n 3` | Update stale code references |
+| **Improve verifiers** | `sdqctl iterate tooling/verifier-test-loop.conv -n 5` | TDD for tool development |
 
 ---
 

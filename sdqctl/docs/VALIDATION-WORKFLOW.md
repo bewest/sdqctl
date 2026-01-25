@@ -125,13 +125,13 @@ sdqctl show workflow.conv
 sdqctl render run workflow.conv
 
 # Render for cycle command
-sdqctl render cycle workflow.conv -n 3
+sdqctl render iterate workflow.conv -n 3
 
 # Quick overview (show refs, don't expand content)
 sdqctl render run workflow.conv --plan
 
 # JSON output for pipeline composition
-sdqctl render cycle workflow.conv --json
+sdqctl render iterate workflow.conv --json
 ```
 
 **What it expands**:
@@ -274,9 +274,9 @@ Use render + transform + execute for dynamic workflows:
 
 ```bash
 # Render, transform with jq, execute
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq '.cycles[0].prompts[0].resolved += " (transformed)"' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 
 # Conditional workflow based on verify results
 if sdqctl verify refs --json | jq -e '.passed'; then
@@ -338,7 +338,7 @@ sdqctl show mystery-workflow.conv
 sdqctl render run mystery-workflow.conv
 
 # 3. See cycle-by-cycle breakdown
-sdqctl render cycle mystery-workflow.conv -n 3
+sdqctl render iterate mystery-workflow.conv -n 3
 ```
 
 ---

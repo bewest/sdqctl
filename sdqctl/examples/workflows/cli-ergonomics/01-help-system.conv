@@ -4,7 +4,7 @@
 # Follows the 4-phase pattern: Design → Implement → Verify → Chores
 #
 # Usage:
-#   sdqctl cycle examples/workflows/cli-ergonomics/01-help-system.conv --adapter copilot
+#   sdqctl iterate examples/workflows/cli-ergonomics/01-help-system.conv --adapter copilot
 #
 # Deliverables:
 #   - sdqctl/commands/help.py - Help command implementation
@@ -190,5 +190,5 @@ FOOTER ---
 FOOTER ## Next Steps
 FOOTER Run the gap analysis workflow:
 FOOTER ```bash
-FOOTER sdqctl cycle examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
+FOOTER sdqctl iterate examples/workflows/cli-ergonomics/02-tooling-gap-analysis.conv --adapter copilot
 FOOTER ```

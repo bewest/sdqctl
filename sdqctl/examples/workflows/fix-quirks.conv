@@ -4,8 +4,8 @@
 # Designed to minimize context usage while maintaining focus.
 #
 # Usage:
-#   sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot
-#   sdqctl cycle examples/workflows/fix-quirks.conv --adapter copilot -n 2  # Fix 2 quirks
+#   sdqctl iterate examples/workflows/fix-quirks.conv --adapter copilot
+#   sdqctl iterate examples/workflows/fix-quirks.conv --adapter copilot -n 2  # Fix 2 quirks
 #
 # Terminology:
 #   - CYCLE = one complete pass through all 4 phases (fixes ONE quirk)

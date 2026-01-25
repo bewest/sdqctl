@@ -17,9 +17,9 @@ sdqctl supports **round-trip JSON workflows** for external transformation pipeli
 
 ```bash
 # Render workflow as JSON, transform it, execute
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq '.cycles[0].prompts[0].resolved += " (modified)"' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ---
@@ -159,7 +159,7 @@ Fields marked as **Stable** are guaranteed to maintain their semantics across mi
 sdqctl render run workflow.conv --json > workflow.json
 
 # Multi-cycle
-sdqctl render cycle workflow.conv -n 3 --json > workflow.json
+sdqctl render iterate workflow.conv -n 3 --json > workflow.json
 
 # Plan mode (references only, faster)
 sdqctl render run workflow.conv --plan --json
@@ -169,49 +169,49 @@ sdqctl render run workflow.conv --plan --json
 
 ```bash
 # From file
-sdqctl cycle --from-json workflow.json
+sdqctl iterate --from-json workflow.json
 
 # From stdin
-cat workflow.json | sdqctl cycle --from-json -
+cat workflow.json | sdqctl iterate --from-json -
 
 # With dry run
-sdqctl cycle --from-json workflow.json --dry-run
+sdqctl iterate --from-json workflow.json --dry-run
 ```
 
 ### Transform Pipeline
 
 ```bash
 # Add prefix to all prompts
-sdqctl render cycle audit.conv --json \
+sdqctl render iterate audit.conv --json \
   | jq '.cycles[].prompts[].resolved = "IMPORTANT: " + .resolved' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 
 # Modify specific cycle
-sdqctl render cycle workflow.conv -n 5 --json \
+sdqctl render iterate workflow.conv -n 5 --json \
   | jq '.cycles[2].prompts[0].resolved += "\n\nFocus on security issues."' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ### Environment-Specific Workflows (with jq)
 
 ```bash
 ENV="production"
-sdqctl render cycle deploy.conv --json \
+sdqctl render iterate deploy.conv --json \
   | jq --arg env "$ENV" '.cycles[0].prompts[0].resolved = "Environment: " + $env + "\n\n" + .resolved' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ### Merge Multiple Workflows
 
 ```bash
 # Render both workflows
-sdqctl render cycle audit.conv --json > /tmp/audit.json
-sdqctl render cycle fix.conv --json > /tmp/fix.json
+sdqctl render iterate audit.conv --json > /tmp/audit.json
+sdqctl render iterate fix.conv --json > /tmp/fix.json
 
 # Merge cycles from both (jq example)
 jq -s '.[0] + {cycles: (.[0].cycles + .[1].cycles)}' \
   /tmp/audit.json /tmp/fix.json \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ---
@@ -226,7 +226,7 @@ The `--from-json` flag performs these validations:
 
 ```bash
 # Validate without executing
-sdqctl cycle --from-json workflow.json --dry-run
+sdqctl iterate --from-json workflow.json --dry-run
 ```
 
 ---

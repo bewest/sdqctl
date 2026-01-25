@@ -1,7 +1,7 @@
 # refcat-improvement.conv - Iterative workflow for improving refcat and verifiers
 #
 # Usage:
-#   sdqctl cycle examples/workflows/tooling/refcat-improvement.conv -n 3 --session-mode fresh
+#   sdqctl iterate examples/workflows/tooling/refcat-improvement.conv -n 3 --session-mode fresh
 #
 # This workflow:
 # 1. Runs verify refs on a target workspace to find false positives
@@ -11,7 +11,7 @@
 # 5. Documents the improvement
 #
 # Use with --prologue to inject a specific target workspace:
-#   sdqctl cycle examples/workflows/tooling/refcat-improvement.conv \
+#   sdqctl iterate examples/workflows/tooling/refcat-improvement.conv \
 #     --prologue "Target: externals/rag-nightscout-ecosystem-alignment"
 
 MODEL gpt-4

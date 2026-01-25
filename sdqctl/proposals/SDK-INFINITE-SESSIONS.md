@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-The Copilot SDK v2 introduces **Infinite Sessions** with native background compaction. This proposal outlines how to integrate this capability into sdqctl's `cycle` command, replacing the current client-side compaction approach with SDK-managed context window management.
+The Copilot SDK v2 introduces **Infinite Sessions** with native background compaction. This proposal outlines how to integrate this capability into sdqctl's `iterate` command, replacing the current client-side compaction approach with SDK-managed context window management.
 
 ---
 
@@ -64,7 +64,7 @@ session = await client.create_session({
 
 ### Default Cycle Mode Behavior
 
-For `sdqctl cycle`, infinite sessions should be the default with intelligent threshold handling:
+For `sdqctl iterate`, infinite sessions should be the default with intelligent threshold handling:
 
 ```
 MIN_COMPACTION_DENSITY (default: 30%)
@@ -103,19 +103,19 @@ COMPACTION-MAX 95          # Block at 95%
 
 ```bash
 # Use infinite sessions (default for cycle)
-sdqctl cycle workflow.conv -n 10
+sdqctl iterate workflow.conv -n 10
 
 # Disable infinite sessions (use client-side compaction)
-sdqctl cycle workflow.conv -n 10 --no-infinite-sessions
+sdqctl iterate workflow.conv -n 10 --no-infinite-sessions
 
 # Custom thresholds
-sdqctl cycle workflow.conv -n 10 \
+sdqctl iterate workflow.conv -n 10 \
     --min-compaction-density 25 \
     --compaction-threshold 75 \
     --max-context 90
 
 # Override session mode (fresh = no compaction, new session each cycle)
-sdqctl cycle workflow.conv -n 10 --session-mode fresh
+sdqctl iterate workflow.conv -n 10 --session-mode fresh
 ```
 
 ---
@@ -204,7 +204,7 @@ elif event_type == "session.compaction_complete":
 Update cycle command to use infinite sessions by default:
 
 ```python
-# sdqctl/commands/cycle.py
+# sdqctl/commands/iterate.py
 
 @click.option(
     "--no-infinite-sessions",
@@ -294,7 +294,7 @@ COMPACTION-MIN 25
 COMPACTION-THRESHOLD 70
 
 # CLI can still override
-# sdqctl cycle workflow.conv --compaction-threshold 85
+# sdqctl iterate workflow.conv --compaction-threshold 85
 ```
 
 ---
@@ -352,7 +352,7 @@ def test_compaction_skip_below_threshold():
 
 ```bash
 # Test infinite sessions with many cycles
-sdqctl cycle tests/fixtures/long-workflow.conv -n 20 -v
+sdqctl iterate tests/fixtures/long-workflow.conv -n 20 -v
 
 # Verify compaction events in log
 grep "compaction" output.log
@@ -393,10 +393,10 @@ grep "compaction" output.log
 
 | Option | Status | Location |
 |--------|--------|----------|
-| `--no-infinite-sessions` flag | ✅ Complete | `sdqctl/commands/cycle.py` |
-| `--compaction-threshold N` | ✅ Complete | `sdqctl/commands/cycle.py` |
-| `--min-compaction-density N` | ✅ Complete | `sdqctl/commands/cycle.py` |
-| `--buffer-threshold N` | ✅ Complete | `sdqctl/commands/cycle.py` |
+| `--no-infinite-sessions` flag | ✅ Complete | `sdqctl/commands/iterate.py` |
+| `--compaction-threshold N` | ✅ Complete | `sdqctl/commands/iterate.py` |
+| `--min-compaction-density N` | ✅ Complete | `sdqctl/commands/iterate.py` |
+| `--buffer-threshold N` | ✅ Complete | `sdqctl/commands/iterate.py` |
 
 ### Phase 3: Cycle Mode Integration ✅
 

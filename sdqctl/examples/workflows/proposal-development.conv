@@ -5,7 +5,7 @@
 #
 # Usage:
 #   cd /path/to/sdqctl
-#   sdqctl cycle examples/workflows/proposal-development.conv --adapter copilot
+#   sdqctl iterate examples/workflows/proposal-development.conv --adapter copilot
 #
 # Terminology:
 #   - ITERATION/CYCLE = one complete pass through all 3 phases
@@ -131,7 +131,7 @@ Identify the next 2-3 items to work on and why.
 
 Provide exact command for next session:
 ```bash
-sdqctl cycle examples/workflows/proposal-development.conv --adapter copilot
+sdqctl iterate examples/workflows/proposal-development.conv --adapter copilot
 ```
 
 # === Output Configuration ===
@@ -151,7 +151,7 @@ FOOTER - `docs/FEATURE-INTERACTIONS.md` - Design decisions
 FOOTER
 FOOTER Continue with:
 FOOTER ```bash
-FOOTER sdqctl cycle examples/workflows/proposal-development.conv --adapter copilot
+FOOTER sdqctl iterate examples/workflows/proposal-development.conv --adapter copilot
 FOOTER ```
 
 OUTPUT-FORMAT markdown

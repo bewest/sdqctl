@@ -83,7 +83,7 @@ COMPACTION-MIN 30%
 
 ```bash
 # CLI
-sdqctl cycle workflow.conv -n 10 --infinite-sessions
+sdqctl iterate workflow.conv -n 10 --infinite-sessions
 ```
 
 ---

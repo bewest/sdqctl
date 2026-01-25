@@ -58,7 +58,7 @@ Large files are harder to maintain, test, and understand.
 |------|-------|----------------|----------|
 | `core/conversation.py` | 1,768 | Split into parser/validator/directives/templates | P3 |
 | `commands/run.py` | 1,513 | Extract StepExecutor, split into modules | P1 |
-| `commands/cycle.py` | 1,079 | Share execution engine with run.py | P2 |
+| `commands/iterate.py` | 1,079 | Share execution engine with run.py | P2 |
 | `adapters/copilot.py` | 1,000+ | Extract events/stats/session modules | P3 |
 
 ### Refactoring Strategy

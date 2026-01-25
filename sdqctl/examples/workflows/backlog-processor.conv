@@ -5,24 +5,24 @@
 #
 # Usage:
 #   # Process main proposal backlog
-#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#   sdqctl iterate examples/workflows/backlog-processor.conv \
 #     --prologue proposals/BACKLOG.md \
 #     --adapter copilot -n 5
 #
 #   # Process quirks backlog
-#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#   sdqctl iterate examples/workflows/backlog-processor.conv \
 #     --prologue docs/QUIRKS.md \
 #     --adapter copilot -n 3
 #
 #   # Process multiple backlogs in priority order
-#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#   sdqctl iterate examples/workflows/backlog-processor.conv \
 #     --prologue proposals/BACKLOG.md \
 #     --prologue proposals/REFCAT-DESIGN.md \
 #     --prologue proposals/ARTIFACT-TAXONOMY.md \
 #     --adapter copilot -n 10
 #
 #   # With philosophy context for terminology work
-#   sdqctl cycle examples/workflows/backlog-processor.conv \
+#   sdqctl iterate examples/workflows/backlog-processor.conv \
 #     --prologue docs/PHILOSOPHY.md \
 #     --prologue docs/GLOSSARY.md \
 #     --prologue proposals/BACKLOG.md \
@@ -315,7 +315,7 @@ Review the backlog(s) for the next iteration:
 ```
 
 **If this is the final cycle (-n limit reached):**
-Summarize overall progress and recommend next `sdqctl cycle` command.
+Summarize overall progress and recommend next `sdqctl iterate` command.
 
 COMPACT
 

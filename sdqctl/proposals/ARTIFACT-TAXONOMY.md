@@ -138,7 +138,7 @@ Excessive insulin delivery leading to severe hypoglycemia.
 **Priority:** P1
 **Status:** ✅ RESOLVED
 **Symptoms:** Originally reported as crash when compacting session with no context files.
-**Reproduction:** Run `sdqctl cycle` with empty CONTEXT directive.
+**Reproduction:** Run `sdqctl iterate` with empty CONTEXT directive.
 **Resolution:** Investigation on 2026-01-24 found the issue cannot be reproduced.
   - Empty context (no CONTEXT directive) with COMPACT works correctly.
   - Missing context files fail validation before COMPACT executes (expected behavior).

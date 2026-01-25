@@ -93,7 +93,7 @@ OUTPUT-FILE docs/API.md
 
 ## Phase 3: Architecture Extraction
 
-Use `cycle` for deeper analysis:
+Use `iterate` for deeper analysis:
 
 ```dockerfile
 # architecture-extraction.conv
@@ -325,7 +325,7 @@ Start broad, then zoom in:
 Use `--session-mode fresh` so each cycle reads current file state:
 
 ```bash
-sdqctl cycle doc-generator.conv -n 5 --session-mode fresh
+sdqctl iterate doc-generator.conv -n 5 --session-mode fresh
 ```
 
 ---

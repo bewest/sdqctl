@@ -1,7 +1,7 @@
 # verifier-test-loop.conv - Test-driven verifier improvement
 #
 # Usage:
-#   sdqctl cycle examples/workflows/tooling/verifier-test-loop.conv -n 5 --session-mode fresh
+#   sdqctl iterate examples/workflows/tooling/verifier-test-loop.conv -n 5 --session-mode fresh
 #
 # This workflow implements a test-driven improvement loop:
 # 1. Run tests to establish baseline
@@ -129,7 +129,7 @@ FOOTER ---
 FOOTER ## Next Iteration
 FOOTER Run again to address the next issue:
 FOOTER ```bash
-FOOTER sdqctl cycle examples/workflows/tooling/verifier-test-loop.conv -n 5
+FOOTER sdqctl iterate examples/workflows/tooling/verifier-test-loop.conv -n 5
 FOOTER ```
 
 OUTPUT-FORMAT markdown

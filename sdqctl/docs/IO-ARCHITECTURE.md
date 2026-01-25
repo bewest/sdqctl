@@ -20,7 +20,7 @@ This separation allows:
 sdqctl -P run workflow.conv > output.md 2> prompts.log
 
 # CI/CD: capture results, log prompts
-sdqctl -P cycle workflow.conv > results.json 2>> debug.log
+sdqctl -P iterate workflow.conv > results.json 2>> debug.log
 ```
 
 ## Verbosity Flags
@@ -48,7 +48,7 @@ sdqctl -P run workflow.conv
 sdqctl -P run workflow.conv 2> prompts.txt
 
 # Combine with verbosity for full debugging
-sdqctl -vv -P cycle workflow.conv
+sdqctl -vv -P iterate workflow.conv
 ```
 
 When enabled, prompts are displayed with context:

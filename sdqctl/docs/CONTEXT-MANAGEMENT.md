@@ -202,17 +202,17 @@ session = await client.create_session({
 
 ### sdqctl Integration ✅
 
-Infinite sessions CLI options are now active in `cycle` mode:
+Infinite sessions CLI options are now active in `iterate` mode:
 
 ```bash
 # Default: infinite sessions enabled
-sdqctl cycle workflow.conv -n 10
+sdqctl iterate workflow.conv -n 10
 
 # Disable infinite sessions (use client-side compaction)
-sdqctl cycle workflow.conv -n 10 --no-infinite-sessions
+sdqctl iterate workflow.conv -n 10 --no-infinite-sessions
 
 # Custom thresholds
-sdqctl cycle workflow.conv -n 10 \
+sdqctl iterate workflow.conv -n 10 \
     --min-compaction-density 25 \
     --compaction-threshold 75 \
     --buffer-threshold 90
@@ -266,7 +266,7 @@ See [SDK-INFINITE-SESSIONS proposal](../proposals/SDK-INFINITE-SESSIONS.md) for 
 ### Fresh Mode
 
 ```bash
-sdqctl cycle workflow.conv -n 5 --session-mode fresh
+sdqctl iterate workflow.conv -n 5 --session-mode fresh
 ```
 
 Each cycle starts with a clean context. Use when:
@@ -277,7 +277,7 @@ Each cycle starts with a clean context. Use when:
 ### Accumulate Mode (Default)
 
 ```bash
-sdqctl cycle workflow.conv -n 5 --session-mode accumulate
+sdqctl iterate workflow.conv -n 5 --session-mode accumulate
 ```
 
 Context grows across cycles. Use when:
@@ -292,7 +292,7 @@ Context grows across cycles. Use when:
 ### Compact Mode
 
 ```bash
-sdqctl cycle workflow.conv -n 10 --session-mode compact
+sdqctl iterate workflow.conv -n 10 --session-mode compact
 ```
 
 Automatically summarize between cycles. Use when:
@@ -421,14 +421,14 @@ Should I use CONTEXT to inject a file?
 Use verbose mode to see context percentage:
 
 ```bash
-sdqctl -v cycle workflow.conv -n 3
+sdqctl -v iterate workflow.conv -n 3
 # Shows: (ctx: 45%) after each turn
 ```
 
 ### With Prompt Display
 
 ```bash
-sdqctl -vv -P cycle workflow.conv -n 3
+sdqctl -vv -P iterate workflow.conv -n 3
 # Shows prompts and context percentage
 ```
 

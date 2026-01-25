@@ -250,7 +250,7 @@ PROMPT |
 EPILOGUE @progress.md
 ```
 
-Run with `sdqctl cycle --max-cycles 10`. The workflow adapts based on the progress file contents, not static branching.
+Run with `sdqctl iterate --max-cycles 10`. The workflow adapts based on the progress file contents, not static branching.
 
 **This may be the right answer**: complex conditional logic belongs in the prompt + state file pattern, not new directives.
 
@@ -446,7 +446,7 @@ Branching blocks **cannot** be modified via JSON round-trip in meaningful ways:
 
 See also: [PIPELINE-ARCHITECTURE.md](./PIPELINE-ARCHITECTURE.md)
 
-The pipeline pattern (`sdqctl render --json | transform | sdqctl cycle --from-json -`) provides an alternative to RUN branching for workflow composition:
+The pipeline pattern (`sdqctl render --json | transform | sdqctl iterate --from-json -`) provides an alternative to RUN branching for workflow composition:
 
 | Approach | Timing | Complexity | Use Case |
 |----------|--------|------------|----------|

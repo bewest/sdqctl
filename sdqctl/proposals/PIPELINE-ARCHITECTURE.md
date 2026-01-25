@@ -15,9 +15,9 @@ sdqctl can **export** fully-rendered workflows as JSON via `sdqctl render --json
 
 ```bash
 # Currently impossible:
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jsonnet transform.jsonnet \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 **Use cases blocked by this limitation:**
@@ -71,15 +71,15 @@ Add `--from-json` flag to execution commands:
 
 ```bash
 # Read workflow definition from stdin
-sdqctl cycle --from-json -
+sdqctl iterate --from-json -
 
 # Read from file
-sdqctl cycle --from-json rendered.json
+sdqctl iterate --from-json rendered.json
 
 # Full pipeline
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq '.cycles[0].prompts += [{"raw": "Additional prompt"}]' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ### JSON Schema for Round-Trip
@@ -164,9 +164,9 @@ workflow + {
 ```
 
 ```bash
-sdqctl render cycle deploy.conv --json \
+sdqctl render iterate deploy.conv --json \
   | jsonnet --ext-str environment=staging transform.jsonnet \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ### Use Case: Conditional Cycle Skipping
@@ -198,12 +198,12 @@ audit + {
 ```
 
 ```bash
-sdqctl render cycle audit.conv --json > /tmp/audit.json
-sdqctl render cycle fix.conv --json > /tmp/fix.json
+sdqctl render iterate audit.conv --json > /tmp/audit.json
+sdqctl render iterate fix.conv --json > /tmp/fix.json
 jsonnet --ext-code-file audit=/tmp/audit.json \
         --ext-code-file fix=/tmp/fix.json \
         merge-workflows.jsonnet \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 ---
@@ -220,10 +220,10 @@ pytest -v > /tmp/test-output.txt 2>&1
 if [ $? -eq 0 ]; then
   sdqctl run deploy.conv
 else
-  sdqctl render cycle fix-tests.conv --json \
+  sdqctl render iterate fix-tests.conv --json \
     | jq --rawfile output /tmp/test-output.txt \
          '.cycles[0].prompts[0].resolved += "\n\nTest output:\n" + $output' \
-    | sdqctl cycle --from-json -
+    | sdqctl iterate --from-json -
 fi
 ```
 
@@ -345,9 +345,9 @@ Can we modify only some fields and preserve others?
 
 ```bash
 # Only change prompts, keep context
-sdqctl render cycle workflow.conv --json \
+sdqctl render iterate workflow.conv --json \
   | jq '.cycles[0].prompts[0].resolved = "New prompt"' \
-  | sdqctl cycle --from-json -
+  | sdqctl iterate --from-json -
 ```
 
 **Recommendation**: Yes, support partial updates. Missing fields use defaults.
@@ -366,7 +366,7 @@ If `context_files[].content` is modified, should we:
 Should `--from-json` support `--dry-run`?
 
 ```bash
-sdqctl cycle --from-json workflow.json --dry-run
+sdqctl iterate --from-json workflow.json --dry-run
 # Output: Would execute 3 cycles with 2 prompts each
 ```
 

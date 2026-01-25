@@ -62,7 +62,7 @@ sdqctl run requirements-discovery.conv --adapter copilot
 
 ## Phase 2: Specification Generation
 
-Use `cycle` mode to generate detailed specifications:
+Use `iterate` mode to generate detailed specifications:
 
 ```dockerfile
 # spec-generator.conv
@@ -92,7 +92,7 @@ OUTPUT-FILE specs/specifications.md
 ```
 
 ```bash
-sdqctl cycle spec-generator.conv --adapter copilot -n 2
+sdqctl iterate spec-generator.conv --adapter copilot -n 2
 ```
 
 ---
@@ -134,7 +134,7 @@ OUTPUT-FILE tests/test_generated.py
 
 ## Phase 4: Implementation with Validation
 
-Use `cycle` with RUN commands to implement and verify:
+Use `iterate` with RUN commands to implement and verify:
 
 ```dockerfile
 # implement-with-tests.conv
@@ -584,7 +584,7 @@ Use the fix-broken-refs workflow:
 
 ```bash
 # 3-cycle workflow to fix broken refs
-sdqctl cycle examples/workflows/traceability/fix-broken-refs.conv -n 3
+sdqctl iterate examples/workflows/traceability/fix-broken-refs.conv -n 3
 
 # Or manually with suggestions
 sdqctl verify refs --suggest-fixes -v 2>&1 | grep "Suggestion"

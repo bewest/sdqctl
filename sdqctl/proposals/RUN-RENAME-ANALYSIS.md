@@ -9,7 +9,7 @@
 ---
 
 > **Note**: This analysis focused on renaming `run` alone. The decision has evolved 
-> to consolidate both `run` and `cycle` into a new `iterate` command. See 
+> to consolidate both `run` and `iterate` into a new `iterate` command. See 
 > [ITERATE-CONSOLIDATION.md](ITERATE-CONSOLIDATION.md) for the full implementation plan.
 
 ---
@@ -81,7 +81,7 @@ Survey existing users:
 
 | Tool | Single execution | Multi execution | Parallel |
 |------|------------------|-----------------|----------|
-| sdqctl | `run` | `cycle` | `flow` |
+| sdqctl | `run` | `iterate` | `flow` |
 | npm | `run` | - | - |
 | make | (default) | - | `-j` |
 | docker | `run` | - | compose |

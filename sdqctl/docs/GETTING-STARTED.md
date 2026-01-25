@@ -151,7 +151,7 @@ The `render` command shows fully-resolved prompts without calling AI:
 sdqctl render run my-audit.conv
 
 # Render for cycle command (multi-cycle)
-sdqctl render cycle my-audit.conv -n 3
+sdqctl render iterate my-audit.conv -n 3
 
 # Quick overview: show @file references without expanding
 sdqctl render run my-audit.conv --plan
@@ -173,7 +173,7 @@ This is useful for:
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
 | `run` | Execute single prompt or workflow | Testing, one-off tasks |
-| `cycle` | Multi-cycle iteration with state | Iterative refinement, long tasks |
+| `iterate` | Multi-cycle iteration with state | Iterative refinement, long tasks |
 | `apply` | Apply workflow to multiple components | Batch processing |
 | `render` | Preview prompts without AI calls | Debugging, validation |
 | `verify` | Static verification suite | Pre-flight checks |
@@ -189,10 +189,10 @@ This is useful for:
 - Priming before committing to cycles
 
 > **⚠️ Note**: `run` does not process CHECKPOINT directives. If your workflow uses 
-> CHECKPOINT for resumability, use `cycle` instead. The `run` command is lightweight 
-> and stateless; `cycle` provides full checkpoint/resume support.
+> CHECKPOINT for resumability, use `iterate` instead. The `run` command is lightweight 
+> and stateless; `iterate` provides full checkpoint/resume support.
 
-**`cycle`** — Multiple iterations, good for:
+**`iterate`** — Multiple iterations, good for:
 - Tasks that need refinement
 - Work that exceeds one context window
 - Self-improving workflows
@@ -200,9 +200,9 @@ This is useful for:
 
 **Session modes** control context across cycles:
 ```bash
-sdqctl cycle workflow.conv -n 5 --session-mode fresh      # New session each cycle
-sdqctl cycle workflow.conv -n 5 --session-mode accumulate # Context grows (default)
-sdqctl cycle workflow.conv -n 10 --session-mode compact   # Summarize between cycles
+sdqctl iterate workflow.conv -n 5 --session-mode fresh      # New session each cycle
+sdqctl iterate workflow.conv -n 5 --session-mode accumulate # Context grows (default)
+sdqctl iterate workflow.conv -n 10 --session-mode compact   # Summarize between cycles
 ```
 
 #### Session Modes Comparison
@@ -296,7 +296,7 @@ sdqctl -P run my-audit.conv
 sdqctl -P run my-audit.conv 2> prompts.log
 
 # Full debugging: prompts + streaming
-sdqctl -vv -P cycle my-audit.conv -n 3
+sdqctl -vv -P iterate my-audit.conv -n 3
 ```
 
 Output shows cycle/prompt position and context usage:
@@ -669,11 +669,11 @@ sdqctl run workflow.conv --adapter copilot
 
 # Preview prompts (use subcommand: run, cycle, or apply)
 sdqctl render run workflow.conv
-sdqctl render cycle workflow.conv -n 3
+sdqctl render iterate workflow.conv -n 3
 
 # Multi-cycle with session mode
-sdqctl cycle workflow.conv -n 3
-sdqctl cycle workflow.conv -n 5 --session-mode fresh  # New session each cycle
+sdqctl iterate workflow.conv -n 3
+sdqctl iterate workflow.conv -n 5 --session-mode fresh  # New session each cycle
 
 # Batch apply
 sdqctl apply workflow.conv --components "lib/*.py"
