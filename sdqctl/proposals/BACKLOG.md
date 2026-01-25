@@ -31,18 +31,18 @@ All 7 proposed tooling commands are **fully implemented**:
 
 #### P0: Documentation Gaps (Quick Wins)
 
-| Gap | Location | Effort | Status |
-|-----|----------|--------|--------|
-| Pipeline schema docs | `docs/PIPELINE-SCHEMA.md` | 1 hour | ✅ Complete |
-| Verifier extension guide | `docs/EXTENDING-VERIFIERS.md` | 1 hour | ✅ Complete |
+| Gap | Location | Complexity | Status |
+|-----|----------|------------|--------|
+| Pipeline schema docs | `docs/PIPELINE-SCHEMA.md` | Low | ✅ Complete |
+| Verifier extension guide | `docs/EXTENDING-VERIFIERS.md` | Low | ✅ Complete |
 
 #### P1: Verifier Expansion (High Value)
 
-| Verifier | Use Case | Effort | Status |
-|----------|----------|--------|--------|
-| `traceability` | STPA REQ→SPEC→TEST validation | 4 hours | ✅ Complete |
-| `links` | URL/file link checking | 2 hours | ✅ Complete |
-| `terminology` | Deprecated terms + capitalization | 2 hours | ✅ Complete |
+| Verifier | Use Case | Complexity | Status |
+|----------|----------|------------|--------|
+| `traceability` | STPA REQ→SPEC→TEST validation | Moderate | ✅ Complete |
+| `links` | URL/file link checking | Low | ✅ Complete |
+| `terminology` | Deprecated terms + capitalization | Low | ✅ Complete |
 
 #### P2: Directive Implementation (Deferred)
 
@@ -736,14 +736,14 @@ docs/
 
 **Remaining future work:**
 
-| Task | Priority | Effort | Notes |
-|------|----------|--------|-------|
-| ~~Add artifact summary to TRACEABILITY-WORKFLOW.md~~ | ~~P2~~ | ~~30 min~~ | ✅ Done 2026-01-24 |
-| ~~Create artifact templates (REQ, GAP, UCA, SPEC)~~ | ~~P3~~ | ~~1 hour~~ | ✅ Done 2026-01-24 - `examples/templates/artifacts/` |
-| ~~`sdqctl artifact next` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - includes `list` subcommand |
-| ~~`sdqctl artifact rename` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - `--dry-run` and `--json` flags |
-| ~~`sdqctl artifact retire` command~~ | ~~P3~~ | ~~2 hours~~ | ✅ Done 2026-01-24 - `--reason`, `--successor`, `--dry-run`, `--json` flags |
-| ~~Nightscout ecosystem conventions doc~~ | ~~P3~~ | ~~1 hour~~ | ✅ Done 2026-01-24 - `docs/NIGHTSCOUT-ECOSYSTEM.md` |
+| Task | Priority | Complexity | Notes |
+|------|----------|------------|-------|
+| ~~Add artifact summary to TRACEABILITY-WORKFLOW.md~~ | ~~P2~~ | ~~Low~~ | ✅ Done 2026-01-24 |
+| ~~Create artifact templates (REQ, GAP, UCA, SPEC)~~ | ~~P3~~ | ~~Low~~ | ✅ Done 2026-01-24 - `examples/templates/artifacts/` |
+| ~~`sdqctl artifact next` command~~ | ~~P3~~ | ~~Low~~ | ✅ Done 2026-01-24 - includes `list` subcommand |
+| ~~`sdqctl artifact rename` command~~ | ~~P3~~ | ~~Low~~ | ✅ Done 2026-01-24 - `--dry-run` and `--json` flags |
+| ~~`sdqctl artifact retire` command~~ | ~~P3~~ | ~~Low~~ | ✅ Done 2026-01-24 - `--reason`, `--successor`, `--dry-run`, `--json` flags |
+| ~~Nightscout ecosystem conventions doc~~ | ~~P3~~ | ~~Low~~ | ✅ Done 2026-01-24 - `docs/NIGHTSCOUT-ECOSYSTEM.md` |
 
 ### Session 2026-01-24 (Documentation Philosophy)
 
@@ -1128,55 +1128,49 @@ sdqctl cycle examples/workflows/backlog-processor.conv \
 2. Fresh session mode with prologue injection is sustainable for 90+ min
 3. Documentation and backlog hygiene need dedicated phases, not afterthoughts
 
+### Session 2026-01-25 (Time-Based Estimates Cleanup)
+
+- [x] **P2: Replace time-based effort estimates** - Documentation hygiene
+  - Updated 10 files to use complexity labels instead of hours/days/weeks
+  - Replaced "Week N" phase headings with "Phase N" + complexity notes
+  - Replaced "6 months" deprecation periods with "2 major versions"
+  - Updated artifact templates to use Low/Moderate/High complexity
+  - Preserved factual historical timing (session durations) as-is
+  - Preserved medical domain terminology (HAZ exposure duration)
+
 ---
 
 ### P2: Replace Time-Based Effort Estimates
 
-**Status**: Open  
+**Status**: ✅ Complete (2026-01-25)  
 **Discovered**: 2026-01-25
 
-**Issue**: Documentation uses hours/days/weeks/months to estimate effort, which is inappropriate for software. Replace with complexity and size indicators.
+**Issue**: Documentation used hours/days/weeks/months to estimate effort, which is inappropriate for software. Replaced with complexity and size indicators.
 
-**Affected Files** (14 total):
+**Files Updated** (10 files):
 
-| File | Lines | Issue |
-|------|-------|-------|
-| `proposals/STPA-INTEGRATION.md` | 261-275 | "Week 1-6" phase headings |
-| `INTEGRATION-PROPOSAL.md` | 500-562 | "Week 1-7" phase headings |
-| `INTEGRATION-SUMMARY.md` | 29, 101-117, 189 | "7-week roadmap" references |
-| `proposals/ERROR-HANDLING.md` | 175-179 | "1-4 hours" in task table |
-| `proposals/BACKLOG.md` | 36-45, 742-746 | Hour estimates in tables |
-| `proposals/RUN-RENAME-ANALYSIS.md` | 100 | "6 months" deprecation |
-| `proposals/CLI-ERGONOMICS.md` | 109-110 | "Minutes to hours" duration |
-| `examples/templates/artifacts/PROP-template.md` | 77-79 | "{hours/days}" placeholders |
-| `examples/templates/artifacts/GAP-template.md` | 45 | "{X hours/days}" placeholder |
-| `reports/cycle-improvements-focus.md` | 131 | "6 months" deprecation |
+| File | Change |
+|------|--------|
+| `proposals/STPA-INTEGRATION.md` | "Week 1-6" → "Phase 1-4" with complexity notes |
+| `INTEGRATION-PROPOSAL.md` | "Week 1-7" → "Phase 1-7" with complexity labels |
+| `INTEGRATION-SUMMARY.md` | "7-week roadmap" → "7-phase roadmap" |
+| `proposals/ERROR-HANDLING.md` | "1-4 hours" → "Low/Moderate complexity" |
+| `proposals/BACKLOG.md` | Hour estimates → complexity levels |
+| `proposals/RUN-RENAME-ANALYSIS.md` | "6 months" → "2 major versions" |
+| `proposals/CLI-ERGONOMICS.md` | "Minutes to hours" → "Typical Use" column |
+| `examples/templates/artifacts/PROP-template.md` | "{hours/days}" → "{Low/Moderate/High}" |
+| `examples/templates/artifacts/GAP-template.md` | "{X hours/days}" → "{Low/Moderate/High}" |
+| `reports/cycle-improvements-focus.md` | "6 months" → "2 major versions" |
 
-**Replacement Strategy**:
-
-| Old Pattern | New Pattern |
-|-------------|-------------|
-| "1 hour" | "Low complexity (single file)" |
-| "2-4 hours" | "Moderate complexity (few files)" |
-| "Week 1" | "Phase 1" (remove time label) |
-| "7 weeks" | "7 phases" or list deliverables |
-| "6 months" | "2 major releases" or version target |
-
-**Complexity Spectrum**:
-- **Very Low**: Single function/file, straightforward
+**Complexity Spectrum** (for reference):
 - **Low**: Few files, well-understood pattern
 - **Moderate**: Multiple files/components
 - **High**: Many files, architectural changes
-- **Very High**: Cross-cutting, unclear scope
-
-**Size Indicators**:
-- Lines: ~10-50 (small), ~50-200 (medium), ~200-500 (large), 500+ (very large)
-- Files: 1-2 (small), 3-5 (medium), 6-10 (large), 10+ (very large)
 
 **Notes**:
-- Historical reports with factual timing (session durations) are preserved
+- Historical reports with factual timing (session durations) preserved
 - Feature descriptions like "multi-day workflows" are acceptable
-- HAZ-template "exposure duration" is medical domain - keep as-is
+- HAZ-template "exposure duration" is medical domain - kept as-is
 
 ---
 

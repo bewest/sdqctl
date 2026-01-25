@@ -42,7 +42,7 @@
 2. {Step 2 to resolve}
 3. {Step 3 to resolve}
 
-**Estimated Effort:** {X hours/days}
+**Complexity:** {Low/Moderate/High}
 
 ---
 

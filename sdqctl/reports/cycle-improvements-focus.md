@@ -128,7 +128,7 @@ for pattern in conversation.context_files:
 
 **Breaking Change:** Yes - existing scripts using `--session-mode shared` will break
 
-**Migration Path:** Log deprecation warning if "shared" used, accept as alias for 6 months
+**Migration Path:** Log deprecation warning if "shared" used, accept as alias for 2 major versions
 
 **Acceptance Criteria:**
 - [x] `accumulate` is the documented mode name

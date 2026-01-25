@@ -497,7 +497,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 
 ## Part 4: Implementation Roadmap
 
-### Phase 1: Core Infrastructure (Week 1)
+### Phase 1: Core Infrastructure
+**Complexity: Low (skeleton + registration)**
 **Goal: Add new command groups to sdqctl**
 
 - [ ] Create `sdqctl/commands/workspace.py` skeleton
@@ -507,7 +508,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Add `--json` output support to all new commands
 - [ ] Write unit tests for command registration
 
-### Phase 2: Workspace Commands (Week 2)
+### Phase 2: Workspace Commands
+**Complexity: Moderate (port existing code)**
 **Goal: Replace `make bootstrap/status/freeze`**
 
 - [ ] Port `bootstrap.py` functions to importable module
@@ -518,7 +520,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Implement `sdqctl workspace clean`
 - [ ] Test against rag-nightscout-ecosystem-alignment repo
 
-### Phase 3: Verify Commands (Week 3)
+### Phase 3: Verify Commands
+**Complexity: Moderate (port existing code)**
 **Goal: Replace `make verify-*`**
 
 - [ ] Port `verify_refs.py` to importable module
@@ -532,7 +535,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Implement `sdqctl verify all`
 - [ ] Add `--fix` options where applicable
 
-### Phase 4: Trace Commands (Week 4)
+### Phase 4: Trace Commands
+**Complexity: Moderate (port existing code)**
 **Goal: Replace `make query/trace/traceability`**
 
 - [ ] Port `query_workspace.py` to importable module
@@ -542,7 +546,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Implement `sdqctl trace matrix`
 - [ ] Implement `sdqctl trace search "term"`
 
-### Phase 5: CI & Conformance (Week 5)
+### Phase 5: CI & Conformance
+**Complexity: Low (orchestration layer)**
 **Goal: Replace `make ci` and `make conformance`**
 
 - [ ] Port `run_conformance.py` to importable module
@@ -550,7 +555,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Implement `sdqctl ci` (orchestrates all checks)
 - [ ] Create GitHub Actions workflow using sdqctl
 
-### Phase 6: Fixture Integration (Week 6)
+### Phase 6: Fixture Integration
+**Complexity: High (cross-language conversion)**
 **Goal: Generate tests and workflows from fixtures**
 
 - [ ] Create fixture conversion script
@@ -559,7 +565,8 @@ OUTPUT-FILE audits/edge-case-handling.md
 - [ ] Write tests using converted fixtures
 - [ ] Document fixture-to-workflow patterns
 
-### Phase 7: Documentation & Migration (Week 7)
+### Phase 7: Documentation & Migration
+**Complexity: Low (documentation)**
 **Goal: Complete documentation and deprecation guide**
 
 - [ ] Update sdqctl README with new commands

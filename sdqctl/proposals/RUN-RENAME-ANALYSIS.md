@@ -97,7 +97,7 @@ If renaming:
 |--------|----------|------------------|
 | A) Hard rename | Remove `run` immediately | None (breaking) |
 | B) Alias | Both work forever | Permanent |
-| C) Deprecation | Warn on `run`, suggest new name | 6 months |
+| C) Deprecation | Warn on `run`, suggest new name | 2 major versions |
 | D) Config switch | User chooses preferred name | Permanent |
 
 **Recommendation**: Option C (deprecation with warning)

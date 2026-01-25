@@ -258,21 +258,25 @@ INCLUDE verification/stpa-checks.conv
 
 ## Implementation Plan
 
-### Phase 1: Template Variables (Week 1)
+### Phase 1: Template Variables
+**Complexity:** Low (few files)
 - Add STPA-related template variables
 - Document conventions for STPA workflows
 
-### Phase 2: Workflow Library (Week 2-3)
+### Phase 2: Workflow Library
+**Complexity:** Moderate (multiple files)
 - Create `workflows/stpa/` in rag-nightscout
 - Implement: control-action-audit.conv, trace-verification.conv
 - Test with Loop bolus analysis
 
-### Phase 3: VERIFY Extensions (Week 4-5)
+### Phase 3: VERIFY Extensions
+**Complexity:** Moderate (multiple files)
 - Extend VERIFY directive for trace checking
 - Implement VERIFY-COVERAGE for STPA artifacts
 - Add CI integration examples
 
-### Phase 4: Reporting (Week 6)
+### Phase 4: Reporting
+**Complexity:** Moderate (new feature)
 - Standardize JSON output format
 - Create summary report generator
 - Integration with rag-nightscout tooling

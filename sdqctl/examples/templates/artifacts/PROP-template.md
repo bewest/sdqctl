@@ -72,11 +72,11 @@
 
 ## Implementation Plan
 
-| Phase | Description | Effort | Status |
-|-------|-------------|--------|--------|
-| Phase 1 | {description} | {hours/days} | ❌ Pending |
-| Phase 2 | {description} | {hours/days} | ❌ Pending |
-| Phase 3 | {description} | {hours/days} | ❌ Pending |
+| Phase | Description | Complexity | Status |
+|-------|-------------|------------|--------|
+| Phase 1 | {description} | {Low/Moderate/High} | ❌ Pending |
+| Phase 2 | {description} | {Low/Moderate/High} | ❌ Pending |
+| Phase 3 | {description} | {Low/Moderate/High} | ❌ Pending |
 
 ---
 

@@ -26,7 +26,7 @@ Comprehensive 600+ line proposal covering:
 - Makefile target mapping (22 targets)
 - Proposed sdqctl command structure
 - Implementation architecture (3 options evaluated)
-- 7-week implementation roadmap
+- 7-phase implementation roadmap
 - Risk assessment
 
 ### 2. Python Test Fixtures
@@ -98,23 +98,23 @@ edge-cases.js             →  edge_cases.py            →  edge-case-audit.con
 
 ### Priority Order
 
-1. **Week 1-2: Core Infrastructure**
+1. **Phase 1-2: Core Infrastructure**
    - Add `sdqctl workspace` command group
    - Port `bootstrap.py` as library module
 
-2. **Week 3-4: Verification Suite**
+2. **Phase 3-4: Verification Suite**
    - Add `sdqctl verify` command group
    - Port verify_*.py tools
 
-3. **Week 5: Traceability**
+3. **Phase 5: Traceability**
    - Add `sdqctl trace` command group
    - Port gen_traceability.py
 
-4. **Week 6: CI Integration**
+4. **Phase 6: CI Integration**
    - Add `sdqctl ci` command
    - Create GitHub Actions workflow
 
-5. **Week 7: Documentation**
+5. **Phase 7: Documentation**
    - Migration guide
    - Deprecate Makefile
 
@@ -186,7 +186,7 @@ sdqctl/
 | Fixtures converted | 23 pytest fixtures |
 | Workflows generated | 3 .conv files |
 | Proposal document | 600+ lines |
-| Implementation estimate | 7 weeks |
+| Implementation | 7 phases |
 
 ---
 

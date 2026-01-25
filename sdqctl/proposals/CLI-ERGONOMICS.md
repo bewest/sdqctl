@@ -103,12 +103,12 @@ def guidance(topic: Optional[str]):
 
 These commands send prompts to AI and require API access:
 
-| Command | Description | Typical Duration |
-|---------|-------------|------------------|
-| `run` | Single prompt/workflow | Seconds to minutes |
-| `cycle` | Multi-cycle with compaction | Minutes to hours |
-| `apply` | Workflow across components | Minutes to hours |
-| `flow` | Parallel batch execution | Varies |
+| Command | Description | Typical Use |
+|---------|-------------|-------------|
+| `run` | Single prompt/workflow | Quick tasks |
+| `cycle` | Multi-cycle with compaction | Extended analysis |
+| `apply` | Workflow across components | Multi-file changes |
+| `flow` | Parallel batch execution | Batch processing |
 
 ### Tooling Commands
 

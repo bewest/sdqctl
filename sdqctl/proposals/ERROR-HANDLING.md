@@ -170,13 +170,13 @@ Enable with `--json-errors` flag for CI integration.
 
 ## Implementation Roadmap
 
-| Phase | Feature | Effort | Status |
-|-------|---------|--------|--------|
-| 0 | Consolidate docs (this file) | 1 hour | ✅ Complete |
-| 1 | Add `--strict` to verify | 1 hour | ✅ Complete (2026-01-24) |
-| 2 | Implement ON-FAILURE blocks | 4 hours | ✅ Complete (2026-01-24) |
-| 3 | Add `--json-errors` output | 2 hours | ✅ Complete (2026-01-24) |
-| 4 | ON-ABORT handling | 4 hours | Pending |
+| Phase | Feature | Complexity | Status |
+|-------|---------|------------|--------|
+| 0 | Consolidate docs (this file) | Low | ✅ Complete |
+| 1 | Add `--strict` to verify | Low | ✅ Complete (2026-01-24) |
+| 2 | Implement ON-FAILURE blocks | Moderate | ✅ Complete (2026-01-24) |
+| 3 | Add `--json-errors` output | Moderate | ✅ Complete (2026-01-24) |
+| 4 | ON-ABORT handling | Moderate | Pending |
 
 ### Phase 1 Implementation Notes
 
