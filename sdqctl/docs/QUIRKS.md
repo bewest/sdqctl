@@ -10,13 +10,14 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| Q-014 | Event handler multiplexing in accumulate mode | 🔴 P0 | ✅ ROOT CAUSE FOUND |
-| Q-015 | Duplicate tool calls at session termination | 🔴 P0 | ⏳ Blocked by Q-014 fix |
 | Q-013 | Tool name shows "unknown" in completion logs | 🟡 P1 | ⚠️ REGRESSION |
 
 ### Resolved Quirks
 
 | ID | Quirk | Status | Resolution |
+|----|-------|--------|------------|
+| Q-014 | Event handler multiplexing in accumulate mode | ✅ FIXED | Handler registered once per session (2026-01-25) |
+| Q-015 | Duplicate tool calls at session termination | ✅ FIXED | Fixed by Q-014 (event handler cleanup) |
 |----|-------|--------|------------|
 | Q-001 | Workflow filename influences agent behavior | ✅ FIXED | `WORKFLOW_NAME` excluded from prompts by default |
 | Q-002 | SDK abort events not emitted | ✅ IMPROVED | Lowered detection thresholds + stop file mechanism |
@@ -34,11 +35,11 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 **Priority:** P0 - Critical  
 **Discovered:** 2026-01-25  
-**Status:** 🔬 RESEARCH
+**Status:** ✅ FIXED (2026-01-25)
 
 ### Description
 
-When using `--session-mode=accumulate` with the `cycle` command, event handlers appear to register multiple times, causing exponential log duplication and duplicate tool execution.
+When using `--session-mode=accumulate` with the `cycle` command, event handlers were registered multiple times, causing exponential log duplication and duplicate tool execution.
 
 ### Evidence
 
@@ -80,26 +81,28 @@ By session end (cycle 5):
 copilot_session.on(on_event)  # Called every prompt, NEVER removed!
 ```
 
-Each `send()` call registers a new event handler via `.on(on_event)`, but handlers are **never removed**. 
-In accumulate mode with N prompts, there are N handlers all firing for each event.
+Each `send()` call registered a new event handler via `.on(on_event)`, but handlers were **never removed**. 
+In accumulate mode with N prompts, there were N handlers all firing for each event.
 
-**Fix options:**
-1. Register handler once at session creation, not per-send
-2. Call `copilot_session.off(on_event)` after `done.wait()` completes
+### Fix Applied (2026-01-25)
 
-### Research Questions (Answered)
+**Solution:** Register handler once per session, not per-send. Track registration state in `SessionStats.handler_registered`:
 
-1. ~~Does `CopilotAdapter._subscribe_events()` get called multiple times per session?~~ 
-   → **Yes:** `send()` calls `.on(on_event)` on every prompt
-2. ~~Are event subscriptions cleaned up between prompts in accumulate mode?~~ 
-   → **No:** No `.off()` call exists anywhere in the codebase
-3. ~~Does SDK 2 have different event subscription semantics?~~ 
-   → **Not relevant:** Bug is in our adapter code
+```python
+# Q-014 fix: Only register handler once per session
+if not stats.handler_registered:
+    copilot_session.on(on_event)
+    stats.handler_registered = True
+```
+
+The handler now uses session-level state (`stats._send_*` fields) that gets reset each send, allowing a single handler to be reused across all prompts in a session.
+
+**Files modified:** `sdqctl/adapters/copilot.py`
 
 ### Related
 
-- Q-015: Duplicate tool calls (symptom of this issue)
-- Q-013: Unknown tool names (corrupted by multiplexed events)
+- Q-015: Duplicate tool calls (fixed by this change)
+- Q-013: Unknown tool names (may be improved by this fix)
 
 ---
 
@@ -107,11 +110,11 @@ In accumulate mode with N prompts, there are N handlers all firing for each even
 
 **Priority:** P0 - Critical  
 **Discovered:** 2026-01-25  
-**Status:** 🔬 RESEARCH
+**Status:** ✅ FIXED (2026-01-25) - by Q-014 fix
 
 ### Description
 
-When agent creates STOPAUTOMATION file to halt automation, the same tool call is executed 15+ times:
+When agent creates STOPAUTOMATION file to halt automation, the same tool call was executed 15+ times:
 
 ```
 20:01:02 [INFO] 🔧 Tool: bash  # Same command
@@ -122,20 +125,20 @@ When agent creates STOPAUTOMATION file to halt automation, the same tool call is
 20:01:04 [INFO] ✓ unknown → Created STOPAUTOMATION file  # 24 more completions
 ```
 
-### Impact
+### Impact (Historical)
 
 - File created successfully (single write wins)
 - But 15+ bash processes spawned unnecessarily
 - Resource waste and potential race conditions
-- Corrupts tool tracking (explains "unknown" names)
+- Corrupted tool tracking (explains "unknown" names)
 
 ### Root Cause
 
-Likely a symptom of Q-014 (event handler multiplexing). Each handler fires the same tool call independently.
+A symptom of Q-014 (event handler multiplexing). Each handler fired the same tool call independently.
 
-### Workaround
+### Resolution
 
-Use `--session-mode=fresh` instead of `accumulate` for multi-cycle runs.
+Fixed by Q-014 - event handlers now register once per session, eliminating duplicate event firing.
 
 ---
 
@@ -143,11 +146,11 @@ Use `--session-mode=fresh` instead of `accumulate` for multi-cycle runs.
 
 **Priority:** P1 - Medium Impact  
 **Discovered:** 2026-01-25  
-**Status:** ⚠️ REGRESSION (was marked FIXED)
+**Status:** ⚠️ REGRESSION (may be resolved by Q-014 fix)
 
 ### Regression Details (2026-01-25)
 
-Despite the fix below, a 30-minute accumulate-mode session showed **3,535 "unknown" tool entries** out of 3,878 total tool calls (91%).
+Despite the fix below, a 30-minute accumulate-mode session showed **3,535 "unknown" tool entries** out of 3,878 total tool calls (91%). This was likely caused by Q-014 event multiplexing corrupting the `stats.active_tools` state.
 
 **Evidence:**
 ```

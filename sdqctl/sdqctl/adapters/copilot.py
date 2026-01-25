@@ -226,6 +226,16 @@ class SessionStats:
     # Abort tracking
     abort_reason: Optional[str] = None
     abort_details: Optional[str] = None
+    # Handler registration tracking (Q-014 fix)
+    handler_registered: bool = False
+    # Per-send state (reset each send, used by persistent handler)
+    _send_done: Optional[asyncio.Event] = None
+    _send_chunks: list = field(default_factory=list)
+    _send_full_response: str = ""
+    _send_reasoning_parts: list = field(default_factory=list)
+    _send_on_chunk: Optional[Callable] = None
+    _send_on_reasoning: Optional[Callable] = None
+    _send_turn_stats: Optional[TurnStats] = None
 
 
 class CopilotAdapter(AdapterBase):
@@ -384,14 +394,18 @@ class CopilotAdapter(AdapterBase):
         stats = self.session_stats.get(session.id, SessionStats())
         turn_stats = TurnStats()
 
-        # Set up event handling
-        done = asyncio.Event()
-        chunks: list[str] = []
-        full_response: str = ""
-        reasoning_parts: list[str] = []
+        # Reset per-send state (Q-014 fix: handler persists, state resets)
+        stats._send_done = asyncio.Event()
+        stats._send_chunks = []
+        stats._send_full_response = ""
+        stats._send_reasoning_parts = []
+        stats._send_on_chunk = on_chunk
+        stats._send_on_reasoning = on_reasoning
+        stats._send_turn_stats = turn_stats
 
         def on_event(event):
-            nonlocal full_response
+            # Access per-send state from stats object (not closure locals)
+            # This allows a single handler to be reused across sends
 
             event_type = event.type.value if hasattr(event.type, "value") else str(event.type)
             data = event.data if hasattr(event, "data") else None
@@ -461,20 +475,20 @@ class CopilotAdapter(AdapterBase):
             # Message events
             elif event_type == "assistant.message_delta":
                 delta = _get_field(data, "delta_content", default="")
-                chunks.append(delta)
-                if on_chunk and delta:
-                    on_chunk(delta)
+                stats._send_chunks.append(delta)
+                if stats._send_on_chunk and delta:
+                    stats._send_on_chunk(delta)
 
             elif event_type == "assistant.message":
-                full_response = _get_field(data, "content", default="")
+                stats._send_full_response = _get_field(data, "content", default="")
 
             # Reasoning events
             elif event_type == "assistant.reasoning":
                 reasoning = _get_field(data, "content", "reasoning", default=str(data))
                 logger.debug(f"Reasoning: {reasoning[:200]}..." if len(str(reasoning)) > 200 else f"Reasoning: {reasoning}")
-                reasoning_parts.append(reasoning)
-                if on_reasoning:
-                    on_reasoning(reasoning)
+                stats._send_reasoning_parts.append(reasoning)
+                if stats._send_on_reasoning:
+                    stats._send_on_reasoning(reasoning)
 
             elif event_type == "assistant.reasoning_delta":
                 # Skip logging deltas - we get full reasoning in assistant.reasoning
@@ -488,8 +502,9 @@ class CopilotAdapter(AdapterBase):
             elif event_type == "assistant.usage":
                 input_tokens = int(_get_field(data, "input_tokens", default=0) or 0)
                 output_tokens = int(_get_field(data, "output_tokens", default=0) or 0)
-                turn_stats.input_tokens = input_tokens
-                turn_stats.output_tokens = output_tokens
+                if stats._send_turn_stats:
+                    stats._send_turn_stats.input_tokens = input_tokens
+                    stats._send_turn_stats.output_tokens = output_tokens
                 stats.total_input_tokens += input_tokens
                 stats.total_output_tokens += output_tokens
                 logger.info(f"Tokens: {input_tokens} in / {output_tokens} out")
@@ -509,10 +524,11 @@ class CopilotAdapter(AdapterBase):
             # Tool events
             elif event_type == "tool.execution_start":
                 tool_name = _get_tool_name(data)
-                tool_call_id = _get_field(data, "tool_call_id", "id", default=str(turn_stats.tool_calls))
+                tool_call_id = _get_field(data, "tool_call_id", "id", default=str(stats._send_turn_stats.tool_calls if stats._send_turn_stats else 0))
                 tool_args = _get_field(data, "arguments", "args", default={})
                 
-                turn_stats.tool_calls += 1
+                if stats._send_turn_stats:
+                    stats._send_turn_stats.tool_calls += 1
                 stats.total_tool_calls += 1
                 
                 # Track active tool for timing
@@ -641,24 +657,29 @@ class CopilotAdapter(AdapterBase):
                 stats.abort_reason = reason
                 stats.abort_details = details
                 # Signal completion so we don't hang
-                done.set()
+                if stats._send_done:
+                    stats._send_done.set()
 
             # Completion
             elif event_type == "session.idle":
-                done.set()
+                if stats._send_done:
+                    stats._send_done.set()
 
             # Unknown events - log at TRACE for forward compatibility
             elif event_type != "unknown":
                 if logger.isEnabledFor(TRACE):
                     logger.log(TRACE, f"Event: {event_type} - {_format_data(data)}")
 
-        copilot_session.on(on_event)
+        # Q-014 fix: Only register handler once per session
+        if not stats.handler_registered:
+            copilot_session.on(on_event)
+            stats.handler_registered = True
 
         # Send the prompt
         await copilot_session.send({"prompt": prompt})
 
         # Wait for completion
-        await done.wait()
+        await stats._send_done.wait()
 
         # Check if session was aborted - raise exception for caller to handle
         if stats.abort_reason:
@@ -670,7 +691,7 @@ class CopilotAdapter(AdapterBase):
             )
 
         # Return full response or assembled chunks
-        return full_response or "".join(chunks)
+        return stats._send_full_response or "".join(stats._send_chunks)
 
     def get_session_stats(self, session: AdapterSession) -> Optional[SessionStats]:
         """Get accumulated stats for a session."""

@@ -69,9 +69,7 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
-| 🔴 P0 | [Q-014: Event handler multiplexing](../docs/QUIRKS.md#q-014-event-handler-multiplexing-in-accumulate-mode) | **Low** | ✅ ROOT CAUSE FOUND: `send()` registers handlers without cleanup |
-| 🔴 P0 | [Q-015: Duplicate tool calls](../docs/QUIRKS.md#q-015-duplicate-tool-calls-at-session-termination) | N/A | Symptom of Q-014 - will be fixed by Q-014 fix |
-| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | May be related to Q-014 event corruption |
+| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | May be resolved by Q-014 fix - needs verification |
 | P2 | Document `artifact` command | Medium | User-facing docs for traceability IDs |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | P3 | STPA template variables | Low | Future work |
@@ -83,6 +81,8 @@ All 8 proposed tooling commands are **fully implemented**:
 - ~~Create `docs/ADAPTERS.md`~~ ✅ 2026-01-25
 - ~~MODEL-REQUIREMENTS Phase 3-4~~ ✅ 2026-01-25
 - ~~Q-014/Q-015 root cause analysis~~ ✅ 2026-01-25 (Line 655 handler leak)
+- ~~Q-014: Event handler multiplexing~~ ✅ 2026-01-25 (Handler registered once per session)
+- ~~Q-015: Duplicate tool calls~~ ✅ 2026-01-25 (Fixed by Q-014)
 
 ### Research Items (2026-01-25)
 
