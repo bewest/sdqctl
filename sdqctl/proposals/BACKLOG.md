@@ -659,10 +659,10 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 |-----|----------|-------|--------|
 | HELP directive not in GETTING-STARTED examples | P3 | Show `HELP directives workflow` syntax | 🔲 Open |
 | ~~Adapter env vars not documented~~ | P2 | COPILOT_SDK_AUTH, ANTHROPIC_API_KEY, OPENAI_API_KEY | ✅ docs/ADAPTERS.md |
-| ~~Q-014/Q-015 research blockers~~ | P0 | **ROOT CAUSE FOUND**: Line 655 `copilot_session.on(on_event)` never removed | ✅ Diagnosed |
+| ~~Q-014/Q-015 research blockers~~ | P0 | **FIXED**: Handler registered once per session | ✅ 2026-01-25 |
 | `ON-FAILURE`/`ON-SUCCESS` not in GETTING-STARTED | P3 | Branching directives implemented but not in tutorials | 🔲 Open |
-| Accumulate mode stability warning | P2 | Document known issue with `--session-mode=accumulate` until Q-014 fixed | 🔲 Open |
-| Event handler lifecycle docs | P2 | Document SDK event subscription/cleanup pattern in ADAPTERS.md | 🔲 Open |
+| ~~Accumulate mode stability warning~~ | P2 | Q-014 fixed - accumulate mode now stable | ✅ 2026-01-25 |
+| ~~Event handler lifecycle docs~~ | P2 | Fix documented in QUIRKS.md Q-014 section | ✅ 2026-01-25 |
 
 ---
 
