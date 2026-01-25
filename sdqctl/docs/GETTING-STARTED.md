@@ -362,6 +362,8 @@ OUTPUT-FILE report.md          # Save output
 > PROMPT Fix any failing tests above.
 > ```
 > This sends one merged prompt instead of multiple agent turns.
+>
+> **More patterns:** See [`examples/workflows/elide-patterns.conv`](../examples/workflows/elide-patterns.conv) for 5 ELIDE optimization patterns.
 
 ### HELP Directive
 
