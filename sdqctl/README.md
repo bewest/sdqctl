@@ -757,35 +757,35 @@ ruff check sdqctl/
 
 ### Recently Completed
 
+- ✅ **ON-FAILURE/ON-SUCCESS Blocks** - Conditional execution after RUN commands
+- ✅ **All Quirks Resolved** - Q-013 tool name fix completes quirk backlog
 - ✅ **REFCAT Command** - Extract file content with line ranges (`@file.py#L10-L50`) for precise context injection
 - ✅ **VERIFY Directive** - Static verification during workflows ([docs](#verify-directive-in-workflow-verification))
 - ✅ **STPA Workflow Templates** - Safety analysis workflows (`examples/workflows/stpa/`)
-- ✅ **Hook Event Logging** - Track hook.start/hook.end events
-- ✅ **Model Change Tracking** - Log session.model_change events
-- ✅ **Session Handoff Logging** - Track session.handoff events
 - ✅ **RUN-RETRY Directive** - AI-assisted retry on command failure ([docs](#run-retry-ai-assisted-retry))
+- ✅ **INCLUDE Directive** - Compose workflows from reusable fragments
+- ✅ **REQUIRE Directive** - Pre-flight checks for files and commands
 
 ### Waiting on SDK
 
+- 🔜 **Infinite Sessions** - Native SDK compaction (requires SDK v2 protocol)
+- 🔜 **Session Persistence** - Resume/list/delete sessions (requires SDK v2 protocol)
 - 🔜 **SDK ABORT Event Handling** - Code ready to handle abort signals, but SDK does not currently emit them ([details](./COPILOT-SDK-INTEGRATION.md#gap-sdk-abort-event-not-observed))
 
 ### Planned Features
 
-#### P1: Conditional RUN Branching (Phase 2)
+#### P2: VERIFY-IMPLEMENTED Directive
 
-Phase 1 (RUN-RETRY) is complete. Phase 2 adds full ON-FAILURE/ON-SUCCESS blocks:
+Pattern search in code to verify safety constraints are implemented:
 
 ```dockerfile
-RUN npm test
-ON-FAILURE
-  PROMPT "Tests failed. Analyze errors and fix."
-ON-SUCCESS
-  PROMPT "Tests passed. Continue to documentation."
+# Check that safety constraint is implemented in code
+VERIFY-IMPLEMENTED SC-BOLUS-003a
 ```
 
-See [proposals/RUN-BRANCHING.md](./proposals/RUN-BRANCHING.md) for design details.
+See [proposals/STPA-INTEGRATION.md](./proposals/STPA-INTEGRATION.md) for design details.
 
-#### P1: Tight Validation Tool Integration
+#### P2: Tight Validation Tool Integration
 
 Integrate sdqctl with verification tools (like `verify_refs.py`) as first-class gates:
 
@@ -798,7 +798,7 @@ GATE @reports/verification.json exists
 CONTEXT-FROM-TOOL verify_refs --output-format json
 ```
 
-#### P2: Permission Handler
+#### P3: Permission Handler
 
 Implement SDK permission handler for safe unattended automation:
 
