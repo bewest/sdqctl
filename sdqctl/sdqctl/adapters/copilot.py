@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, Optional
 
-from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult
+from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult, InfiniteSessionConfig
 
 # Lazy import to avoid hard dependency
 CopilotClient = None
@@ -288,7 +288,12 @@ class CopilotAdapter(AdapterBase):
             self.session_stats.clear()
 
     async def create_session(self, config: AdapterConfig) -> AdapterSession:
-        """Create a new Copilot session."""
+        """Create a new Copilot session.
+        
+        Supports SDK v2 infinite sessions for automatic context management.
+        When infinite_sessions is configured, the SDK handles background
+        compaction automatically.
+        """
         if not self.client:
             raise RuntimeError("Adapter not started. Call start() first.")
 
@@ -299,6 +304,23 @@ class CopilotAdapter(AdapterBase):
 
         if config.tools:
             session_config["tools"] = config.tools
+
+        # Configure infinite sessions if specified
+        if config.infinite_sessions is not None:
+            infinite_cfg = config.infinite_sessions
+            if infinite_cfg.enabled:
+                session_config["infinite_sessions"] = {
+                    "enabled": True,
+                    "background_compaction_threshold": infinite_cfg.background_threshold,
+                    "buffer_exhaustion_threshold": infinite_cfg.buffer_exhaustion,
+                }
+                logger.info(
+                    f"Infinite sessions enabled: compact at {infinite_cfg.background_threshold:.0%}, "
+                    f"block at {infinite_cfg.buffer_exhaustion:.0%}"
+                )
+            else:
+                session_config["infinite_sessions"] = {"enabled": False}
+                logger.debug("Infinite sessions disabled")
 
         copilot_session = await self.client.create_session(session_config)
 
@@ -936,3 +958,106 @@ class CopilotAdapter(AdapterBase):
         except Exception as e:
             logger.warning(f"list_models failed: {e}")
             return []
+
+    # ========================================
+    # Session Persistence APIs (SDK v2)
+    # ========================================
+
+    async def list_sessions(self) -> list[dict]:
+        """List all available sessions with metadata.
+        
+        Returns:
+            List of session metadata dicts with keys:
+            - id: Session identifier
+            - start_time: ISO 8601 timestamp
+            - modified_time: ISO 8601 timestamp
+            - summary: Optional session summary
+            - is_remote: Whether session is remote
+        """
+        _ensure_copilot_sdk()
+        if not self.client:
+            await self.start()
+        
+        try:
+            sessions = await self.client.list_sessions()
+            return [
+                {
+                    "id": s.get("sessionId", ""),
+                    "start_time": s.get("startTime", ""),
+                    "modified_time": s.get("modifiedTime", ""),
+                    "summary": s.get("summary"),
+                    "is_remote": s.get("isRemote", False),
+                }
+                for s in sessions
+            ]
+        except Exception as e:
+            logger.warning(f"list_sessions failed: {e}")
+            return []
+
+    async def resume_session(
+        self, 
+        session_id: str, 
+        config: AdapterConfig
+    ) -> AdapterSession:
+        """Resume an existing session by ID.
+        
+        Restores conversation history and continues from previous state.
+        
+        Args:
+            session_id: The ID of the session to resume
+            config: Adapter configuration for the resumed session
+            
+        Returns:
+            AdapterSession for the resumed session
+            
+        Raises:
+            RuntimeError: If session doesn't exist or client not started
+        """
+        _ensure_copilot_sdk()
+        if not self.client:
+            await self.start()
+        
+        resume_config = {}
+        if config.tools:
+            resume_config["tools"] = config.tools
+        
+        copilot_session = await self.client.resume_session(
+            session_id, 
+            resume_config if resume_config else None
+        )
+        
+        # Use the original session_id (or a short version if very long)
+        internal_id = session_id[:8] if len(session_id) > 8 else session_id
+        
+        session = AdapterSession(
+            id=internal_id,
+            adapter=self,
+            config=config,
+            _internal=copilot_session,
+        )
+        
+        self.sessions[internal_id] = copilot_session
+        stats = SessionStats(model=config.model)
+        stats.event_collector = EventCollector(internal_id)
+        self.session_stats[internal_id] = stats
+        
+        logger.info(f"Resumed session: {session_id}")
+        return session
+
+    async def delete_session(self, session_id: str) -> None:
+        """Delete a session permanently.
+        
+        The session cannot be resumed after deletion.
+        
+        Args:
+            session_id: The ID of the session to delete
+            
+        Raises:
+            RuntimeError: If deletion fails
+        """
+        _ensure_copilot_sdk()
+        if not self.client:
+            await self.start()
+        
+        await self.client.delete_session(session_id)
+        logger.info(f"Deleted session: {session_id}")

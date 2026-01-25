@@ -8,10 +8,10 @@
 ## Executive Summary: Tooling Gap Analysis
 
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4  
-**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence**, Metadata APIs ✅)
+**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence** Phase 1 ✅, Metadata APIs ✅)
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
-SDK integration complete (2026-01-25). Next priorities: SDK-SESSION-PERSISTENCE (P2) and STPA directives (P2).
+SDK-SESSION-PERSISTENCE Phase 1 complete (2026-01-25). Next: Phase 2-4 CLI commands, then STPA directives (P2).
 
 ### Tooling Commands Status (Non-SDK)
 
@@ -29,7 +29,7 @@ All 7 proposed tooling commands are **fully implemented**:
 
 ### Priority Recommendations
 * [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Phase 1-4 | Native SDK compaction for cycle mode |
-* [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
+* [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | In Progress | Phase 1 ✅ | Resume/list/delete sessions |
 * Backlog Hygiene (archive completed, chunk complex)
 
 #### P0: Documentation Gaps (Quick Wins)
@@ -77,7 +77,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Implemented | ✅ Phase 1-4 | Native SDK compaction + directives |
-| [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
+| [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | In Progress | Phase 1 ✅ | Adapter methods complete; CLI pending |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Implemented | Phase 1-2 ✅ | Adapter methods + status command enhanced |
 
 ---

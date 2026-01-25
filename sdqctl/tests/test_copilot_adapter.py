@@ -1090,3 +1090,140 @@ class TestCompactWithSessionReset:
         context_prompt = sent_prompts[-1]
         assert "compacted" in context_prompt.lower() or "summary" in context_prompt.lower()
         assert "Continue" in context_prompt
+
+
+class TestSessionPersistence:
+    """Tests for session persistence APIs (SDK v2)."""
+
+    @pytest.mark.asyncio
+    async def test_list_sessions(self, mock_copilot_client):
+        """Test listing available sessions."""
+        mock_copilot_client.list_sessions = AsyncMock(return_value=[
+            {
+                "sessionId": "session-abc",
+                "startTime": "2026-01-24T10:00:00Z",
+                "modifiedTime": "2026-01-24T12:00:00Z",
+                "summary": "Test session",
+                "isRemote": False,
+            },
+            {
+                "sessionId": "session-xyz",
+                "startTime": "2026-01-23T09:00:00Z",
+                "modifiedTime": "2026-01-23T15:00:00Z",
+                "isRemote": True,
+            },
+        ])
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        sessions = await adapter.list_sessions()
+        
+        assert len(sessions) == 2
+        assert sessions[0]["id"] == "session-abc"
+        assert sessions[0]["start_time"] == "2026-01-24T10:00:00Z"
+        assert sessions[0]["modified_time"] == "2026-01-24T12:00:00Z"
+        assert sessions[0]["summary"] == "Test session"
+        assert sessions[0]["is_remote"] is False
+        
+        assert sessions[1]["id"] == "session-xyz"
+        assert sessions[1]["summary"] is None
+        assert sessions[1]["is_remote"] is True
+
+    @pytest.mark.asyncio
+    async def test_list_sessions_empty(self, mock_copilot_client):
+        """Test listing sessions when none exist."""
+        mock_copilot_client.list_sessions = AsyncMock(return_value=[])
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        sessions = await adapter.list_sessions()
+        
+        assert sessions == []
+
+    @pytest.mark.asyncio
+    async def test_list_sessions_error_returns_empty(self, mock_copilot_client):
+        """Test list_sessions returns empty list on error."""
+        mock_copilot_client.list_sessions = AsyncMock(side_effect=Exception("Connection failed"))
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        sessions = await adapter.list_sessions()
+        
+        assert sessions == []
+
+    @pytest.mark.asyncio
+    async def test_resume_session(self, mock_copilot_client, mock_copilot_session):
+        """Test resuming an existing session."""
+        mock_copilot_client.resume_session = AsyncMock(return_value=mock_copilot_session)
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        config = AdapterConfig(model="gpt-4")
+        session = await adapter.resume_session("session-abc", config)
+        
+        assert session is not None
+        assert session.id == "session-"  # Truncated to 8 chars
+        mock_copilot_client.resume_session.assert_called_once_with("session-abc", None)
+
+    @pytest.mark.asyncio
+    async def test_resume_session_with_tools(self, mock_copilot_client, mock_copilot_session):
+        """Test resuming session with tools configuration."""
+        mock_copilot_client.resume_session = AsyncMock(return_value=mock_copilot_session)
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        mock_tool = MagicMock()
+        config = AdapterConfig(model="gpt-4", tools=[mock_tool])
+        session = await adapter.resume_session("test-session", config)
+        
+        # Should pass tools to resume_session
+        call_args = mock_copilot_client.resume_session.call_args
+        assert call_args[0][0] == "test-session"
+        assert call_args[0][1] is not None
+        assert "tools" in call_args[0][1]
+
+    @pytest.mark.asyncio
+    async def test_resume_session_creates_stats(self, mock_copilot_client, mock_copilot_session):
+        """Test that resuming a session creates session stats."""
+        mock_copilot_client.resume_session = AsyncMock(return_value=mock_copilot_session)
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        config = AdapterConfig(model="gpt-4")
+        session = await adapter.resume_session("session-abc", config)
+        
+        # Check that stats were created
+        stats = adapter.get_session_stats(session)
+        assert stats is not None
+        assert stats.model == "gpt-4"
+
+    @pytest.mark.asyncio
+    async def test_delete_session(self, mock_copilot_client):
+        """Test deleting a session."""
+        mock_copilot_client.delete_session = AsyncMock()
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        await adapter.delete_session("session-abc")
+        
+        mock_copilot_client.delete_session.assert_called_once_with("session-abc")
+
+    @pytest.mark.asyncio
+    async def test_delete_session_propagates_error(self, mock_copilot_client):
+        """Test that delete_session propagates errors."""
+        mock_copilot_client.delete_session = AsyncMock(
+            side_effect=RuntimeError("Session not found")
+        )
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        with pytest.raises(RuntimeError, match="Session not found"):
+            await adapter.delete_session("nonexistent")

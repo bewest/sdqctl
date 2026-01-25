@@ -1,7 +1,8 @@
 # SDK Session Persistence Integration
 
-> **Status**: Draft  
+> **Status**: In Progress (Phase 1 Complete)  
 > **Date**: 2026-01-24  
+> **Updated**: 2026-01-25  
 > **Priority**: P2 (Medium Impact)  
 > **Scope**: Resume, list, and delete sessions  
 > **SDK Available**: ✅ Yes - `../../copilot-sdk/python` (Protocol Version 2)
@@ -120,9 +121,17 @@ sdqctl status --sessions
 
 ## Implementation
 
-### Phase 1: Adapter Methods
+### Phase 1: Adapter Methods ✅
 
-Add session management methods to `CopilotAdapter`:
+**Status**: Complete (2026-01-25)
+
+Added session management methods to `CopilotAdapter` in `sdqctl/adapters/copilot.py`:
+
+- `list_sessions()` - Returns list of session metadata dicts
+- `resume_session(session_id, config)` - Resumes an existing session
+- `delete_session(session_id)` - Deletes a session permanently
+
+**Tests**: 8 new tests in `tests/test_copilot_adapter.py::TestSessionPersistence`
 
 ```python
 # sdqctl/adapters/copilot.py
