@@ -10,7 +10,8 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| - | (none) | - | All quirks resolved |
+| Q-016 | 5 undefined name bugs (F821) in run.py, copilot.py | P0 | 🔴 Active |
+| Q-017 | 1994 linting issues (mostly whitespace) | P3 | 🟡 Backlog |
 
 ### Resolved Quirks
 
@@ -28,6 +29,92 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-010 | COMPACT directive ignored by cycle command | ✅ FIXED | Refactored to iterate `conv.steps` |
 | Q-011 | Compaction threshold options not fully wired | ✅ FIXED | `--min-compaction-density` now wired to `needs_compaction()` |
 | Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold |
+
+---
+
+## Q-016: Undefined Name Bugs (F821)
+
+**Priority:** P0 - Critical  
+**Discovered:** 2026-01-25  
+**Status:** 🔴 Active
+
+### Description
+
+Ruff linting discovered 5 undefined name errors (F821) that will cause `NameError` exceptions at runtime:
+
+| Location | Variable | Root Cause |
+|----------|----------|------------|
+| `run.py:568` | `quiet` | Variable not passed to function scope |
+| `run.py:1172` | `restrictions` | Not defined in RUN-RETRY block |
+| `run.py:1173` | `show_streaming` | Not defined in RUN-RETRY block |
+| `run.py:1376` | `pending_context` | Not defined in VERIFY step handler |
+| `copilot.py:1001` | `ModelRequirements` | Forward ref string but missing import |
+
+### Evidence
+
+```bash
+$ ruff check sdqctl/ --select F821
+F821 Undefined name `quiet` --> sdqctl/commands/run.py:568:29
+F821 Undefined name `restrictions` --> sdqctl/commands/run.py:1172:58
+F821 Undefined name `show_streaming` --> sdqctl/commands/run.py:1173:52
+F821 Undefined name `pending_context` --> sdqctl/commands/run.py:1376:25
+F821 Undefined name `ModelRequirements` --> sdqctl/adapters/copilot.py:1001:24
+Found 5 errors.
+```
+
+### Impact
+
+- RUN-RETRY with AI fix will crash with NameError
+- VERIFY step execution will crash with NameError
+- `--quiet` flag may not work in certain code paths
+- CopilotAdapter model resolution has type hint issue
+
+### Fix Required
+
+Each bug needs local investigation to determine correct variable source:
+- `quiet`: Should come from CLI context or function parameter
+- `restrictions`: Should be passed from outer scope in retry block
+- `show_streaming`: Should be passed from outer scope in retry block
+- `pending_context`: Should be defined at step iteration start
+- `ModelRequirements`: Add to TYPE_CHECKING imports in copilot.py
+
+---
+
+## Q-017: Linting Issues Backlog
+
+**Priority:** P3 - Low (Cosmetic)  
+**Discovered:** 2026-01-25  
+**Status:** 🟡 Backlog
+
+### Description
+
+Comprehensive ruff linting revealed 1,994 issues across the codebase. Most are auto-fixable cosmetic issues.
+
+### Breakdown
+
+| Category | Count | Auto-fixable | Notes |
+|----------|-------|--------------|-------|
+| W293 (whitespace in blank lines) | 1,617 | ✅ Yes | `ruff check --fix` |
+| E501 (line too long >100) | 193 | ⚠️ Manual | Requires refactoring |
+| W291 (trailing whitespace) | 63 | ✅ Yes | `ruff check --fix` |
+| F541 (f-string no placeholders) | 41 | ✅ Yes | `ruff check --fix` |
+| F401 (unused imports) | 35 | ✅ Yes | `ruff check --fix` |
+| I001 (unsorted imports) | 34 | ✅ Yes | `ruff check --fix` |
+| F841 (unused variables) | 5 | ⚠️ Review | May be intentional |
+| F811 (redefinition) | 1 | ⚠️ Review | `time` import |
+
+### Quick Fix
+
+```bash
+cd sdqctl
+ruff check sdqctl/ --fix  # Fixes 1,450 issues
+```
+
+### Recommendation
+
+- Run auto-fix for immediate cleanup
+- Address E501 (long lines) during normal development
+- Review F841 (unused vars) for dead code
 
 ---
 
