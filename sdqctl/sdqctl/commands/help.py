@@ -423,8 +423,9 @@ PROMPT Now that the design decisions are resolved,
 ```
 
 The CONSULT directive pauses like PAUSE, but when the human resumes
-with `copilot --resume SESSION`, the agent proactively presents
-open questions and guides the human through answering them.
+with `sdqctl sessions resume SESSION` (or `copilot --resume SESSION`),
+the agent proactively presents open questions and guides the human
+through answering them.
 """,
 
     "validation": """

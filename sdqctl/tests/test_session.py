@@ -341,6 +341,22 @@ PROMPT Inline prompt.
         restored = Session.load_from_pause(pause_file)
         assert restored.conversation.model == "gpt-4"
 
+    def test_load_from_pause_preserves_consulting_status(self, tmp_path, sample_conv_content):
+        """Test that 'consulting' status is preserved through checkpoint."""
+        conv = ConversationFile.parse(sample_conv_content)
+        session = Session(conv, session_dir=tmp_path)
+        session.state.status = "consulting"  # Set consulting status (as CONSULT does)
+        
+        pause_file = session.save_pause_checkpoint("CONSULT: Design Decisions")
+        
+        # Verify checkpoint contains status
+        data = json.loads(pause_file.read_text())
+        assert data["status"] == "consulting"
+        
+        # Load should preserve consulting status
+        restored = Session.load_from_pause(pause_file)
+        assert restored.state.status == "consulting"
+
 
 class TestReloadContext:
     """Tests for CONTEXT file reloading (fresh mode support)."""

@@ -202,6 +202,7 @@ class Session:
         data = {
             "type": "pause",
             "message": message,
+            "status": self.state.status,  # Include session status (e.g., "consulting")
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "session_id": self.id,
             "conversation_file": str(self.conversation.source_path) if self.conversation.source_path else None,
@@ -248,7 +249,10 @@ class Session:
         session.id = data["session_id"]
         session.state.cycle_number = data["cycle_number"]
         session.state.prompt_index = data["prompt_index"]
-        session.state.status = "resumed"
+        
+        # Restore status: keep "consulting" for CONSULT, otherwise set "resumed"
+        saved_status = data.get("status", "pending")
+        session.state.status = saved_status if saved_status == "consulting" else "resumed"
 
         # Restore messages
         for m in data["messages"]:

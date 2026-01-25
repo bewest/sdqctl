@@ -15,6 +15,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -25,6 +26,21 @@ from ..adapters import get_adapter
 from .utils import run_async
 
 console = Console()
+
+# Consultation prompt injected when resuming a CONSULT session
+CONSULTATION_PROMPT = """You are resuming a paused consultation session.
+
+Topic: {topic}
+
+Your task:
+1. Review the work done so far in context
+2. Identify all open questions that need human input
+3. Present each question clearly with choices where applicable
+4. Use the ask_user tool to collect answers interactively
+5. After all questions are answered, summarize the decisions
+6. Signal readiness to continue with: "All questions resolved. Ready to continue."
+
+Be concise. Present one question at a time. Offer reasonable defaults."""
 
 
 def parse_duration(duration_str: str) -> datetime:
@@ -354,14 +370,39 @@ async def _resume_session_async(
                 streaming=streaming,
             )
             
+            # Check for local checkpoint with CONSULT status
+            consult_topic = None
+            session_dir = Path.home() / ".sdqctl" / "sessions" / session_id
+            checkpoint_file = session_dir / "pause.json"
+            if checkpoint_file.exists():
+                try:
+                    checkpoint_data = json.loads(checkpoint_file.read_text())
+                    if checkpoint_data.get("status") == "consulting":
+                        # Extract topic from message (format: "CONSULT: {topic}")
+                        message = checkpoint_data.get("message", "")
+                        if message.startswith("CONSULT: "):
+                            consult_topic = message[9:]  # Strip "CONSULT: " prefix
+                        else:
+                            consult_topic = "Open Questions"
+                except (json.JSONDecodeError, KeyError):
+                    pass
+            
             # Resume the session
             console.print(f"[dim]Resuming session: {session_id}[/dim]")
             session = await ai_adapter.resume_session(session_id, config)
             console.print(f"[green]✓[/green] Session resumed")
             
+            # If this was a CONSULT session, inject consultation prompt
+            if consult_topic and not prompt:
+                console.print(f"\n[yellow]📋 Consultation: {consult_topic}[/yellow]")
+                console.print("[dim]Agent will present open questions...[/dim]\n")
+                prompt = CONSULTATION_PROMPT.format(topic=consult_topic)
+            
             # Send prompt if provided
             if prompt:
-                console.print(Panel(prompt, title="Prompt", border_style="blue"))
+                # Don't show full consultation prompt (it's verbose)
+                display_prompt = prompt if not consult_topic else f"[Consultation: {consult_topic}]"
+                console.print(Panel(display_prompt, title="Prompt", border_style="blue"))
                 
                 response = await ai_adapter.send(session, prompt)
                 

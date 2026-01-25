@@ -1,7 +1,7 @@
 # Proposal: CONSULT Directive - Human Consultation Workflow
 
 **Date:** 2026-01-25  
-**Status:** Partial (Phase 1 Complete)  
+**Status:** Partial (Phase 1-3 Complete)  
 **Author:** bewest + sdqctl planning session  
 **Related:** PAUSE directive, SDK-SESSION-PERSISTENCE, session resume
 
@@ -305,17 +305,19 @@ CONSULT "..."
 - [x] On consult: checkpoint + pause + print instructions
 - [x] Document the directive
 
-### Phase 2: Consultation Prompt Injection
+### Phase 2: Consultation Prompt Injection ✅ (2026-01-25)
 
-- [ ] Detect "consulting" status on session resume
-- [ ] Inject consultation system prompt
-- [ ] Test with copilot --resume
+- [x] Detect "consulting" status on session resume
+- [x] Inject consultation system prompt
+- [x] Test with `sdqctl sessions resume`
 
 ### Phase 3: sdqctl resume Enhancement
 
-- [ ] `sdqctl resume SESSION` command
-- [ ] Wraps copilot --resume with prompt injection
-- [ ] Shows consultation topic in output
+- [x] `sdqctl sessions resume SESSION` command (already exists)
+- [x] Wraps SDK resume with prompt injection (done in Phase 2)
+- [x] Shows consultation topic in output
+
+> **Note:** Phase 3 merged into Phase 2 - `sdqctl sessions resume` already handles both.
 
 ### Phase 4: Refinements
 
@@ -328,7 +330,7 @@ CONSULT "..."
 ## Open Questions
 
 1. **Session status storage**: Where to store "consulting" status? Checkpoint metadata?
-   - **Tentative**: Add `status` field to checkpoint JSON
+   - ✅ **Resolved**: Added `status` field to checkpoint JSON (Phase 2)
 
 2. **Timeout handling**: What if human never resumes?
    - **Tentative**: No timeout by default; sessions persist until deleted
