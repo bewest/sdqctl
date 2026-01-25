@@ -740,7 +740,7 @@ class ConversationFile:
         Returns:
             List of (topic, error_message) for unknown topics.
         """
-        from ..commands.help import TOPICS
+        from .help_topics import TOPICS
 
         errors = []
         for topic in self.help_topics:

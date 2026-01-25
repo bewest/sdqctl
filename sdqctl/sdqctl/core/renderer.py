@@ -181,7 +181,7 @@ def render_cycle(
     # Resolve help topics to prologues
     resolved_prologues = list(conv.prologues)  # Copy prologues
     if conv.help_topics:
-        from ..commands.help import TOPICS
+        from .help_topics import TOPICS
         for topic in conv.help_topics:
             if topic in TOPICS:
                 resolved_prologues.append(TOPICS[topic])
