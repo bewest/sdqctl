@@ -314,6 +314,7 @@ OUTPUT-FILE report.md          # Save output
 | `ELIDE` | Merge adjacent elements into single prompt |
 | `VERIFY` | Run static verification (refs, etc.) |
 | `MODEL-REQUIRES` | Abstract model selection (e.g., `context:50k`) |
+| `HELP` | Inject built-in help topics into prompts |
 
 > **Efficiency Tip:** Use `ELIDE` to combine test output with fix instructions:
 > ```dockerfile
@@ -322,6 +323,40 @@ OUTPUT-FILE report.md          # Save output
 > PROMPT Fix any failing tests above.
 > ```
 > This sends one merged prompt instead of multiple agent turns.
+
+### HELP Directive
+
+Inject built-in help content directly into workflow prompts. Useful for giving AI agents reference material:
+
+```dockerfile
+# Single topic - inject directive reference
+HELP directives
+
+# Multiple topics on one line
+HELP directives workflow
+
+# Multiple HELP directives
+HELP adapters
+HELP variables
+```
+
+**Available topics:** `adapters`, `ai`, `context`, `directives`, `examples`, `validation`, `variables`, `workflow`
+
+**How it works:** HELP topics are injected as prologues, prepended to the first prompt of each cycle. This gives the AI agent access to sdqctl reference documentation without you copying it manually.
+
+**Example:** Create a workflow where the AI helps write workflows:
+
+```dockerfile
+# workflow-assistant.conv
+MODEL gpt-4
+ADAPTER copilot
+
+HELP directives workflow
+PROMPT I need a workflow to audit authentication code.
+  Suggest a ConversationFile structure with appropriate directives.
+```
+
+> **Tip:** Use `sdqctl help --list` to see all available topics, or `sdqctl help <topic>` to preview content.
 
 ### Template Variables
 
