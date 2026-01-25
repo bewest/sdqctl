@@ -823,6 +823,7 @@ When you discover a new quirk:
 
 ## See Also
 
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
 - [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) - SDK gaps and integration details
 - [SYNTHESIS-CYCLES.md](SYNTHESIS-CYCLES.md) - Anti-patterns for workflows
 - [LOOP-STRESS-TEST.md](LOOP-STRESS-TEST.md) - Loop detection testing methodology
