@@ -1,9 +1,11 @@
 # SDK Infinite Sessions Integration
 
-> **Status**: Draft  
+> **Status**: Partial ✅ (Phase 1-3 Complete)  
 > **Date**: 2026-01-24  
+> **Updated**: 2026-01-25  
 > **Priority**: P1 (High Impact)  
-> **Scope**: Native SDK compaction for cycle mode
+> **Scope**: Native SDK compaction for cycle mode  
+> **SDK Available**: ✅ Yes - `../../copilot-sdk/python` (Protocol Version 2)
 
 ---
 
@@ -374,3 +376,46 @@ grep "compaction" output.log
 - [SDK Types - InfiniteSessionConfig](../../copilot-sdk/python/copilot/types.py)
 - [Current Compaction Implementation](../sdqctl/adapters/copilot.py#L766)
 - [Context Management Guide](../docs/CONTEXT-MANAGEMENT.md)
+
+---
+
+## Implementation Status (2026-01-25)
+
+### Phase 1: Adapter Configuration ✅
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| `InfiniteSessionConfig` dataclass | ✅ Complete | `sdqctl/adapters/base.py` |
+| SDK integration in `create_session()` | ✅ Complete | `sdqctl/adapters/copilot.py` |
+| `AdapterConfig.infinite_sessions` field | ✅ Complete | `sdqctl/adapters/base.py` |
+
+### Phase 2: CLI Options ✅
+
+| Option | Status | Location |
+|--------|--------|----------|
+| `--no-infinite-sessions` flag | ✅ Complete | `sdqctl/commands/cycle.py` |
+| `--compaction-threshold N` | ✅ Complete | `sdqctl/commands/cycle.py` |
+| `--min-compaction-density N` | ✅ Complete | `sdqctl/commands/cycle.py` |
+| `--buffer-threshold N` | ✅ Complete | `sdqctl/commands/cycle.py` |
+
+### Phase 3: Cycle Mode Integration ✅
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| CLI→AdapterConfig wiring | ✅ Complete | All 3 session creation points updated |
+| `_cycle_async` integration | ✅ Complete | Uses `build_infinite_session_config()` |
+| `_cycle_from_json_async` integration | ✅ Complete | Params added to function signature |
+| `build_infinite_session_config()` helper | ✅ Complete | Converts CLI options to config |
+
+### Phase 4: Smart COMPACT Directive ❌ Not Started
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `INFINITE-SESSIONS` directive | ❌ Pending | Not yet implemented in conversation.py |
+| `COMPACTION-MIN` directive | ❌ Pending | Not yet implemented |
+| `COMPACTION-THRESHOLD` directive | ❌ Pending | Not yet implemented |
+| Compaction event handling | ⚠️ Partial | Events exist in SDK, not yet logged |
+
+### Tests
+
+All 25 cycle command tests pass. Existing tests validate session creation and compaction behavior.

@@ -29,7 +29,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..adapters import get_adapter
-from ..adapters.base import AdapterConfig
+from ..adapters.base import AdapterConfig, InfiniteSessionConfig
 from ..core.conversation import ConversationFile
 from ..core.exceptions import ExitCode, LoopDetected, LoopReason, MissingContextFiles
 from ..core.logging import get_logger, WorkflowContext, set_workflow_context
@@ -51,6 +51,21 @@ SESSION_MODES = {
 }
 
 
+def build_infinite_session_config(
+    no_infinite_sessions: bool,
+    compaction_threshold: int,
+    buffer_threshold: int = 95,
+    min_compaction_density: int = 30,
+) -> InfiniteSessionConfig:
+    """Build InfiniteSessionConfig from CLI options."""
+    return InfiniteSessionConfig(
+        enabled=not no_infinite_sessions,
+        min_compaction_density=min_compaction_density / 100.0,
+        background_threshold=compaction_threshold / 100.0,
+        buffer_exhaustion=buffer_threshold / 100.0,
+    )
+
+
 @click.command("cycle")
 @click.argument("workflow", type=click.Path(exists=True), required=False)
 @click.option("--from-json", "from_json", type=click.Path(), 
@@ -70,8 +85,14 @@ SESSION_MODES = {
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
-@click.option("--min-compaction-density", type=int, default=0,
-              help="Skip compaction if context usage below this % (e.g., 30 = skip if < 30% full)")
+@click.option("--min-compaction-density", type=int, default=30,
+              help="Skip compaction if context usage below this % (default: 30)")
+@click.option("--no-infinite-sessions", is_flag=True,
+              help="Disable SDK infinite sessions (use client-side compaction)")
+@click.option("--compaction-threshold", type=int, default=80,
+              help="Start background compaction at this % (default: 80)")
+@click.option("--buffer-threshold", type=int, default=95,
+              help="Block until compaction at this % (default: 95)")
 @click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
 @click.pass_context
@@ -94,6 +115,9 @@ def cycle(
     dry_run: bool,
     render_only: bool,
     min_compaction_density: int,
+    no_infinite_sessions: bool,
+    compaction_threshold: int,
+    buffer_threshold: int,
     no_stop_file_prologue: bool,
     stop_file_nonce: Optional[str],
 ) -> None:
@@ -217,6 +241,9 @@ def cycle(
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag,
         min_compaction_density=min_compaction_density,
+        no_infinite_sessions=no_infinite_sessions,
+        compaction_threshold=compaction_threshold,
+        buffer_threshold=buffer_threshold,
         json_errors=json_errors
     ))
 
@@ -240,6 +267,10 @@ async def _cycle_from_json_async(
     stop_file_nonce: Optional[str] = None,
     verbosity: int = 0,
     show_prompt: bool = False,
+    min_compaction_density: int = 30,
+    no_infinite_sessions: bool = False,
+    compaction_threshold: int = 80,
+    buffer_threshold: int = 95,
     json_errors: bool = False,
 ) -> None:
     """Execute workflow from pre-rendered JSON.
@@ -297,11 +328,15 @@ async def _cycle_from_json_async(
         console.print(f"[red]Adapter error: {e}[/red]")
         return
     
-    # Create adapter config
+    # Create adapter config with infinite sessions
+    infinite_config = build_infinite_session_config(
+        no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density
+    )
     adapter_config = AdapterConfig(
         model=conv.model,
         event_log_path=event_log_path,
         debug_intents=conv.debug_intents,
+        infinite_sessions=infinite_config,
     )
     
     # Initialize session
@@ -415,7 +450,10 @@ async def _cycle_async(
     stop_file_nonce: Optional[str] = None,
     verbosity: int = 0,
     show_prompt: bool = False,
-    min_compaction_density: int = 0,
+    min_compaction_density: int = 30,
+    no_infinite_sessions: bool = False,
+    compaction_threshold: int = 80,
+    buffer_threshold: int = 95,
     json_errors: bool = False,
 ) -> None:
     """Execute multi-cycle workflow with session management.
@@ -564,6 +602,11 @@ async def _cycle_async(
         if effective_event_log:
             effective_event_log = substitute_template_variables(effective_event_log, template_vars)
 
+        # Build infinite sessions config from CLI options
+        infinite_config = build_infinite_session_config(
+            no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density
+        )
+        
         adapter_session = await ai_adapter.create_session(
             AdapterConfig(
                 model=conv.model,
@@ -571,6 +614,7 @@ async def _cycle_async(
                 debug_categories=conv.debug_categories,
                 debug_intents=conv.debug_intents,
                 event_log=effective_event_log,
+                infinite_sessions=infinite_config,
             )
         )
         
@@ -637,6 +681,7 @@ async def _cycle_async(
                                 debug_categories=conv.debug_categories,
                                 debug_intents=conv.debug_intents,
                                 event_log=effective_event_log,
+                                infinite_sessions=infinite_config,
                             )
                         )
                         # Reload CONTEXT files from disk (pick up any changes)

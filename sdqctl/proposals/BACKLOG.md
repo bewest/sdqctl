@@ -8,7 +8,7 @@
 ## Executive Summary: Tooling Gap Analysis
 
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4  
-**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (Infinite Sessions, Session Persistence, Metadata APIs)
+**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions**, **Session Persistence**, Metadata APIs)
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 Error handling phases 0-3 complete (2026-01-24). Next priorities: SDK integration (P1) and STPA directives (P2).
@@ -28,6 +28,9 @@ All 7 proposed tooling commands are **fully implemented**:
 | `help` | Documentation access | 11 commands, 6 topics | ✅ Complete |
 
 ### Priority Recommendations
+* [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Partial | ✅ Phase 1-3 | Native SDK compaction for cycle mode |
+* [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
+* Backlog Hygiene (archive completed, chunk complex)
 
 #### P0: Documentation Gaps (Quick Wins)
 
@@ -73,13 +76,16 @@ All 7 proposed tooling commands are **fully implemented**:
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
-| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Draft | ❌ Not started | Native SDK compaction for cycle mode |
+| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Partial | ✅ Phase 1-3 | Native SDK compaction for cycle mode |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Implemented | Phase 1-2 ✅ | Adapter methods + status command enhanced |
 
 ---
 
 ## SDK v2 Integration (2026-01-24)
+
+> **SDK Location**: Available locally at `../../copilot-sdk/python`  
+> **Ready for Integration**: Yes - SDK v2 with Protocol Version 2 is installed and ready
 
 The Copilot SDK has been updated to Protocol Version 2 with new capabilities. Three new proposals track their integration:
 
