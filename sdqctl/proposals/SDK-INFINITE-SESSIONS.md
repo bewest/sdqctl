@@ -1,6 +1,6 @@
 # SDK Infinite Sessions Integration
 
-> **Status**: Partial ✅ (Phase 1-3 Complete)  
+> **Status**: ✅ Complete (Phase 1-4)  
 > **Date**: 2026-01-24  
 > **Updated**: 2026-01-25  
 > **Priority**: P1 (High Impact)  
@@ -407,15 +407,24 @@ grep "compaction" output.log
 | `_cycle_from_json_async` integration | ✅ Complete | Params added to function signature |
 | `build_infinite_session_config()` helper | ✅ Complete | Converts CLI options to config |
 
-### Phase 4: Smart COMPACT Directive ❌ Not Started
+### Phase 4: Smart COMPACT Directive ✅ Complete
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| `INFINITE-SESSIONS` directive | ❌ Pending | Not yet implemented in conversation.py |
-| `COMPACTION-MIN` directive | ❌ Pending | Not yet implemented |
-| `COMPACTION-THRESHOLD` directive | ❌ Pending | Not yet implemented |
-| Compaction event handling | ⚠️ Partial | Events exist in SDK, not yet logged |
+| `INFINITE-SESSIONS` directive | ✅ Complete | `conversation.py`, enabled/disabled values |
+| `COMPACTION-MIN` directive | ✅ Complete | `conversation.py`, 0-100 or 0%-100% |
+| `COMPACTION-THRESHOLD` directive | ✅ Complete | `conversation.py`, 0-100 or 0%-100% |
+| CLI + conv file priority | ✅ Complete | CLI options override conv file directives |
+| Unit tests | ✅ Complete | 4 tests in `test_conversation.py` |
+
+**Implementation (2026-01-25):**
+- `DirectiveType.INFINITE_SESSIONS`, `COMPACTION_MIN`, `COMPACTION_THRESHOLD` added
+- `ConversationFile.infinite_sessions`, `compaction_min`, `compaction_threshold` fields
+- `apply_directive()` parses enabled/disabled and percentage values
+- `to_string()` serializes directives for round-trip
+- `build_infinite_session_config()` merges CLI options with conv file values
+- Priority: CLI flags > ConversationFile directives > adapter defaults
 
 ### Tests
 
-All 25 cycle command tests pass. Existing tests validate session creation and compaction behavior.
+All 130 conversation tests pass including 4 new tests for infinite session directives.

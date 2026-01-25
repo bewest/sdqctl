@@ -8,10 +8,10 @@
 ## Executive Summary: Tooling Gap Analysis
 
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4  
-**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions**, **Session Persistence**, Metadata APIs)
+**SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence**, Metadata APIs ✅)
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
-Error handling phases 0-3 complete (2026-01-24). Next priorities: SDK integration (P1) and STPA directives (P2).
+SDK integration complete (2026-01-25). Next priorities: SDK-SESSION-PERSISTENCE (P2) and STPA directives (P2).
 
 ### Tooling Commands Status (Non-SDK)
 
@@ -28,7 +28,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | `help` | Documentation access | 11 commands, 6 topics | ✅ Complete |
 
 ### Priority Recommendations
-* [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Partial | ✅ Phase 1-3 | Native SDK compaction for cycle mode |
+* [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Phase 1-4 | Native SDK compaction for cycle mode |
 * [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
 * Backlog Hygiene (archive completed, chunk complex)
 
@@ -76,7 +76,7 @@ All 7 proposed tooling commands are **fully implemented**:
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Draft | ❌ Open Questions | Abstract model selection by capability |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
-| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Partial | ✅ Phase 1-3 | Native SDK compaction for cycle mode |
+| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Implemented | ✅ Phase 1-4 | Native SDK compaction + directives |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | Draft | ❌ Not started | Resume/list/delete sessions |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Implemented | Phase 1-2 ✅ | Adapter methods + status command enhanced |
 
@@ -93,7 +93,7 @@ The Copilot SDK has been updated to Protocol Version 2 with new capabilities. Th
 
 | Proposal | Feature | Effort | Rationale |
 |----------|---------|--------|-----------|
-| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Native compaction | Medium | Replace client-side compaction, simpler code |
+| [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | Native compaction | Medium | ✅ Complete - INFINITE-SESSIONS directives |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | Status/auth/models | Low | ✅ Complete - `sdqctl status` enhanced |
 
 ### Priority: P2 (Medium Impact)
@@ -185,7 +185,7 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 
 ## Directive Candidates Analysis
 
-### Currently Implemented (66 directives)
+### Currently Implemented (69 directives)
 
 **Metadata**: `MODEL`, `ADAPTER`, `MODE`, `MAX-CYCLES`, `CWD`  
 **Context**: `CONTEXT`, `CONTEXT-OPTIONAL`, `CONTEXT-EXCLUDE`, `CONTEXT-LIMIT`, `ON-CONTEXT-LIMIT`, `VALIDATION-MODE`, `REFCAT`  
@@ -193,6 +193,7 @@ See [COPILOT-SDK-INTEGRATION.md](../COPILOT-SDK-INTEGRATION.md) for detailed API
 **Injection**: `PROLOGUE`, `EPILOGUE`, `HEADER`, `FOOTER`, `HELP`  
 **Prompts**: `PROMPT`, `ON-CONTEXT-LIMIT-PROMPT`  
 **Compaction**: `COMPACT`, `COMPACT-PRESERVE`, `COMPACT-SUMMARY`, `COMPACT-PROLOGUE`, `COMPACT-EPILOGUE`, `NEW-CONVERSATION`, `ELIDE`  
+**Infinite Sessions**: `INFINITE-SESSIONS`, `COMPACTION-MIN`, `COMPACTION-THRESHOLD`  
 **Checkpoints**: `CHECKPOINT`, `CHECKPOINT-AFTER`, `CHECKPOINT-NAME`, `PAUSE`  
 **Output**: `OUTPUT`, `OUTPUT-FORMAT`, `OUTPUT-FILE`, `OUTPUT-DIR`  
 **RUN**: `RUN`, `RUN-ON-ERROR`, `RUN-OUTPUT`, `RUN-OUTPUT-LIMIT`, `RUN-ENV`, `RUN-CWD`, `RUN-TIMEOUT`, `ALLOW-SHELL`, `RUN-ASYNC`, `RUN-WAIT`, `RUN-RETRY`  
@@ -1098,6 +1099,19 @@ sdqctl verify trace "SC-001 -> REQ-001" --json
   - Fixes 7 false positives in docs/ (VALIDATION-WORKFLOW, EXTENDING-VERIFIERS, TRACEABILITY-WORKFLOW)
   - Added 2 tests: `test_skip_links_in_code_blocks`, `test_skip_links_in_inline_code`
   - Commit: `7ee0461`
+
+### Session 2026-01-25 (SDK-INFINITE-SESSIONS Phase 4)
+
+Implemented Phase 4 of SDK-INFINITE-SESSIONS proposal:
+
+- [x] **INFINITE-SESSIONS directive** - enabled/disabled in .conv files
+- [x] **COMPACTION-MIN directive** - Minimum density % to trigger compaction
+- [x] **COMPACTION-THRESHOLD directive** - SDK background compaction threshold %
+- [x] **Priority logic** - CLI flags override conv directives, which override defaults
+- [x] **Tests** - 4 new tests in test_conversation.py (130 total pass)
+- [x] **Documentation** - CONTEXT-MANAGEMENT.md, BACKLOG.md updated
+
+Files changed: `conversation.py`, `cycle.py`, `test_conversation.py`, `SDK-INFINITE-SESSIONS.md`, `BACKLOG.md`, `CONTEXT-MANAGEMENT.md`
 
 ### Session 2026-01-25 (Multi-Prologue Lessons)
 

@@ -236,8 +236,20 @@ Even with infinite sessions enabled, you may still want explicit `COMPACT` direc
 
 ### Implementation Status
 
-CLI options are wired to `AdapterConfig.infinite_sessions` (Phase 1-3 complete).
-Directive-based configuration (`INFINITE-SESSIONS`, `COMPACTION-THRESHOLD`) is pending.
+All phases complete (Phase 1-4). Configuration available via CLI options and directives:
+
+```dockerfile
+# Enable/disable SDK infinite sessions
+INFINITE-SESSIONS enabled    # or: disabled
+
+# Minimum context density to trigger compaction (default: 30%)
+COMPACTION-MIN 30           # or: 30%
+
+# SDK background compaction threshold (default: 80%)
+COMPACTION-THRESHOLD 80     # or: 80%
+```
+
+**Priority**: CLI flags override directive values, which override defaults.
 
 See [SDK-INFINITE-SESSIONS proposal](../proposals/SDK-INFINITE-SESSIONS.md) for implementation details.
 

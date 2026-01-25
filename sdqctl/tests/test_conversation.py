@@ -159,6 +159,67 @@ PROMPT Analyze the code.
         assert conv.compact_prologue == "This conversation has been compacted. Previous context:"
         assert conv.compact_epilogue == "Continue from the summary above."
 
+    def test_parse_infinite_sessions_directives(self):
+        """Test parsing INFINITE-SESSIONS, COMPACTION-MIN, COMPACTION-THRESHOLD directives."""
+        content = """MODEL gpt-4
+ADAPTER mock
+INFINITE-SESSIONS enabled
+COMPACTION-MIN 25
+COMPACTION-THRESHOLD 75
+
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert conv.infinite_sessions is True
+        assert conv.compaction_min == 0.25
+        assert conv.compaction_threshold == 0.75
+    
+    def test_parse_infinite_sessions_disabled(self):
+        """Test parsing INFINITE-SESSIONS disabled."""
+        content = """MODEL gpt-4
+ADAPTER mock
+INFINITE-SESSIONS disabled
+
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.infinite_sessions is False
+    
+    def test_parse_infinite_sessions_with_percent(self):
+        """Test parsing compaction values with % suffix."""
+        content = """MODEL gpt-4
+ADAPTER mock
+COMPACTION-MIN 30%
+COMPACTION-THRESHOLD 80%
+
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert conv.compaction_min == 0.30
+        assert conv.compaction_threshold == 0.80
+    
+    def test_infinite_sessions_round_trip(self):
+        """Test that infinite session directives serialize correctly."""
+        conv = ConversationFile()
+        conv.infinite_sessions = True
+        conv.compaction_min = 0.25
+        conv.compaction_threshold = 0.75
+        conv.prompts = ["Test"]
+        conv.steps = [ConversationStep(type="prompt", content="Test")]
+        
+        serialized = conv.to_string()
+        assert "INFINITE-SESSIONS enabled" in serialized
+        assert "COMPACTION-MIN 25" in serialized
+        assert "COMPACTION-THRESHOLD 75" in serialized
+        
+        # Parse it back
+        reparsed = ConversationFile.parse(serialized)
+        assert reparsed.infinite_sessions is True
+        assert reparsed.compaction_min == 0.25
+        assert reparsed.compaction_threshold == 0.75
+
     def test_parse_elide_directive(self):
         """Test parsing ELIDE directive creates elide step."""
         content = """MODEL gpt-4

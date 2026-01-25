@@ -62,6 +62,11 @@ class DirectiveType(Enum):
     COMPACT_EPILOGUE = "COMPACT-EPILOGUE"  # Content injected after compacted summary
     NEW_CONVERSATION = "NEW-CONVERSATION"
     
+    # Infinite sessions (SDK native compaction)
+    INFINITE_SESSIONS = "INFINITE-SESSIONS"  # enabled|disabled
+    COMPACTION_MIN = "COMPACTION-MIN"  # Minimum density % to trigger compaction (0-100)
+    COMPACTION_THRESHOLD = "COMPACTION-THRESHOLD"  # SDK background compaction threshold % (0-100)
+    
     # Elision (merge adjacent elements into single prompt)
     ELIDE = "ELIDE"  # Merge element above with element below
 
@@ -291,6 +296,11 @@ class ConversationFile:
     compact_summary: Optional[str] = None
     compact_prologue: Optional[str] = None  # Content before compacted summary
     compact_epilogue: Optional[str] = None  # Content after compacted summary
+    
+    # Infinite sessions (SDK native compaction)
+    infinite_sessions: Optional[bool] = None  # None=use adapter default, True=enabled, False=disabled
+    compaction_min: Optional[float] = None  # Minimum density to trigger (0.0-1.0), None=use default
+    compaction_threshold: Optional[float] = None  # SDK background threshold (0.0-1.0), None=use default
 
     # Checkpointing
     checkpoint_after: Optional[str] = None  # each-cycle, each-prompt, never
@@ -956,6 +966,14 @@ class ConversationFile:
             lines.append(f"COMPACT-PRESERVE {', '.join(self.compact_preserve)}")
         if self.compact_summary:
             lines.append(f"COMPACT-SUMMARY {self.compact_summary}")
+        
+        # Infinite sessions
+        if self.infinite_sessions is not None:
+            lines.append(f"INFINITE-SESSIONS {'enabled' if self.infinite_sessions else 'disabled'}")
+        if self.compaction_min is not None:
+            lines.append(f"COMPACTION-MIN {int(self.compaction_min * 100)}")
+        if self.compaction_threshold is not None:
+            lines.append(f"COMPACTION-THRESHOLD {int(self.compaction_threshold * 100)}")
 
         # Checkpointing
         if self.checkpoint_after:
@@ -1130,6 +1148,24 @@ def _apply_directive(conv: ConversationFile, directive: Directive) -> None:
             conv.compact_prologue = directive.value
         case DirectiveType.COMPACT_EPILOGUE:
             conv.compact_epilogue = directive.value
+        
+        # Infinite sessions (SDK native compaction)
+        case DirectiveType.INFINITE_SESSIONS:
+            value_lower = directive.value.lower()
+            if value_lower in ("enabled", "true", "yes", "on", "1"):
+                conv.infinite_sessions = True
+            elif value_lower in ("disabled", "false", "no", "off", "0"):
+                conv.infinite_sessions = False
+            else:
+                raise ValueError(f"Invalid INFINITE-SESSIONS value: {directive.value} (expected enabled/disabled)")
+        case DirectiveType.COMPACTION_MIN:
+            # Parse "30" or "30%" -> 0.30
+            value = directive.value.rstrip("%")
+            conv.compaction_min = float(value) / 100
+        case DirectiveType.COMPACTION_THRESHOLD:
+            # Parse "80" or "80%" -> 0.80
+            value = directive.value.rstrip("%")
+            conv.compaction_threshold = float(value) / 100
         
         # Elision - merge adjacent elements
         case DirectiveType.ELIDE:

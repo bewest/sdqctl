@@ -56,13 +56,46 @@ def build_infinite_session_config(
     compaction_threshold: int,
     buffer_threshold: int = 95,
     min_compaction_density: int = 30,
+    conv_infinite_sessions: Optional[bool] = None,
+    conv_compaction_min: Optional[float] = None,
+    conv_compaction_threshold: Optional[float] = None,
 ) -> InfiniteSessionConfig:
-    """Build InfiniteSessionConfig from CLI options."""
+    """Build InfiniteSessionConfig from CLI options and ConversationFile directives.
+    
+    Priority: CLI options > ConversationFile directives > defaults
+    """
+    # Enabled: CLI flag takes precedence, then conv directive, then default (True)
+    if no_infinite_sessions:
+        enabled = False
+    elif conv_infinite_sessions is not None:
+        enabled = conv_infinite_sessions
+    else:
+        enabled = True
+    
+    # Min compaction density: CLI > conv > default (30%)
+    if min_compaction_density != 30:  # CLI override
+        min_density = min_compaction_density / 100.0
+    elif conv_compaction_min is not None:
+        min_density = conv_compaction_min
+    else:
+        min_density = 0.30
+    
+    # Background threshold: CLI > conv > default (80%)
+    if compaction_threshold != 80:  # CLI override
+        bg_threshold = compaction_threshold / 100.0
+    elif conv_compaction_threshold is not None:
+        bg_threshold = conv_compaction_threshold
+    else:
+        bg_threshold = 0.80
+    
+    # Buffer exhaustion: CLI > default (95%)
+    buf_threshold = buffer_threshold / 100.0
+    
     return InfiniteSessionConfig(
-        enabled=not no_infinite_sessions,
-        min_compaction_density=min_compaction_density / 100.0,
-        background_threshold=compaction_threshold / 100.0,
-        buffer_exhaustion=buffer_threshold / 100.0,
+        enabled=enabled,
+        min_compaction_density=min_density,
+        background_threshold=bg_threshold,
+        buffer_exhaustion=buf_threshold,
     )
 
 
@@ -328,9 +361,12 @@ async def _cycle_from_json_async(
         console.print(f"[red]Adapter error: {e}[/red]")
         return
     
-    # Create adapter config with infinite sessions
+    # Create adapter config with infinite sessions (merge CLI + conv file settings)
     infinite_config = build_infinite_session_config(
-        no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density
+        no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density,
+        conv_infinite_sessions=conv.infinite_sessions,
+        conv_compaction_min=conv.compaction_min,
+        conv_compaction_threshold=conv.compaction_threshold,
     )
     adapter_config = AdapterConfig(
         model=conv.model,
@@ -602,9 +638,12 @@ async def _cycle_async(
         if effective_event_log:
             effective_event_log = substitute_template_variables(effective_event_log, template_vars)
 
-        # Build infinite sessions config from CLI options
+        # Build infinite sessions config from CLI options + conv file directives
         infinite_config = build_infinite_session_config(
-            no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density
+            no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density,
+            conv_infinite_sessions=conv.infinite_sessions,
+            conv_compaction_min=conv.compaction_min,
+            conv_compaction_threshold=conv.compaction_threshold,
         )
         
         adapter_session = await ai_adapter.create_session(
