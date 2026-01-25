@@ -779,7 +779,7 @@ The security model for shell execution and file handling is now documented.
 
 | Issue | Severity | Location | Recommendation |
 |-------|----------|----------|----------------|
-| Commands→core→commands circular import | High | `core/renderer.py` → `commands/help.py` | Move TOPICS to core/constants |
+| ~~Commands→core→commands circular import~~ | ~~High~~ | ~~`core/renderer.py` → `commands/help.py`~~ | ✅ FIXED: `core/help_topics.py` (2026-01-25) |
 | Duplicated command setup | High | `run.py`, `cycle.py`, `apply.py` | Extract WorkflowCommand base |
 | ConversationFile does too much | Medium | `conversation.py` | Split into Parser/Model/Validator |
 | Adapter ownership unclear | Medium | Session receives but doesn't own adapter | Make Session own lifecycle |
