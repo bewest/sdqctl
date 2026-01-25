@@ -788,7 +788,7 @@ The security model for shell execution and file handling is now documented.
 
 ### Action Items
 
-- [ ] **P0**: Fix 5 F821 undefined name bugs (runtime errors)
+- [x] **P0**: Fix 5 F821 undefined name bugs (runtime errors) → ✅ 2026-01-25
 - [ ] **P1**: Run `ruff check --fix` to clean 1,450 auto-fixable issues
 - [ ] **P1**: Split `run()` function into smaller units
 - [ ] **P2**: Fix circular import in renderer→help

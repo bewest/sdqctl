@@ -11,7 +11,10 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sdqctl.core.models import ModelRequirements
 
 from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult, InfiniteSessionConfig
 

@@ -564,8 +564,8 @@ async def _run_async(
         is_lenient = conv.validation_mode == "lenient"
         errors, warnings = conv.validate_context_files(allow_missing=is_lenient)
         
-        # Show warnings
-        if warnings and not quiet:
+        # Show warnings (quiet = verbosity == 0)
+        if warnings and verbosity > 0:
             console.print(f"[yellow]Warning: Optional/excluded context files not found:[/yellow]")
             for pattern, resolved in warnings:
                 console.print(f"[yellow]  - {pattern}[/yellow]")
@@ -1169,8 +1169,8 @@ Please analyze the error and make necessary fixes. After fixing, the command wil
                                         retry_response = run_async(ai_adapter.run(
                                             adapter_session,
                                             full_retry_prompt,
-                                            restrictions=restrictions,
-                                            stream=show_streaming,
+                                            restrictions=conv.file_restrictions,
+                                            stream=True,
                                         ))
                                         if retry_response:
                                             logger.info(f"  📥 AI fix response received ({len(retry_response)} chars)")
@@ -1373,7 +1373,7 @@ Please analyze the error and make necessary fixes. After fixing, the command wil
                     )
                     if should_inject and conv.verify_output != "never":
                         session.add_message("system", verify_output)
-                        pending_context.append(verify_output)
+                        # Note: verify_output already added to session context above
                     
                     # Handle failure based on verify_on_error setting
                     if not all_passed:

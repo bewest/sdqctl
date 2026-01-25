@@ -10,7 +10,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| Q-016 | 5 undefined name bugs (F821) in run.py, copilot.py | P0 | 🔴 Active |
+| Q-016 | 5 undefined name bugs (F821) in run.py, copilot.py | P0 | ✅ FIXED |
 | Q-017 | 1994 linting issues (mostly whitespace) | P3 | 🟡 Backlog |
 
 ### Resolved Quirks
@@ -36,7 +36,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 **Priority:** P0 - Critical  
 **Discovered:** 2026-01-25  
-**Status:** 🔴 Active
+**Status:** ✅ FIXED (2026-01-25)
 
 ### Description
 
@@ -77,6 +77,26 @@ Each bug needs local investigation to determine correct variable source:
 - `show_streaming`: Should be passed from outer scope in retry block
 - `pending_context`: Should be defined at step iteration start
 - `ModelRequirements`: Add to TYPE_CHECKING imports in copilot.py
+
+### Resolution (2026-01-25)
+
+All 5 bugs fixed with minimal changes:
+
+| Bug | Fix Applied |
+|-----|-------------|
+| `quiet` | Changed to `verbosity > 0` (warning only at non-quiet) |
+| `restrictions` | Changed to `conv.file_restrictions` |
+| `show_streaming` | Changed to `True` (matches adapter config) |
+| `pending_context` | Removed dead code line (verify_output already in session) |
+| `ModelRequirements` | Added `TYPE_CHECKING` import block |
+
+**Files modified:** `sdqctl/commands/run.py`, `sdqctl/adapters/copilot.py`
+
+**Verification:**
+```bash
+$ ruff check sdqctl/ --select F821
+All checks passed!
+```
 
 ---
 
