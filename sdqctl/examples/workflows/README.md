@@ -41,6 +41,7 @@ sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
 - `typescript-migration.conv` - Multi-cycle TypeScript conversion
 - `documentation-sync.conv` - Documentation consistency check
 - `human-review.conv` - Human-in-the-loop review with PAUSE directive
+- `consult-design.conv` - Design decision consultation with CONSULT directive
 - `implement-improvements.conv` - Quine-like self-improving workflow
 - `test-discovery.conv` - Analyze code for test requirements
 
@@ -62,6 +63,7 @@ sdqctl run examples/workflows/human-review.conv --adapter mock --verbose
 | **Iterative refinement** | `sdqctl cycle workflow.conv -n 3` | Multi-step improvements |
 | **Quine loop** | `sdqctl cycle implement-improvements.conv` | Self-improving workflows |
 | **Batch processing** | `sdqctl apply workflow.conv --components "*.py"` | Per-component work |
+| **Human consultation** | `sdqctl run consult-design.conv` | Design decisions needing human input |
 | **Fix broken refs** | `sdqctl cycle traceability/fix-broken-refs.conv -n 3` | Update stale code references |
 | **Improve verifiers** | `sdqctl cycle tooling/verifier-test-loop.conv -n 5` | TDD for tool development |
 

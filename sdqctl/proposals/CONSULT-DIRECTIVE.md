@@ -3,7 +3,8 @@
 **Date:** 2026-01-25  
 **Status:** Partial (Phase 1-3 Complete)  
 **Author:** bewest + sdqctl planning session  
-**Related:** PAUSE directive, SDK-SESSION-PERSISTENCE, session resume
+**Related:** PAUSE directive, SDK-SESSION-PERSISTENCE, session resume  
+**Example:** [`examples/workflows/consult-design.conv`](../examples/workflows/consult-design.conv)
 
 ---
 

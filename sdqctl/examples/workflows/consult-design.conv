@@ -1,0 +1,69 @@
+# Consultation Workflow: Design Decisions
+# Demonstrates CONSULT directive for proactive human consultation
+#
+# Pattern: Agent analyzes, identifies questions, pauses for human input,
+# then continues with answers incorporated.
+#
+# Run: sdqctl run examples/workflows/consult-design.conv --adapter copilot
+# Resume: sdqctl sessions resume <session-name>
+#
+# See: proposals/CONSULT-DIRECTIVE.md for full specification
+
+MODEL gpt-4
+ADAPTER copilot
+SESSION-NAME design-consultation
+MODE analyze
+
+MAX-CYCLES 1
+CONTEXT-LIMIT 70%
+ON-CONTEXT-LIMIT compact
+
+# Phase 1: Analysis - identify open questions
+PROLOGUE You are a technical analyst helping refine a design proposal.
+PROLOGUE Your job is to identify gaps, ambiguities, and decisions that need human input.
+PROLOGUE When you find open questions, categorize them as BLOCKING (must answer) or NICE-TO-HAVE.
+
+PROMPT |
+  Analyze the current project structure and any proposal documents.
+  
+  Look for:
+  1. **Design decisions** - choices that affect architecture
+  2. **Ambiguities** - unclear requirements or specifications
+  3. **Trade-offs** - options with different pros/cons
+  4. **Dependencies** - external factors that need clarification
+  
+  For each item found, document:
+  - Question: What needs to be decided?
+  - Options: What are the choices? (if applicable)
+  - Impact: Why does this matter?
+  - Category: BLOCKING or NICE-TO-HAVE
+  
+  Output a structured list of open questions.
+
+# Pause for human consultation
+# When resumed, agent will present questions interactively
+CONSULT "Design Decisions"
+
+# Phase 2: Apply decisions
+PROMPT |
+  The design decisions have been made. Now:
+  
+  1. Summarize the decisions that were made
+  2. Update any relevant documentation to reflect these decisions
+  3. Create implementation tasks based on the resolved design
+  4. Note any follow-up items for future consideration
+  
+  Be specific about what changed and why.
+
+# Phase 3: Create action items
+PROMPT |
+  Create a prioritized list of next steps:
+  
+  - Immediate actions (this sprint)
+  - Near-term actions (next sprint)  
+  - Future considerations (backlog)
+  
+  Each item should be actionable with clear acceptance criteria.
+
+OUTPUT-FORMAT markdown
+OUTPUT-FILE consultation-results.md

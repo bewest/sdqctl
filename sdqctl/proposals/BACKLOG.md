@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (Documentation deep dive: 6 new gaps added)  
+> **Last Updated**: 2026-01-25 (CONSULT workflow example added, backlog hygiene)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -14,7 +14,7 @@
 **Q-014/Q-015 Fix**: 2026-01-25 | Event handler leak fixed, accumulate mode stable
 **Q-016/Q-017 Fix**: 2026-01-25 | 5 F821 bugs fixed, 1,797 linting issues auto-fixed
 **Security Docs**: 2026-01-25 | `docs/SECURITY-MODEL.md` created with cross-refs
-**Deep Dive Review**: 2026-01-25 | FEATURE-INTERACTIONS.md → Complete, 6 new backlog items added
+**Deep Dive Review**: 2026-01-25 | All QUIRKS.md items resolved; no new doc gaps identified
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
@@ -118,7 +118,7 @@ Handler uses session-level `_send_*` state that resets each `send()` call.
 | **P2** | claude/openai adapter stubs | Implementation |
 | **P3** | E501 line too long (192 issues) | Code quality |
 | **P3** | F841 unused variables (5 issues) | Code quality |
-| **P3** | CONSULT workflow example | Documentation |
+| ~~**P3**~~ | ~~CONSULT workflow example~~ | ~~Documentation~~ | ✅ 2026-01-25 |
 | **P3** | CI/CD integration examples | Documentation |
 | **P3** | ELIDE chains example | Documentation |
 | **P3** | Default verbosity key actions | Feature |
@@ -674,7 +674,7 @@ The security model for shell execution and file handling is now documented.
 
 | Gap | Suggested Location | Notes |
 |-----|-------------------|-------|
-| CONSULT workflow example | `examples/workflows/` | Show human-in-loop consultation pattern |
+| ~~CONSULT workflow example~~ | ~~`examples/workflows/`~~ | ✅ `consult-design.conv` created 2026-01-25 |
 | refcat usage patterns | `examples/workflows/` | Cross-repo context injection example |
 | ELIDE chains example | `examples/workflows/` | Multi-ELIDE optimized workflows |
 | CI/CD integration | `examples/ci/` | GitHub Actions / GitLab CI examples using verify + render |
@@ -739,7 +739,7 @@ The security model for shell execution and file handling is now documented.
 | F841 unused variables (5 issues) | P3 | Needs code review | 🔲 Open |
 | Split `run()` function | P1 | ~1000 lines, extract step handlers | 🔲 Open |
 | Circular import renderer→help | P2 | Move TOPICS to core/constants | ✅ 2026-01-25 |
-| CONSULT workflow example | P3 | Show human-in-loop consultation pattern | 🔲 Open |
+| CONSULT workflow example | P3 | Show human-in-loop consultation pattern | ✅ 2026-01-25 |
 | CI/CD integration examples | P3 | GitHub Actions / GitLab CI using verify + render | 🔲 Open |
 | FEATURE-INTERACTIONS.md status | P3 | Says "Draft" but content is complete; update to "Complete" | ✅ 2026-01-25 |
 | claude/openai adapter stubs | P2 | ADAPTERS.md documents as "Planned" - either implement or clarify scope | 🔲 Open |
@@ -799,6 +799,124 @@ The security model for shell execution and file handling is now documented.
 | ConversationFile does too much | Medium | `conversation.py` | Split into Parser/Model/Validator |
 | Adapter ownership unclear | Medium | Session receives but doesn't own adapter | Make Session own lifecycle |
 
+### Architecture Improvement Roadmap (Added 2026-01-25)
+
+> **Source**: Comprehensive code review session 2026-01-25
+> **Objective**: Improve maintainability without disrupting features
+
+#### P2: Execution Engine Extraction
+
+**Problem**: `run.py` and `cycle.py` duplicate step execution logic (~500 lines overlap)
+
+**Proposed Solution**: Create `core/executor.py`
+
+```python
+class StepExecutor:
+    """Unified execution engine for workflow steps."""
+    
+    async def execute_prompt(self, step, session, adapter) -> StepResult
+    async def execute_run(self, step, session, config) -> StepResult
+    async def execute_verify(self, step, session) -> StepResult
+    async def execute_compact(self, step, session, adapter) -> StepResult
+```
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Design StepExecutor interface | Low | 🔲 Open |
+| Extract common execution logic from run.py | Medium | 🔲 Open |
+| Refactor cycle.py to use StepExecutor | Medium | 🔲 Open |
+| Add StepExecutor tests | Medium | 🔲 Open |
+
+#### P2: Shared ExecutionContext
+
+**Problem**: Adapter initialization repeated in run.py, cycle.py, apply.py
+
+**Proposed Solution**: Create shared `ExecutionContext` dataclass
+
+```python
+@dataclass
+class ExecutionContext:
+    """Shared context for workflow execution."""
+    adapter: AdapterBase
+    session: Session
+    conv: ConversationFile
+    verbosity: int
+    console: Console
+```
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Define ExecutionContext in core/session.py | Low | 🔲 Open |
+| Refactor run.py to use ExecutionContext | Low | 🔲 Open |
+| Refactor cycle.py to use ExecutionContext | Low | 🔲 Open |
+| Refactor apply.py to use ExecutionContext | Low | 🔲 Open |
+
+#### P3: ConversationFile Split
+
+**Problem**: `conversation.py` is 1,768 lines with mixed responsibilities
+
+**Proposed Split**:
+
+```
+core/
+  conversation/
+    __init__.py      # Re-exports ConversationFile
+    parser.py        # DirectiveParser (line-by-line parsing)
+    validator.py     # ConversationValidator (semantic checks)
+    directives.py    # DirectiveType enum + DirectiveSpec dataclasses
+    templates.py     # Template variable substitution
+```
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Extract DirectiveType to directives.py | Low | 🔲 Open |
+| Extract template substitution to templates.py | Low | 🔲 Open |
+| Extract validation methods to validator.py | Medium | 🔲 Open |
+| Extract parsing logic to parser.py | High | 🔲 Open |
+| Update imports across codebase | Medium | 🔲 Open |
+
+#### P3: Copilot Adapter Modularization
+
+**Problem**: `copilot.py` is 1,000+ lines with inline event handling
+
+**Proposed Split**:
+
+```
+adapters/
+  copilot/
+    __init__.py      # CopilotAdapter (main class)
+    events.py        # CopilotEventHandler
+    stats.py         # SessionStats tracking
+    session.py       # Session management
+```
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Extract SessionStats to stats.py | Low | 🔲 Open |
+| Extract event handlers to events.py | Medium | 🔲 Open |
+| Create CopilotEventHandler class | Medium | 🔲 Open |
+| Update adapter registration | Low | 🔲 Open |
+
+#### P3: Integration Test Expansion
+
+**Problem**: Only 1 integration test file (loop stress), limited coverage
+
+| Test Area | Current | Target | Status |
+|-----------|---------|--------|--------|
+| Loop stress testing | ✅ 1 file | Keep | ✅ Done |
+| Adapter integration | ❌ None | 1 file per adapter | 🔲 Open |
+| End-to-end workflows | ❌ None | 3-5 scenarios | 🔲 Open |
+| CLI integration | ❌ None | Core commands | 🔲 Open |
+
+#### Metrics for Architecture Work
+
+| Metric | Current | Target | Notes |
+|--------|---------|--------|-------|
+| Max file size | 1,768 lines | <500 lines | conversation.py |
+| Lint issues | 197 | 0 | E501, F841 |
+| Integration test files | 1 | 5+ | Beyond loop stress |
+| Code duplication | ~500 lines | <100 lines | run/cycle overlap |
+
 ### Medium: Security Concerns
 
 | Issue | Severity | Location | Mitigation |
@@ -821,14 +939,36 @@ The security model for shell execution and file handling is now documented.
 
 ### Action Items
 
+#### Backlog Maintenance (Added 2026-01-25)
+
+- [ ] **P2**: Groom BACKLOG.md - migrate knowledge to appropriate locations:
+  - Move completed proposal summaries to `archive/`
+  - Move permanent patterns/guidelines to `docs/`
+  - Move code quality standards to a `CONTRIBUTING.md` or `docs/CODE-QUALITY.md`
+  - Archive resolved research items (R-001, R-002, R-003)
+  - Consolidate duplicate gap tracking sections
+- [ ] **P3**: Create `archive/2026-01-backlog-snapshot.md` with completed items for historical reference
+- [ ] **P3**: Reduce BACKLOG.md size (currently 800+ lines) - target <400 lines of active items
+
+#### Code Quality
+
 - [x] **P0**: Fix 5 F821 undefined name bugs (runtime errors) → ✅ 2026-01-25
 - [x] **P1**: Run `ruff check --fix` to clean 1,785 auto-fixable issues → ✅ 2026-01-25
 - [ ] **P1**: Split `run()` function into smaller units
 - [x] **P2**: Fix circular import in renderer→help → ✅ `core/help_topics.py` (2026-01-25)
 - [x] **P2**: Document security model for shell execution → `docs/SECURITY-MODEL.md` (2026-01-25)
+- [ ] **P2**: Extract StepExecutor from run.py/cycle.py (see Architecture Roadmap above)
+- [ ] **P2**: Create shared ExecutionContext dataclass
+- [ ] **P2**: Audit refcat.py path handling for traversal prevention
+- [ ] **P2**: Add RUN-ENV secret masking in logs
 - [ ] **P3**: Fix E501 line too long (192 remaining) - refactor during normal development
 - [ ] **P3**: Review F841 unused variables (5 remaining)
 - [ ] **P3**: Add test parametrization and markers
+- [ ] **P3**: Split conversation.py into parser/validator/directives/templates modules
+- [ ] **P3**: Modularize copilot.py into events/stats/session modules
+- [ ] **P3**: Add py.typed marker for downstream type checking
+- [ ] **P3**: Add adapter integration tests
+- [ ] **P3**: Create performance benchmark suite
 
 ---
 
