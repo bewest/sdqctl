@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (Documentation gaps added)  
+> **Last Updated**: 2026-01-25 (MODEL-REQUIREMENTS complete)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -10,6 +10,7 @@
 
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4  
 **SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence** ✅, Metadata APIs ✅)
+**MODEL-REQUIREMENTS**: 2026-01-25 | All 4 phases complete (Registry → CLI → Adapter → Operator config)
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
@@ -72,7 +73,7 @@ All 8 proposed tooling commands are **fully implemented**:
 | P2 | ~~[MODEL-REQUIREMENTS Phase 3](MODEL-REQUIREMENTS.md)~~ | Medium | ✅ 2026-01-25 Adapter integration |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | P2 | ~~Create `docs/COMMANDS.md`~~ | Medium | ✅ 2026-01-25 |
-| P2 | [MODEL-REQUIREMENTS Phase 4](MODEL-REQUIREMENTS.md) | Low | Operator configuration |
+| P2 | ~~[MODEL-REQUIREMENTS Phase 4](MODEL-REQUIREMENTS.md)~~ | Low | ✅ 2026-01-25 Operator configuration |
 | P3 | STPA template variables | Low | Future work |
 | P3 | CI/CD workflow examples | Low | GitHub Actions integration |
 
@@ -87,7 +88,7 @@ All 8 proposed tooling commands are **fully implemented**:
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | Implemented | ✅ Complete | --from-json + schema_version implemented |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | Partial | ✅ Core complete | Templates + traceability verifier done |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | Implemented | N/A | Help implemented, no gaps remaining |
-| [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Partial | Phase 1-3 ✅ | Registry + validate --check-model + Adapter integration |
+| [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | Implemented | Phase 1-4 ✅ | Registry + validate + Adapter + Operator config |
 | [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | Partial | Phase 1-3 ✅ | CONSULT directive + prompt injection on resume |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | Implemented | ✅ Complete | Taxonomy, enumeration, `artifact` CLI commands |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | Implemented | Phase 0-3 ✅ | `--strict`, `--json-errors`, ON-FAILURE complete |
@@ -548,7 +549,7 @@ Ideas moved from QUIRKS.md "Future Considerations":
 |------|----------|---------------------|
 | 2026-01-23 | 5 sessions | Tooling gap analysis, VERIFY directive (4 phases), RUN-RETRY, --from-json |
 | 2026-01-24 | 16 sessions | Artifact taxonomy, verify CLI commands, ON-FAILURE blocks, INCLUDE directive |
-| 2026-01-25 | 10 sessions | CONSULT directive, docs/COMMANDS.md, MODEL-REQUIREMENTS Phase 3 |
+| 2026-01-25 | 11 sessions | CONSULT directive, docs/COMMANDS.md, MODEL-REQUIREMENTS Phase 3-4 |
 | Earlier | — | Terminology updates, regulatory context, GLOSSARY.md |
 
 For detailed session logs, see:
