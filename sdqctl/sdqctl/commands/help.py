@@ -30,6 +30,7 @@ Directives control workflow behavior in `.conv` files.
 | `ADAPTER` | AI provider | `ADAPTER copilot` |
 | `MODE` | Execution mode | `MODE audit` |
 | `MAX-CYCLES` | Maximum iterations | `MAX-CYCLES 5` |
+| `SESSION-NAME` | Named session for resumability | `SESSION-NAME audit-2026-01` |
 | `PROMPT` | Prompt to send | `PROMPT Analyze the code` |
 
 ## Context Directives
@@ -967,6 +968,7 @@ sdqctl sessions list --format json
 sdqctl sessions list --filter "audit-*"
 sdqctl sessions delete SESSION_ID
 sdqctl sessions cleanup --older-than 7d
+sdqctl sessions resume SESSION_ID --prompt "Continue"
 ```
 
 ## Subcommands
@@ -976,6 +978,7 @@ sdqctl sessions cleanup --older-than 7d
 | `list` | List all available sessions |
 | `delete` | Delete a session permanently |
 | `cleanup` | Clean up old sessions |
+| `resume` | Resume a previous conversation session |
 
 ## List Options
 
@@ -1000,6 +1003,15 @@ sdqctl sessions cleanup --older-than 7d
 | `--dry-run` | Show what would be deleted without deleting |
 | `--adapter` | Adapter to use (default: copilot) |
 
+## Resume Options
+
+| Option | Description |
+|--------|-------------|
+| `--prompt, -p` | Send an immediate prompt after resuming |
+| `--adapter` | Adapter to use (default: copilot) |
+| `--model` | Model to use for resumed session |
+| `--streaming/--no-streaming` | Enable/disable streaming output |
+
 ## Examples
 
 ```bash
@@ -1023,6 +1035,12 @@ sdqctl sessions cleanup --older-than 7d --dry-run
 
 # Clean up sessions older than 30 days
 sdqctl sessions cleanup --older-than 30d
+
+# Resume a session
+sdqctl sessions resume security-audit-2026-01
+
+# Resume and send immediate prompt
+sdqctl sessions resume my-session --prompt "Continue with auth module"
 ```
 
 ## Notes
@@ -1030,6 +1048,7 @@ sdqctl sessions cleanup --older-than 30d
 - Remote sessions are automatically filtered from listings
 - The `cleanup` command respects the dry-run flag
 - Sessions older than 30 days trigger a cleanup tip in listings
+- Use `SESSION-NAME` directive in workflows for named sessions
 """,
 
     "flow": """
