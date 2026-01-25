@@ -354,12 +354,13 @@ sdqctl run security-audit.conv --adapter copilot
 Once comfortable with `run`, explore:
 
 1. **[Philosophy](PHILOSOPHY.md)** — Workflow design principles and patterns
-2. **[Context Management](CONTEXT-MANAGEMENT.md)** — Optimal context window strategies
-3. **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration patterns
-4. **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Requirements → code → verification
-5. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
-6. **[Commands Reference](COMMANDS.md)** — Complete CLI command documentation
-7. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
+2. **[Adapters](ADAPTERS.md)** — Configure AI providers (Copilot, Claude, OpenAI)
+3. **[Context Management](CONTEXT-MANAGEMENT.md)** — Optimal context window strategies
+4. **[Synthesis Cycles](SYNTHESIS-CYCLES.md)** — Self-improving iteration patterns
+5. **[Traceability Workflows](TRACEABILITY-WORKFLOW.md)** — Requirements → code → verification
+6. **[Reverse Engineering](REVERSE-ENGINEERING.md)** — Code → documentation
+7. **[Commands Reference](COMMANDS.md)** — Complete CLI command documentation
+8. **[Known Quirks](QUIRKS.md)** — Surprising behaviors and workarounds
 
 See `examples/workflows/` for ready-to-use templates, including:
 - `examples/workflows/stpa/` — STPA safety analysis workflows

@@ -769,6 +769,8 @@ Available topics: `directives`, `adapters`, `workflow`, `variables`, `context`, 
 | `claude` | `anthropic` | Anthropic Claude |
 | `openai` | `openai` | OpenAI GPT |
 
+> **📖 Configuration**: See [docs/ADAPTERS.md](docs/ADAPTERS.md) for authentication, environment variables, and provider-specific options.
+
 ## Development
 
 ```bash

@@ -69,6 +69,9 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
+| 🔴 P0 | [Q-014: Event handler multiplexing](../docs/QUIRKS.md#q-014-event-handler-multiplexing-in-accumulate-mode) | Research | Critical - causes duplicate tools, log spam, token explosion |
+| 🔴 P0 | [Q-015: Duplicate tool calls](../docs/QUIRKS.md#q-015-duplicate-tool-calls-at-session-termination) | Research | Related to Q-014 |
+| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | SDK 2 intent reading hypothesis |
 | P2 | ~~Add `refcat` to GETTING-STARTED.md~~ | Low | ✅ 2026-01-25 |
 | P2 | ~~[MODEL-REQUIREMENTS Phase 3](MODEL-REQUIREMENTS.md)~~ | Medium | ✅ 2026-01-25 Adapter integration |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
@@ -76,6 +79,18 @@ All 8 proposed tooling commands are **fully implemented**:
 | P2 | ~~[MODEL-REQUIREMENTS Phase 4](MODEL-REQUIREMENTS.md)~~ | Low | ✅ 2026-01-25 Operator configuration |
 | P3 | STPA template variables | Low | Future work |
 | P3 | CI/CD workflow examples | Low | GitHub Actions integration |
+
+### Research Items (2026-01-25)
+
+| ID | Topic | Hypothesis | Evidence |
+|----|-------|------------|----------|
+| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix |
+| R-002 | Accumulate mode stability | Event handlers may accumulate across cycles | 25x log duplication, 3667 turns for 5 cycles |
+| R-003 | Event subscription cleanup | `_subscribe_events()` may lack cleanup | Multiplexed handlers in longer sessions |
+
+**Session evidence**: 30m47s accumulate session (5 cycles) vs 88m44s fresh session (10 cycles)
+- Accumulate: 276M input tokens, 3,878 tools, 3,535 unknown
+- Fresh: 7M input tokens, 137 tools, 1,695 unknown
 
 ---
 
@@ -581,15 +596,15 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 
 ### P2: Missing/Incomplete Documentation
 
-| Gap | Location | Notes |
-|-----|----------|-------|
-| `refcat` command not in GETTING-STARTED.md | `docs/GETTING-STARTED.md` | Only mention in Quick Reference; no tutorial section |
-| `artifact` command undocumented | README.md, docs/ | ARTIFACT-TAXONOMY.md proposal exists but no user-facing docs |
-| `resume` command separate from `sessions` | README.md | `resume` vs `sessions resume` - which is canonical? |
-| `flow` command minimal docs | docs/ | Only 2 lines in README; no dedicated page |
-| `init` command not documented | docs/ | Mentioned in README but no details on what it creates |
-| Adapter configuration | docs/ | How to configure each adapter (env vars, auth) |
-| Model selection guide | docs/ | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples |
+| Gap | Location | Notes | Status |
+|-----|----------|-------|--------|
+| ~~`refcat` command not in GETTING-STARTED.md~~ | `docs/GETTING-STARTED.md` | Has "Precise Context with refcat" section | ✅ 2026-01-25 |
+| `artifact` command undocumented | README.md, docs/ | ARTIFACT-TAXONOMY.md proposal exists but no user-facing docs | 🔲 Open |
+| `resume` command separate from `sessions` | README.md | `resume` vs `sessions resume` - which is canonical? | 🔲 Open |
+| `flow` command minimal docs | docs/ | Only 2 lines in README; no dedicated page | 🔲 Open |
+| `init` command not documented | docs/ | Mentioned in README but no details on what it creates | 🔲 Open |
+| ~~Adapter configuration~~ | `docs/ADAPTERS.md` | How to configure each adapter (env vars, auth) | ✅ 2026-01-25 |
+| Model selection guide | docs/ | When to use gpt-4 vs claude vs sonnet; MODEL-REQUIRES examples | 🔲 Open (see ADAPTERS.md §MODEL-REQUIRES) |
 
 ### P3: Cross-Reference Improvements
 
@@ -616,15 +631,25 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
    - ~~Add CONSULT/SESSION-NAME to README directive table~~ ✅ 2026-01-25
    - ~~Add DEBUG directives to README~~ ✅ 2026-01-25
    - ~~Add INFINITE-SESSIONS directives to README~~ ✅ 2026-01-25
-   - Add `refcat` section to GETTING-STARTED.md
+   - ~~Add `refcat` section to GETTING-STARTED.md~~ ✅ 2026-01-25
    
 2. **Medium effort** (1-2 hours):
-   - Create `docs/COMMANDS.md` with detailed command reference
-   - Add adapter configuration guide
+   - ~~Create `docs/COMMANDS.md` with detailed command reference~~ ✅ 2026-01-25
+   - ~~Add adapter configuration guide (`docs/ADAPTERS.md`)~~ ✅ 2026-01-25
+   - Document `artifact` command for traceability workflows
    
 3. **Future consideration**:
    - LSP support for refcat (mentioned in References)
    - Interactive docs via `sdqctl help --interactive`
+
+### New Gaps Identified (2026-01-25 Review)
+
+| Gap | Priority | Notes |
+|-----|----------|-------|
+| HELP directive not in GETTING-STARTED examples | P3 | Show `HELP directives workflow` syntax |
+| Adapter env vars not documented | P2 | COPILOT_SDK_AUTH, ANTHROPIC_API_KEY, OPENAI_API_KEY |
+| Q-014/Q-015 research blockers undocumented | P1 | Event multiplexing + duplicate tools need investigation |
+| `ON-FAILURE`/`ON-SUCCESS` not in GETTING-STARTED | P3 | Branching directives implemented but not in tutorials |
 
 ---
 
