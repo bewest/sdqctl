@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (Documentation gap deep review)  
+> **Last Updated**: 2026-01-25 (P3 documentation gaps completed)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -634,6 +634,8 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 
 ### P3: Workflow Examples Gap
 
+> **Status**: All P3 documentation gaps resolved. Remaining items are example workflows.
+
 | Gap | Suggested Location | Notes |
 |-----|-------------------|-------|
 | CONSULT workflow example | `examples/workflows/` | Show human-in-loop consultation pattern |
@@ -649,11 +651,12 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
    - ~~Add INFINITE-SESSIONS directives to README~~ ✅ 2026-01-25
    - ~~Add `refcat` section to GETTING-STARTED.md~~ ✅ 2026-01-25
    - ~~Add `init` documentation to GETTING-STARTED.md~~ ✅ 2026-01-25
+   - ~~ON-FAILURE/ON-SUCCESS to README directive table~~ ✅ 2026-01-25
    
 2. **Medium effort** (1-2 hours):
    - ~~Create `docs/COMMANDS.md` with detailed command reference~~ ✅ 2026-01-25
    - ~~Add adapter configuration guide (`docs/ADAPTERS.md`)~~ ✅ 2026-01-25
-   - Document `artifact` command for traceability workflows
+   - ~~Document `artifact` command for traceability workflows~~ ✅ 2026-01-25 (in GETTING-STARTED.md)
    
 3. **Future consideration**:
    - LSP support for refcat (mentioned in References)
