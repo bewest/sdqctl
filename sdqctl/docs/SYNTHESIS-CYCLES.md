@@ -541,3 +541,63 @@ sdqctl run workflow.conv --adapter copilot    # ❌ Checkpoints ignored
 ```
 
 See [GETTING-STARTED.md](GETTING-STARTED.md#run-vs-cycle-vs-apply) for full comparison.
+
+### Lesson #32: Multi-Prologue Requires Cross-Document Instruction
+
+When injecting multiple `--prologue` files, the model exhibits **first-prologue bias** — disproportionately selecting items from the first document even when higher-priority items exist in subsequent files.
+
+**Evidence** (from 78-minute session):
+- BACKLOG.md: 80% of items selected
+- ARTIFACT-TAXONOMY.md: 13%
+- REFCAT-DESIGN.md: 7%
+
+**Fix**: Add explicit cross-document review instruction:
+
+```dockerfile
+PROLOGUE Review ALL the following roadmaps to select a high-value taskable area.
+PROLOGUE Prioritize by: P0 > P1 > P2 across ALL documents, not just the first.
+```
+
+### Lesson #33: "EVALUATE ALL" Prefix Enables Cohesiveness Review
+
+Adding an evaluation prefix to multi-prologue workflows improves cross-document awareness:
+
+```bash
+sdqctl cycle workflow.conv \
+  --prologue "EVALUATE ALL following documents for cohesiveness." \
+  --prologue proposals/BACKLOG.md \
+  --prologue proposals/REFCAT-DESIGN.md
+```
+
+**Observed behavior**:
+- Agent explicitly creates cohesiveness evaluation TODOs before work selection
+- Catches inconsistencies between documents (e.g., directive count mismatches)
+- Adds ~10 minutes to session but improves quality
+
+### Lesson #34: Fresh Session Mode Requires Prologue Continuity
+
+With `--session-mode=fresh`, context resets each cycle. Continuity depends on:
+
+1. **Prologue injection** - Key context re-injected each cycle
+2. **File-based state** - Progress tracked in files agent reads
+3. **Git history** - Previous commits provide context via `git log`
+
+**Trade-off**: No cross-cycle memory, but prevents context accumulation issues.
+
+### Lesson #35: ~90 Minutes Sustainable with COMPACT Discipline
+
+Extended sessions (88+ minutes, 10 cycles) are sustainable with:
+- `COMPACT` after phases 2, 3, 4
+- `--session-mode=fresh` to reset per cycle
+- 4-phase structure (select → execute → verify → commit)
+- Per-cycle commits for recovery
+
+**Context progression**: ~46% at cycle end, stable across cycles.
+
+### Lesson #36: Documentation and Backlog Hygiene Phases
+
+Long-running backlog processors benefit from dedicated phases for:
+1. **Documentation integration** - Ensure recent changes are reflected in docs
+2. **Backlog hygiene** - Archive completed items, chunk complex ones
+
+Without these, backlogs grow with completed work and docs drift from implementation.

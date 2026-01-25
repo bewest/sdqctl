@@ -52,11 +52,19 @@ COMPACT-PRESERVE prompts,errors,tool-results
 
 # === Role Clarification ===
 PROLOGUE You are an implementation assistant processing a backlog of work items.
+PROLOGUE 
+PROLOGUE **IMPORTANT: Cross-Document Review**
+PROLOGUE Before selecting work, scan ALL injected --prologue documents.
+PROLOGUE Prioritize P0 > P1 > P2 across ALL documents, not just the first.
+PROLOGUE Do not default to the first document — evaluate all options.
+PROLOGUE 
 PROLOGUE Your job is to:
-PROLOGUE 1. Select ONE item from the injected backlog(s)
+PROLOGUE 1. Review ALL injected documents and select ONE highest-value item
 PROLOGUE 2. Implement the change directly (EDIT FILES, don't just describe)
 PROLOGUE 3. Verify your changes work
-PROLOGUE 4. Update tracking documents and commit
+PROLOGUE 4. Update documentation to reflect changes
+PROLOGUE 5. Maintain backlog hygiene (archive completed, chunk complex)
+PROLOGUE 6. Commit and triage for next cycle
 PROLOGUE 
 PROLOGUE When blocked by missing information, document the blocker and STOP.
 PROLOGUE Do not work around blockers - surface them for human review.
@@ -198,9 +206,94 @@ that are addressable.
 
 COMPACT
 
-# === Phase 4: Commit and Triage ===
+# === Phase 4: Documentation Integration ===
 ELIDE
-PROMPT ## Phase 4: Commit and Triage
+PROMPT ## Phase 4: Documentation Integration
+
+Ensure the changes you made are reflected in project documentation.
+
+**Review these documentation areas:**
+
+1. **Usage guides** (`docs/` directory):
+   - Does any doc describe the feature/area you changed?
+   - Are examples still accurate?
+   - Do command-line flags match implementation?
+
+2. **API/Reference docs**:
+   - Are new functions/methods documented?
+   - Are deprecated items marked?
+
+3. **README and help topics**:
+   - If you added a command/directive, is it mentioned in help?
+   - Is the feature discoverable?
+
+4. **Cross-references**:
+   - Do links between docs still work?
+   - Are backlog items properly linked to their proposals?
+
+**Action required:**
+- If docs need updates → make the changes now (minimal, surgical)
+- If docs are current → note "Docs current, no updates needed"
+- If major doc work needed → add to backlog as separate item
+
+**Output format:**
+```
+### Phase 4 Result: Documentation
+**Docs reviewed:** [list files checked]
+**Updates made:** [list changes or "None needed"]
+**Deferred to backlog:** [list items or "None"]
+```
+
+COMPACT
+
+# === Phase 5: Backlog Hygiene ===
+ELIDE
+PROMPT ## Phase 5: Backlog Hygiene
+
+Keep backlogs maintainable by managing completed and complex items.
+
+**Hygiene actions:**
+
+1. **Archive completed work** (items with ✅, `[x]`, or "Complete"):
+   - If an item has been completed AND verified in prior cycles, it can be:
+     - Moved to an "## Archived" or "## Completed" section
+     - Summarized as a single line with completion date
+     - Removed if tracked elsewhere (git history, docs)
+   - Keep recent completions (last 2-3 cycles) visible for context
+
+2. **Chunk complex items**:
+   - If an item is too large (estimated > 2 hours), break it down
+   - If an item has been attempted multiple times without completion, restructure
+   - If an item needs design discussion, move to a dedicated proposal file
+
+3. **Consolidate duplicates**:
+   - Merge items that address the same concern
+   - Cross-reference related items
+
+4. **Update status markers**:
+   - Change `🔶` to `✅` for resolved quirks
+   - Update priority (P0→P1→P2) based on dependencies
+
+**Backlog size guidance:**
+- Active items per backlog: aim for 15-25 actionable items
+- If > 40 items: aggressive archival needed
+- If > 60 items: split into multiple focused backlogs
+
+**Output format:**
+```
+### Phase 5 Result: Backlog Hygiene
+**Items archived:** N (list if any)
+**Items chunked:** N (list if any)
+**Items merged:** N
+**Current backlog size:** ~N active items
+**Hygiene notes:** [any concerns]
+```
+
+COMPACT
+
+# === Phase 6: Commit and Triage ===
+ELIDE
+PROMPT ## Phase 6: Commit and Triage
 
 **Section 1: Commit**
 If meaningful changes were made, commit them now:
@@ -240,9 +333,10 @@ OUTPUT-FORMAT markdown
 # === Notes ===
 # This workflow intentionally:
 # - Has NO hardcoded file paths (reads from --prologue)
-# - Uses 4 PHASES per cycle: select → execute → verify → triage
+# - Uses 6 PHASES per cycle: select → execute → verify → docs → hygiene → triage
 # - COMPACTs aggressively for long -n runs
 # - Commits after each meaningful change
+# - Maintains documentation and backlog hygiene
 # - Surfaces blockers instead of working around them
 # - Works across domains: proposals, quirks, docs, artifacts, etc.
 #

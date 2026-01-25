@@ -839,7 +839,7 @@ sdqctl cycle examples/workflows/proposal-development.conv \
 
 - [x] **backlog-processor.conv** - Created universal backlog iteration workflow
   - Works across ALL domains via `--prologue` injection
-  - 4-phase pattern: select → execute → verify → triage
+  - 6-phase pattern: select → execute → verify → docs → hygiene → triage
   - Aggressive COMPACT for long `-n 10+` runs
   - Git commit per meaningful change
   - No hardcoded file paths - fully reusable
@@ -1090,6 +1090,42 @@ sdqctl verify trace "SC-001 -> REQ-001" --json
   - Fixes 7 false positives in docs/ (VALIDATION-WORKFLOW, EXTENDING-VERIFIERS, TRACEABILITY-WORKFLOW)
   - Added 2 tests: `test_skip_links_in_code_blocks`, `test_skip_links_in_inline_code`
   - Commit: `7ee0461`
+
+### Session 2026-01-25 (Multi-Prologue Lessons)
+
+Insights from two extended backlog processing sessions (78m + 88m):
+
+- [x] **Q-013 discovered** - Tool name shows "unknown" in 1,695 completion logs
+  - Added to QUIRKS.md as open quirk
+  - Q-005 was marked fixed but this is a different code path (complete vs start events)
+  - Cosmetic issue - tools execute correctly
+
+- [x] **Lessons #32-36 documented** in SYNTHESIS-CYCLES.md:
+  - #32: Multi-prologue requires explicit cross-document instruction
+  - #33: "EVALUATE ALL" prefix enables cohesiveness review
+  - #34: Fresh session mode requires prologue continuity
+  - #35: ~90 minutes sustainable with COMPACT discipline
+  - #36: Documentation and backlog hygiene phases
+
+- [x] **backlog-processor.conv enhanced** - 4-phase → 6-phase workflow
+  - Added cross-document review instruction (fixes first-prologue bias)
+  - Added Phase 4: Documentation Integration (keep docs current)
+  - Added Phase 5: Backlog Hygiene (archive completed, chunk complex)
+  - Renumbered Phase 4 → Phase 6: Commit and Triage
+
+**Recommended multi-prologue pattern:**
+```bash
+sdqctl cycle examples/workflows/backlog-processor.conv \
+  --prologue "EVALUATE ALL following documents for cohesiveness." \
+  --prologue proposals/BACKLOG.md \
+  --prologue proposals/REFCAT-DESIGN.md \
+  --adapter copilot -n 10
+```
+
+**Key lessons:**
+1. "EVALUATE ALL" prefix counters first-prologue bias effectively
+2. Fresh session mode with prologue injection is sustainable for 90+ min
+3. Documentation and backlog hygiene need dedicated phases, not afterthoughts
 
 ---
 
