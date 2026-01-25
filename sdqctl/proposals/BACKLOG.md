@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25 (MODEL-REQUIREMENTS complete)  
+> **Last Updated**: 2026-01-25 (Q-014/Q-015 fixed)  
 > **Purpose**: Track open design questions, implementation work, and future proposals  
 > **Archive**: Completed session logs and design decisions → [`archive/`](../archive/)
 
@@ -11,6 +11,7 @@
 **Analysis Date**: 2026-01-23 | **Phases Completed**: 4/4  
 **SDK v2 Analysis**: 2026-01-24 | **New Proposals**: 3 (**Infinite Sessions** ✅, **Session Persistence** ✅, Metadata APIs ✅)
 **MODEL-REQUIREMENTS**: 2026-01-25 | All 4 phases complete (Registry → CLI → Adapter → Operator config)
+**Q-014/Q-015 Fix**: 2026-01-25 | Event handler leak fixed, accumulate mode stable
 
 Note: remember to cross reference and evaluate priorities across roadmaps.
 SDK-SESSION-PERSISTENCE complete (2026-01-25): Phase 1-4 all implemented.
@@ -31,16 +32,16 @@ All 8 proposed tooling commands are **fully implemented**:
 | `help` | Documentation access | 12 commands, 6 topics | ✅ Complete |
 
 ### Priority Recommendations
-* [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Phase 1-4 | Native SDK compaction for cycle mode |
-* [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | ✅ Complete | Phase 1-4 | `sessions resume` + `SESSION-NAME` directive
-* Backlog Hygiene (archive completed, chunk complex)
+* ~~[SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md)~~ | ✅ Complete | Phase 1-4 | Native SDK compaction for cycle mode
+* ~~[SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md)~~ | ✅ Complete | Phase 1-4 | `sessions resume` + `SESSION-NAME` directive
+* ~~Q-014/Q-015 Event handler fix~~ | ✅ Complete | Accumulate mode now stable
 
 #### P0: Documentation Gaps (Quick Wins)
 
 | Gap | Location | Complexity | Status |
 |-----|----------|------------|--------|
-| Pipeline schema docs | `docs/PIPELINE-SCHEMA.md` | Low | ✅ Complete |
-| Verifier extension guide | `docs/EXTENDING-VERIFIERS.md` | Low | ✅ Complete |
+| ~~Pipeline schema docs~~ | `docs/PIPELINE-SCHEMA.md` | Low | ✅ Complete |
+| ~~Verifier extension guide~~ | `docs/EXTENDING-VERIFIERS.md` | Low | ✅ Complete |
 
 #### P1: Verifier Expansion (High Value)
 
@@ -88,20 +89,12 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | ID | Topic | Hypothesis | Evidence | Status |
 |----|-------|------------|----------|--------|
-| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix | 🔬 Open |
-| R-002 | Accumulate mode stability | Event handlers accumulate across cycles | 25x log duplication, 3667 turns for 5 cycles | ✅ **CONFIRMED** |
-| R-003 | Event subscription cleanup | `send()` lacks handler cleanup | Line 655: `.on(on_event)` called each send, never `.off()` | ✅ **ROOT CAUSE** |
+| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix | 🔬 Open (may be resolved by Q-014 fix) |
+| ~~R-002~~ | ~~Accumulate mode stability~~ | ~~Event handlers accumulate across cycles~~ | 25x log duplication, 3667 turns for 5 cycles | ✅ **FIXED** |
+| ~~R-003~~ | ~~Event subscription cleanup~~ | ~~`send()` lacks handler cleanup~~ | Line 655: handler now registered once | ✅ **FIXED** |
 
-**Root cause (confirmed 2026-01-25):** `CopilotAdapter.send()` registers `copilot_session.on(on_event)` 
-on every prompt but never removes handlers. In accumulate mode, N prompts = N registered handlers = N× events.
-
-**Fix required:** Either:
-1. Register handler once at session creation (not per-send)
-2. Or call `copilot_session.off(on_event)` after `done.wait()` completes
-
-**Session evidence**: 30m47s accumulate session (5 cycles) vs 88m44s fresh session (10 cycles)
-- Accumulate: 276M input tokens, 3,878 tools, 3,535 unknown
-- Fresh: 7M input tokens, 137 tools, 1,695 unknown
+**Resolution (2026-01-25):** Fixed by registering event handler once per session with `stats.handler_registered` flag.
+Handler uses session-level `_send_*` state that resets each `send()` call.
 
 ---
 
