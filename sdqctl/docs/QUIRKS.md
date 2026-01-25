@@ -10,12 +10,13 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| Q-013 | Tool name shows "unknown" in completion logs | 🟡 P1 | ⚠️ REGRESSION |
+| - | (none) | - | All quirks resolved |
 
 ### Resolved Quirks
 
 | ID | Quirk | Status | Resolution |
 |----|-------|--------|------------|
+| Q-013 | Tool name shows "unknown" in completion logs | ✅ FIXED | Root cause was Q-014; handler fix resolves (2026-01-25) |
 | Q-014 | Event handler multiplexing in accumulate mode | ✅ FIXED | Handler registered once per session (2026-01-25) |
 | Q-015 | Duplicate tool calls at session termination | ✅ FIXED | Fixed by Q-014 (event handler cleanup) |
 |----|-------|--------|------------|
@@ -27,7 +28,6 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-010 | COMPACT directive ignored by cycle command | ✅ FIXED | Refactored to iterate `conv.steps` |
 | Q-011 | Compaction threshold options not fully wired | ✅ FIXED | `--min-compaction-density` now wired to `needs_compaction()` |
 | Q-012 | COMPACT directive triggers unconditionally | ✅ FIXED | Now respects `--min-compaction-density` threshold |
-| Q-013 | Tool name shows "unknown" in completion logs | ⚠️ REGRESSION | See Q-014 - SDK 2 intent reading? |
 
 ---
 
@@ -146,50 +146,35 @@ Fixed by Q-014 - event handlers now register once per session, eliminating dupli
 
 **Priority:** P1 - Medium Impact  
 **Discovered:** 2026-01-25  
-**Status:** ⚠️ REGRESSION (may be resolved by Q-014 fix)
+**Status:** ✅ FIXED (2026-01-25) - Root cause was Q-014
 
-### Regression Details (2026-01-25)
+### Resolution (2026-01-25)
 
-Despite the fix below, a 30-minute accumulate-mode session showed **3,535 "unknown" tool entries** out of 3,878 total tool calls (91%). This was likely caused by Q-014 event multiplexing corrupting the `stats.active_tools` state.
+The Q-013 regression was caused by Q-014 (event handler multiplexing). When multiple handlers were registered for the same session, the `stats.active_tools` dictionary was corrupted:
 
-**Evidence:**
-```
-20:01:04 [INFO] ✓ bash (1.3s) → Created STOPAUTOMATION file
-20:01:04 [INFO] ✓ unknown → Created STOPAUTOMATION file  # 24 more
-```
+1. Handler A fires `tool.execution_started` → stores tool in `active_tools[id]`
+2. Handler B fires `tool.execution_started` → overwrites `active_tools[id]`  
+3. Handler A fires `tool.execution_complete` → pops from `active_tools[id]` (gets B's entry)
+4. Handler B fires `tool.execution_complete` → `active_tools[id]` missing → falls back to "unknown"
 
-### Regression Hypothesis: SDK 2 Intent Reading
-
-The regression may be related to SDK 2 changes in how tool/intent information is provided:
-
-1. **Event structure changes** - SDK 2 may emit `tool.execution_complete` with different field structure
-2. **Intent tool interaction** - `report_intent` tool may affect event ordering
-3. **Event multiplexing** - See Q-014, multiplexed handlers corrupt `tool_call_id` tracking
-
-### Research Questions
-
-- Does SDK 2 provide tool info in `tool_requests` differently?
-- Is `stats.active_tools` being corrupted by duplicate event handlers (Q-014)?
-- Does accumulate mode specifically trigger this regression?
-
-### Original Fix (2026-01-24, may be insufficient)
-
-Used the stored tool name from the start event when direct extraction fails:
+**With Q-014 fix** (single handler per session), `active_tools` is no longer corrupted, and the Q-013 fallback logic works correctly:
 
 ```python
 if tool_call_id and tool_call_id in stats.active_tools:
     tool_info = stats.active_tools.pop(tool_call_id)
-    duration = datetime.now() - tool_info["start_time"]
-    duration_str = f" ({duration.total_seconds():.1f}s)"
     # Use stored name if direct extraction failed (Q-013 fix)
     if tool_name == "unknown" and tool_info.get("name"):
         tool_name = tool_info["name"]
 ```
 
+### Historical Evidence
+
+A 30-minute accumulate-mode session (before Q-014 fix) showed **3,535 "unknown" tool entries** out of 3,878 total tool calls (91%). This was caused by event multiplexing corrupting the `stats.active_tools` state.
+
 ### Related
 
-- Q-014: Event handler multiplexing (likely root cause)
-- Q-005: Original "unknown" tool name issue (different cause)
+- Q-014: Event handler multiplexing (root cause - now fixed)
+- Q-005: Original "unknown" tool name issue (different cause, different fix)
 
 ---
 

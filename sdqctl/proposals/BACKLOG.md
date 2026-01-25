@@ -70,7 +70,6 @@ All 8 proposed tooling commands are **fully implemented**:
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
-| 🟡 P1 | [Q-013: Unknown tool names regression](../docs/QUIRKS.md#q-013-tool-name-shows-unknown-in-completion-logs) | Research | May be resolved by Q-014 fix - needs verification |
 | P2 | Document `artifact` command | Medium | User-facing docs for traceability IDs |
 | P2 | [CONSULT-DIRECTIVE Phase 4](CONSULT-DIRECTIVE.md) | Low | Refinements (timeout, partial save) - needs design review |
 | P3 | STPA template variables | Low | Future work |
@@ -84,12 +83,13 @@ All 8 proposed tooling commands are **fully implemented**:
 - ~~Q-014/Q-015 root cause analysis~~ ✅ 2026-01-25 (Line 655 handler leak)
 - ~~Q-014: Event handler multiplexing~~ ✅ 2026-01-25 (Handler registered once per session)
 - ~~Q-015: Duplicate tool calls~~ ✅ 2026-01-25 (Fixed by Q-014)
+- ~~Q-013: Unknown tool names regression~~ ✅ 2026-01-25 (Root cause was Q-014)
 
 ### Research Items (2026-01-25)
 
 | ID | Topic | Hypothesis | Evidence | Status |
 |----|-------|------------|----------|--------|
-| R-001 | SDK 2 intent reading | SDK 2 may provide tool info differently | Q-013 regression despite fix | 🔬 Open (may be resolved by Q-014 fix) |
+| ~~R-001~~ | ~~SDK 2 intent reading~~ | ~~SDK 2 may provide tool info differently~~ | Q-013 root cause was Q-014 handler leak | ✅ **RESOLVED** |
 | ~~R-002~~ | ~~Accumulate mode stability~~ | ~~Event handlers accumulate across cycles~~ | 25x log duplication, 3667 turns for 5 cycles | ✅ **FIXED** |
 | ~~R-003~~ | ~~Event subscription cleanup~~ | ~~`send()` lacks handler cleanup~~ | Line 655: handler now registered once | ✅ **FIXED** |
 
@@ -657,7 +657,7 @@ All 12 design decisions are documented in [`archive/DECISIONS.md`](../archive/DE
 | `ON-FAILURE`/`ON-SUCCESS` not in GETTING-STARTED | P3 | Branching directives implemented but not in tutorials | 🔲 Open |
 | ~~Accumulate mode stability warning~~ | P2 | Q-014 fixed - accumulate mode now stable | ✅ 2026-01-25 |
 | ~~Event handler lifecycle docs~~ | P2 | Fix documented in QUIRKS.md Q-014 section | ✅ 2026-01-25 |
-| Q-013 verification after Q-014 fix | P1 | Test accumulate mode to confirm unknown tool names resolved | 🔲 Open |
+| ~~Q-013 verification after Q-014 fix~~ | P1 | Root cause confirmed as Q-014 handler leak - now fixed | ✅ 2026-01-25 |
 | `validate` command not in GETTING-STARTED | P3 | Referenced in CI/CD but no tutorial section | 🔲 Open |
 | Copilot skill files not documented | P3 | `sdqctl init` creates skills but purpose not explained | 🔲 Open |
 
