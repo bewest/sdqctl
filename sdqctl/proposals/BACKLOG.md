@@ -109,6 +109,21 @@ All 8 proposed tooling commands are **fully implemented**:
 **Resolution (2026-01-25):** Fixed by registering event handler once per session with `stats.handler_registered` flag.
 Handler uses session-level `_send_*` state that resets each `send()` call.
 
+### Open Items Summary (as of 2026-01-25)
+
+| Priority | Item | Category |
+|----------|------|----------|
+| **P1** | Split `run()` function (~1000 lines) | Code quality |
+| **P2** | CONSULT-DIRECTIVE Phase 4 | Feature refinement |
+| **P2** | claude/openai adapter stubs | Implementation |
+| **P3** | E501 line too long (192 issues) | Code quality |
+| **P3** | F841 unused variables (5 issues) | Code quality |
+| **P3** | CONSULT workflow example | Documentation |
+| **P3** | CI/CD integration examples | Documentation |
+| **P3** | ELIDE chains example | Documentation |
+| **P3** | Default verbosity key actions | Feature |
+| **P3** | Test quality improvements | Testing |
+
 ---
 
 ## Current Proposals Status
@@ -726,7 +741,7 @@ The security model for shell execution and file handling is now documented.
 | Circular import renderer→help | P2 | Move TOPICS to core/constants | ✅ 2026-01-25 |
 | CONSULT workflow example | P3 | Show human-in-loop consultation pattern | 🔲 Open |
 | CI/CD integration examples | P3 | GitHub Actions / GitLab CI using verify + render | 🔲 Open |
-| FEATURE-INTERACTIONS.md status | P3 | Says "Draft" but content is complete; update to "Complete" | 🔲 Open |
+| FEATURE-INTERACTIONS.md status | P3 | Says "Draft" but content is complete; update to "Complete" | ✅ 2026-01-25 |
 | claude/openai adapter stubs | P2 | ADAPTERS.md documents as "Planned" - either implement or clarify scope | 🔲 Open |
 | ELIDE chains example | P3 | Multi-ELIDE optimized workflows example in examples/workflows | 🔲 Open |
 | Default verbosity key actions | P3 | Q-004 notes: show key actions at default level (careful selection) | 🔲 Open |
