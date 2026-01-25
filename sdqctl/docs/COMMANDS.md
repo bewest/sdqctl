@@ -542,6 +542,7 @@ sdqctl help --list
 ## See Also
 
 - [GETTING-STARTED.md](GETTING-STARTED.md) - Quick start guide
+- [ADAPTERS.md](ADAPTERS.md) - Adapter configuration and authentication
 - [PHILOSOPHY.md](PHILOSOPHY.md) - Workflow design principles
 - [CONTEXT-MANAGEMENT.md](CONTEXT-MANAGEMENT.md) - Context strategies
 - [IO-ARCHITECTURE.md](IO-ARCHITECTURE.md) - Stream handling
