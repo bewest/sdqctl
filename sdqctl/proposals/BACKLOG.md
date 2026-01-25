@@ -723,7 +723,7 @@ The security model for shell execution and file handling is now documented.
 | E501 line too long (192 issues) | P3 | Requires manual refactoring during normal development | 🔲 Open |
 | F841 unused variables (5 issues) | P3 | Needs code review | 🔲 Open |
 | Split `run()` function | P1 | ~1000 lines, extract step handlers | 🔲 Open |
-| Circular import renderer→help | P2 | Move TOPICS to core/constants | 🔲 Open |
+| Circular import renderer→help | P2 | Move TOPICS to core/constants | ✅ 2026-01-25 |
 | CONSULT workflow example | P3 | Show human-in-loop consultation pattern | 🔲 Open |
 | CI/CD integration examples | P3 | GitHub Actions / GitLab CI using verify + render | 🔲 Open |
 | FEATURE-INTERACTIONS.md status | P3 | Says "Draft" but content is complete; update to "Complete" | 🔲 Open |
@@ -809,7 +809,7 @@ The security model for shell execution and file handling is now documented.
 - [x] **P0**: Fix 5 F821 undefined name bugs (runtime errors) → ✅ 2026-01-25
 - [x] **P1**: Run `ruff check --fix` to clean 1,785 auto-fixable issues → ✅ 2026-01-25
 - [ ] **P1**: Split `run()` function into smaller units
-- [ ] **P2**: Fix circular import in renderer→help
+- [x] **P2**: Fix circular import in renderer→help → ✅ `core/help_topics.py` (2026-01-25)
 - [x] **P2**: Document security model for shell execution → `docs/SECURITY-MODEL.md` (2026-01-25)
 - [ ] **P3**: Fix E501 line too long (192 remaining) - refactor during normal development
 - [ ] **P3**: Review F841 unused variables (5 remaining)
