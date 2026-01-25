@@ -1138,6 +1138,11 @@ sdqctl cycle examples/workflows/backlog-processor.conv \
   - Preserved factual historical timing (session durations) as-is
   - Preserved medical domain terminology (HAZ exposure duration)
 
+- [x] **Q-013: Tool name shows "unknown" in completion logs** - Bug fix
+  - Root cause: `tool.execution_complete` handler didn't use stored name from start event
+  - Fix: Fall back to `tool_info["name"]` when direct extraction returns "unknown"
+  - All quirks now resolved (QUIRKS.md shows no active quirks)
+
 ---
 
 ### P2: Replace Time-Based Effort Estimates
