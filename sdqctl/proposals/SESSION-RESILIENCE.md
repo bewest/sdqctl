@@ -1,9 +1,10 @@
 # Session Resilience & Observability
 
-> **Status**: Research ⚗️  
+> **Status**: Phase 0-1 Complete ✅  
 > **Created**: 2026-01-26  
-> **Priority**: P3 (Medium-term)  
-> **Source**: backlog-processor-v2 Run #5 observations
+> **Updated**: 2026-01-26  
+> **Priority**: P3 (remaining phases: 2-4)  
+> **Source**: backlog-processor-v2 Run #5 observations + SDK research
 
 ---
 
@@ -12,7 +13,7 @@
 Long-running autonomous sessions (30-60 minutes) encounter three related challenges:
 
 1. **Rate limits terminate sessions unpredictably** - Run #5 hit rate limit at 40 minutes with no warning
-2. **Checkpoint resume is untested** - SDK supports resume but sdqctl hasn't validated it post-rate-limit
+2. **SDK provides rich metrics we don't parse** - quota, cost, cache, compaction data available but ignored
 3. **Compaction effectiveness is unmeasured** - Every compaction in Run #5 *increased* tokens (counter-intuitive)
 
 These issues become critical as we move toward longer autonomous workflows.
@@ -21,7 +22,46 @@ These issues become critical as we move toward longer autonomous workflows.
 
 ## Proposed Features
 
-### Feature 1: Rate Limit Prediction
+### Feature 1: Metrics Instrumentation (NEW - P2)
+
+**Problem**: SDK events contain rich observability data that sdqctl doesn't parse.
+
+**Current State**:
+| Event | What's Extracted | What's Ignored |
+|-------|------------------|----------------|
+| `assistant.usage` | `input_tokens`, `output_tokens` | `quota_snapshots`, `cost`, `cache_*_tokens` |
+| `session.usage_info` | `current_tokens`, `token_limit` | - |
+| `session.error` | Generic message | `error_type`, `error.code` |
+| `session.compaction_complete` | ✅ Logged | `tokens_removed`, `summary_content`, metrics |
+
+**Available SDK Data**:
+
+1. **Quota Tracking** (from `assistant.usage`):
+   ```python
+   quota_snapshots: {
+       "premium": {
+           "remaining_percentage": 78.5,
+           "reset_date": "2026-01-27T00:00:00Z",
+           "is_unlimited_entitlement": False,
+           "used_requests": 215,
+           "entitlement_requests": 1000
+       }
+   }
+   ```
+
+2. **Cost & Cache** (from `assistant.usage`):
+   - `cost` - API call cost
+   - `cache_read_tokens` - Tokens served from cache
+   - `cache_write_tokens` - Tokens added to cache
+
+3. **Compaction Metrics** (from `session.compaction_complete`):
+   - `tokens_removed`, `pre/post_compaction_tokens`
+   - `summary_content` - The actual summary
+   - `compaction_tokens_used.{input, output, cached_input}`
+
+---
+
+### Feature 2: Rate Limit Prediction
 
 **Problem**: Sessions hit rate limits without warning, losing work-in-progress.
 
@@ -273,7 +313,7 @@ Display in session summary:
 
 ## Implementation Phases
 
-### Phase 0: Quota Event Parsing (P2) - Quick Win
+### Phase 0: Quota Event Parsing (P2) - ✅ COMPLETE
 
 Parse existing SDK events that already contain quota data:
 
@@ -293,14 +333,16 @@ elif event_type == "assistant.usage":
         stats.quota_reset_date = snapshot.get("resetDate")
 ```
 
-**Deliverables**:
-- Add `quota_remaining`, `quota_reset_date` to SessionStats
-- Parse `quota_snapshots` from `assistant.usage` events
-- Log warning when quota < 20%
+**Deliverables** (Completed 2026-01-26):
+- ✅ Add `quota_remaining`, `quota_reset_date` to SessionStats
+- ✅ Add `quota_used_requests`, `quota_entitlement_requests`, `is_unlimited_quota` to SessionStats
+- ✅ Parse `quota_snapshots` from `assistant.usage` events
+- ✅ Log warning when quota < 20%
+- ✅ 3 new tests for quota tracking
 
-**Effort**: ~30 lines of code changes
+**Effort**: ~50 lines of code changes
 
-### Phase 0.5: Error Event Enhancement (P2) - Quick Win
+### Phase 0.5: Error Event Enhancement (P2) - ✅ COMPLETE
 
 Parse `session.error` for rate limit specifics:
 
@@ -327,24 +369,30 @@ elif event_type == "session.error":
         progress(f"  ⚠️  Error: {error_msg}")
 ```
 
-**Deliverables**:
-- Add `rate_limited: bool` to SessionStats
-- Specific handling for rate limit errors
-- User-friendly rate limit message
+**Deliverables** (Completed 2026-01-26):
+- ✅ Add `rate_limited: bool` to SessionStats
+- ✅ Add `rate_limit_message: Optional[str]` to SessionStats
+- ✅ Specific handling for rate limit errors (code 429, message patterns)
+- ✅ User-friendly rate limit message in progress output
+- ✅ 3 new tests for rate limit detection
 
-**Effort**: ~20 lines of code changes
+**Effort**: ~30 lines of code changes
 
-### Phase 1: Observability (P3) - Low Effort
+### Phase 1: Observability (P3) - ✅ COMPLETE
 
 Add metrics without changing behavior:
 - Compaction effectiveness tracking
 - Token consumption rate display
 - Session timing metadata
 
-**Deliverables**:
-- Enhanced CompactionResult dataclass
-- SessionStats with timing/rate fields
-- Summary output at session end
+**Deliverables** (Completed 2026-01-26):
+- ✅ `CompactionEvent` dataclass with `token_delta` and `effective` properties
+- ✅ SessionStats with `session_start_time`, `compaction_events` list
+- ✅ SessionStats properties: `session_duration_seconds`, `requests_per_minute`
+- ✅ SessionStats properties: `compaction_count`, `compaction_effectiveness`, `total_tokens_saved`
+- ✅ 5 new tests for observability features
+
+**Note**: Summary output at session end deferred - requires changes in run.py/iterate.py
 
 ### Phase 2: Checkpoint Resume Testing (P3) - Medium Effort
 

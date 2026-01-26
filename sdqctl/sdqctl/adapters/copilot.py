@@ -333,6 +333,9 @@ class CopilotAdapter(AdapterBase):
 
             # Session events
             if event_type == "session.start":
+                # Track session start time for observability
+                stats.session_start_time = datetime.now()
+
                 context = _get_field(data, "context")
                 if context:
                     branch = _get_field(context, "branch")
@@ -356,8 +359,36 @@ class CopilotAdapter(AdapterBase):
 
             elif event_type == "session.error":
                 error = _get_field(data, "error", "message", default=str(data))
-                logger.error(f"Session error: {error}")
-                progress(f"  ⚠️  Error: {error}")
+                error_type = _get_field(data, "error_type", "errorType", default=None)
+                error_code = None
+
+                # Extract code from ErrorClass structure
+                error_obj = _get_field(data, "error", default=None)
+                if isinstance(error_obj, dict):
+                    error_code = error_obj.get("code")
+                    error = error_obj.get("message", str(error_obj))
+                elif hasattr(error_obj, "code"):
+                    error_code = getattr(error_obj, "code", None)
+                    error = getattr(error_obj, "message", str(error_obj))
+
+                # Detect rate limit errors
+                is_rate_limit = (
+                    error_code == "429"
+                    or error_code == 429
+                    or error_type == "rate_limit"
+                    or "rate limit" in str(error).lower()
+                    or "too many requests" in str(error).lower()
+                    or "restricts the number" in str(error).lower()
+                )
+
+                if is_rate_limit:
+                    stats.rate_limited = True
+                    stats.rate_limit_message = str(error)
+                    logger.warning(f"🛑 Rate limit hit: {error}")
+                    progress("  🛑 Rate limited - wait before retrying")
+                else:
+                    logger.error(f"Session error: {error}")
+                    progress(f"  ⚠️  Error: {error}")
 
             elif event_type == "session.truncation":
                 logger.warning("Context truncated due to size limits")
@@ -422,6 +453,57 @@ class CopilotAdapter(AdapterBase):
                 stats.total_input_tokens += input_tokens
                 stats.total_output_tokens += output_tokens
                 logger.info(f"Tokens: {input_tokens} in / {output_tokens} out")
+
+                # Parse quota_snapshots for rate limit awareness
+                quota_snapshots = _get_field(
+                    data, "quota_snapshots", "quotaSnapshots", default={}
+                )
+                if quota_snapshots:
+                    for quota_type, snapshot in (quota_snapshots or {}).items():
+                        if hasattr(snapshot, "__iter__") or isinstance(snapshot, dict):
+                            # Handle both dict and object access
+                            remaining = _get_field(
+                                snapshot, "remaining_percentage",
+                                "remainingPercentage", default=None
+                            )
+                            is_unlimited = _get_field(
+                                snapshot, "is_unlimited_entitlement",
+                                "isUnlimitedEntitlement", default=False
+                            )
+                            reset_date = _get_field(
+                                snapshot, "reset_date", "resetDate", default=None
+                            )
+                            used_requests = _get_field(
+                                snapshot, "used_requests", "usedRequests", default=None
+                            )
+                            entitlement = _get_field(
+                                snapshot, "entitlement_requests",
+                                "entitlementRequests", default=None
+                            )
+
+                            if is_unlimited:
+                                stats.is_unlimited_quota = True
+                            elif remaining is not None:
+                                # Track lowest quota remaining across types
+                                if stats.quota_remaining is None:
+                                    stats.quota_remaining = float(remaining)
+                                else:
+                                    stats.quota_remaining = min(
+                                        stats.quota_remaining, float(remaining)
+                                    )
+                                stats.quota_reset_date = reset_date
+                                if used_requests is not None:
+                                    stats.quota_used_requests = int(used_requests)
+                                if entitlement is not None:
+                                    stats.quota_entitlement_requests = int(entitlement)
+
+                                # Warn when quota is low
+                                if remaining < 20 and not stats.is_unlimited_quota:
+                                    logger.warning(
+                                        f"⚠️  Quota low: {remaining:.0f}% remaining "
+                                        f"({quota_type})"
+                                    )
+                                    progress(f"  ⚠️  Quota: {remaining:.0f}% remaining")
 
             elif event_type == "session.usage_info":
                 # Extract only meaningful usage fields
@@ -536,6 +618,14 @@ class CopilotAdapter(AdapterBase):
                     after = _get_field(tokens_used, "after", default=0)
                     logger.info(f"Compaction complete: {before} → {after} tokens")
                     progress(f"  🗜️  Compacted: {before} → {after} tokens")
+
+                    # Track compaction for observability metrics
+                    from .stats import CompactionEvent
+                    stats.compaction_events.append(CompactionEvent(
+                        tokens_before=int(before) if before else 0,
+                        tokens_after=int(after) if after else 0,
+                        timestamp=datetime.now(),
+                    ))
 
             # Subagent events
             elif event_type == "subagent.started":

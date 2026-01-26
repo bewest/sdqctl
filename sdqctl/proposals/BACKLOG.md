@@ -33,7 +33,7 @@
 | Item | Effort | Notes |
 |------|--------|-------|
 | Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
-| Session resilience & observability | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) - Rate limit prediction, checkpoint resume, compaction metrics |
+| Session resilience (remaining phases) | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) Phase 2-4: Checkpoint resume, rate limit prediction, compaction tuning |
 
 ### Future (Unstarted)
 
@@ -52,6 +52,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Observability metrics (P3)** | 2026-01-26 | SESSION-RESILIENCE Phase 1: CompactionEvent, timing props, 5 new tests. |
+| **Metrics instrumentation (P2)** | 2026-01-26 | SESSION-RESILIENCE Phase 0-0.5: Parse quota_snapshots, rate limit detection. 6 new tests. |
 | **StepExecutor reassessed (P2)** | 2026-01-26 | Analyzed: ~100 lines shared (not ~500). Extracted resolve_run_directory(). 6 tests. Full StepExecutor deferred. |
 | **CONSULT-TIMEOUT (P2)** | 2026-01-26 | Phase 4: Timeout directive, expiration check on resume, clear error. 10 new tests. |
 | **Compaction Simplification (P1)** | 2026-01-26 | Phase 5: Remove default prologue/epilogue. SDK-INFINITE-SESSIONS now complete. |
@@ -288,7 +290,7 @@ def _check_minimal_response(
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Native SDK compaction |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | ✅ Complete | sessions resume + SESSION-NAME |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | ✅ Complete | Adapter methods + status |
-| [SESSION-RESILIENCE](SESSION-RESILIENCE.md) | ⚗️ Research | Rate limit prediction, checkpoint resume, compaction metrics |
+| [SESSION-RESILIENCE](SESSION-RESILIENCE.md) | 🚀 Ready | P2: Metrics instrumentation (Phase 0-0.5). P3: Rate limit prediction, checkpoint resume |
 
 ---
 

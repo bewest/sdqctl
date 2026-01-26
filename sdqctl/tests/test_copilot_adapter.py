@@ -624,6 +624,392 @@ class TestCopilotAdapterGetSessionStats:
         assert adapter.get_session_stats(fake_session) is None
 
 
+class TestQuotaTracking:
+    """Test quota parsing from assistant.usage events."""
+
+    @pytest.mark.asyncio
+    async def test_usage_event_parses_quota_snapshots(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test assistant.usage event parses quota_snapshots."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            # Simulate usage event with quota snapshots
+            event = MagicMock()
+            event.type = MockEventType("assistant.usage")
+            event.data = MagicMock(
+                input_tokens=100,
+                output_tokens=50,
+                quota_snapshots={
+                    "premium": MagicMock(
+                        remaining_percentage=75.5,
+                        is_unlimited_entitlement=False,
+                        reset_date="2026-01-27T00:00:00Z",
+                        used_requests=245,
+                        entitlement_requests=1000,
+                    )
+                },
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.quota_remaining == 75.5
+        assert stats.quota_reset_date == "2026-01-27T00:00:00Z"
+        assert stats.quota_used_requests == 245
+        assert stats.quota_entitlement_requests == 1000
+        assert stats.is_unlimited_quota is False
+
+    @pytest.mark.asyncio
+    async def test_usage_event_detects_unlimited_quota(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test assistant.usage event detects unlimited entitlement."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("assistant.usage")
+            event.data = MagicMock(
+                input_tokens=100,
+                output_tokens=50,
+                quota_snapshots={
+                    "enterprise": MagicMock(
+                        remaining_percentage=100.0,
+                        is_unlimited_entitlement=True,
+                        reset_date=None,
+                        used_requests=0,
+                        entitlement_requests=None,
+                    )
+                },
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.is_unlimited_quota is True
+
+    @pytest.mark.asyncio
+    async def test_quota_tracking_takes_minimum(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test quota_remaining tracks lowest value across quota types."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("assistant.usage")
+            event.data = MagicMock(
+                input_tokens=100,
+                output_tokens=50,
+                quota_snapshots={
+                    "premium": MagicMock(
+                        remaining_percentage=80.0,
+                        is_unlimited_entitlement=False,
+                        reset_date=None,
+                        used_requests=None,
+                        entitlement_requests=None,
+                    ),
+                    "completion": MagicMock(
+                        remaining_percentage=25.0,
+                        is_unlimited_entitlement=False,
+                        reset_date=None,
+                        used_requests=None,
+                        entitlement_requests=None,
+                    ),
+                },
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.quota_remaining == 25.0  # Takes minimum
+
+
+class TestRateLimitDetection:
+    """Test rate limit detection from session.error events."""
+
+    @pytest.mark.asyncio
+    async def test_error_event_detects_rate_limit(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test session.error event detects rate limit."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("session.error")
+            event.data = MagicMock(
+                error={"code": "429", "message": "Too many requests"},
+                error_type=None,
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.rate_limited is True
+        assert "Too many requests" in stats.rate_limit_message
+
+    @pytest.mark.asyncio
+    async def test_error_event_detects_rate_limit_by_message(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test session.error detects rate limit via message content."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("session.error")
+            event.data = MagicMock(
+                error="Your organization restricts the number of requests",
+                error_type=None,
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.rate_limited is True
+
+    @pytest.mark.asyncio
+    async def test_normal_error_not_flagged_as_rate_limit(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test normal errors don't trigger rate limit flag."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("session.error")
+            event.data = MagicMock(
+                error="Connection timeout",
+                error_type="network_error",
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.rate_limited is False
+        assert stats.rate_limit_message is None
+
+
+class TestSessionObservability:
+    """Test session observability features (Phase 1)."""
+
+    @pytest.mark.asyncio
+    async def test_session_start_tracks_time(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test session.start event records start time."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("session.start")
+            event.data = MagicMock(context=None, selected_model="gpt-4")
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.session_start_time is not None
+        assert stats.session_duration_seconds is not None
+        assert stats.session_duration_seconds >= 0
+
+    @pytest.mark.asyncio
+    async def test_compaction_events_tracked(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test compaction events are recorded for metrics."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            # Simulate compaction completion
+            event = MagicMock()
+            event.type = MockEventType("session.compaction_complete")
+            event.data = MagicMock(
+                compaction_tokens_used=MagicMock(before=50000, after=40000)
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.compaction_count == 1
+        assert len(stats.compaction_events) == 1
+        assert stats.compaction_events[0].tokens_before == 50000
+        assert stats.compaction_events[0].tokens_after == 40000
+        assert stats.compaction_events[0].effective is True  # 40K < 50K
+        assert stats.compaction_events[0].token_delta == -10000
+
+    @pytest.mark.asyncio
+    async def test_compaction_effectiveness_calculated(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test overall compaction effectiveness calculation."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        session = await adapter.create_session(AdapterConfig())
+
+        async def simulate_events(*args, **kwargs):
+            handler = mock_copilot_session._event_handler
+
+            # Simulate two compaction events
+            event = MagicMock()
+            event.type = MockEventType("session.compaction_complete")
+            event.data = MagicMock(
+                compaction_tokens_used=MagicMock(before=100000, after=80000)
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.compaction_complete")
+            event.data = MagicMock(
+                compaction_tokens_used=MagicMock(before=80000, after=70000)
+            )
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = simulate_events
+        await adapter.send(session, "Test")
+
+        stats = adapter.session_stats[session.id]
+        assert stats.compaction_count == 2
+        # Total before: 180K, after: 150K, ratio = 0.833
+        assert stats.compaction_effectiveness < 1.0
+        assert stats.total_tokens_saved == 30000  # 20K + 10K saved
+
+    def test_requests_per_minute_calculation(self):
+        """Test requests_per_minute property."""
+        from datetime import datetime, timedelta
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.session_start_time = datetime.now() - timedelta(minutes=5)
+        stats.turns = 50
+
+        rpm = stats.requests_per_minute
+        assert rpm is not None
+        assert 9.5 < rpm < 10.5  # ~10 requests per minute
+
+    def test_requests_per_minute_none_without_start(self):
+        """Test requests_per_minute returns None without start time."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.turns = 50
+
+        assert stats.requests_per_minute is None
+
+
 class TestEnsureCopilotSdk:
     """Test SDK import helper."""
     

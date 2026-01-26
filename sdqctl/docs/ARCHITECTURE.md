@@ -61,6 +61,8 @@ sdqctl/
 │   ├── __init__.py       # Exports AdapterBase, get_adapter
 │   ├── base.py           # AdapterBase, AdapterConfig, AdapterSession
 │   ├── registry.py       # Adapter discovery and registration
+│   ├── stats.py          # SessionStats, TurnStats, CompactionEvent
+│   ├── events.py         # EventCollector for JSONL export
 │   ├── copilot.py        # GitHub Copilot SDK adapter
 │   └── mock.py           # Mock adapter for testing
 │

@@ -86,6 +86,39 @@ COMPACTION-MIN 30%
 sdqctl iterate workflow.conv -n 10 --infinite-sessions
 ```
 
+### Session Observability
+
+The Copilot adapter tracks session metrics for long-running operations:
+
+**Quota Tracking** (from `assistant.usage` events):
+- `quota_remaining` - Percentage of quota remaining (0-100)
+- `quota_reset_date` - When quota resets (ISO timestamp)
+- Automatic warning when quota drops below 20%
+
+**Rate Limit Detection** (from `session.error` events):
+- Detects HTTP 429 errors and rate limit messages
+- `rate_limited` flag for programmatic handling
+- User-friendly error messages
+
+**Session Timing**:
+- `session_start_time` - When session began
+- `session_duration_seconds` - Elapsed time
+- `requests_per_minute` - Average request rate
+
+**Compaction Metrics**:
+- `compaction_count` - Number of compactions
+- `compaction_effectiveness` - Ratio (< 1.0 = good)
+- `total_tokens_saved` - Cumulative tokens saved
+
+Access metrics programmatically:
+```python
+stats = adapter.get_session_stats(session)
+if stats.quota_remaining and stats.quota_remaining < 20:
+    print(f"⚠️ Low quota: {stats.quota_remaining:.0f}%")
+if stats.rate_limited:
+    print(f"🛑 Rate limited: {stats.rate_limit_message}")
+```
+
 ---
 
 ## mock (Testing Adapter)
