@@ -34,7 +34,7 @@ sdqctl [OPTIONS] COMMAND [ARGS]...
 
 | Option | Description |
 |--------|-------------|
-| `-v` | INFO level (progress with context %) |
+| `-v` | INFO level (progress with context %, timestamps) |
 | `-vv` | DEBUG level (streaming responses) |
 | `-vvv` | TRACE level (tool calls, reasoning) |
 | `-q` | Quiet mode (errors only) |
