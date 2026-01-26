@@ -36,7 +36,7 @@ ruff check sdqctl/ tests/
 
 | Category | Target | Current | Notes |
 |----------|--------|---------|-------|
-| E501 (line length >100) | 0 | ~171 | Requires manual refactoring |
+| E501 (line length >100) | 0 | 0 | ✅ Clean |
 | F841 (unused variables) | 0 | 0 | ✅ Clean |
 | All others | 0 | 0 | ✅ Clean |
 
