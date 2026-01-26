@@ -32,6 +32,9 @@ class SessionStats:
     turns: int = 0
     model: Optional[str] = None
     context_info: Optional[dict] = None
+    # Current context window tracking (updated from session.usage_info)
+    current_context_tokens: int = 0
+    context_token_limit: int = 128000
     # Intent tracking
     current_intent: Optional[str] = None
     intent_history: list = field(default_factory=list)

@@ -542,18 +542,20 @@ class TestCopilotAdapterContextUsage:
     
     @pytest.mark.asyncio
     async def test_get_context_usage_with_stats(self, mock_copilot_client, mock_copilot_session):
-        """Test get_context_usage() uses accumulated stats."""
+        """Test get_context_usage() uses current context tokens (not cumulative)."""
         mock_copilot_client.create_session.return_value = mock_copilot_session
         
         adapter = CopilotAdapter()
         adapter.client = mock_copilot_client
         
         session = await adapter.create_session(AdapterConfig())
-        adapter.session_stats[session.id].total_input_tokens = 5000
+        # Set current context tokens (from session.usage_info events)
+        adapter.session_stats[session.id].current_context_tokens = 35000
+        adapter.session_stats[session.id].context_token_limit = 128000
         
         used, max_tokens = await adapter.get_context_usage(session)
         
-        assert used == 5000
+        assert used == 35000
         assert max_tokens == 128000
     
     @pytest.mark.asyncio

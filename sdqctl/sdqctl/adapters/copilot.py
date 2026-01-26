@@ -433,6 +433,9 @@ class CopilotAdapter(AdapterBase):
                     cur = int(current_tokens)
                     lim = int(token_limit)
                     msgs = int(messages_length or 0)
+                    # Update stats for get_context_usage()
+                    stats.current_context_tokens = cur
+                    stats.context_token_limit = lim
                     logger.debug(f"Context: {cur:,}/{lim:,} tokens ({pct}%), {msgs} messages")
                 elif logger.isEnabledFor(TRACE):
                     # Full data only at TRACE
@@ -659,10 +662,14 @@ class CopilotAdapter(AdapterBase):
         return 0
 
     async def get_context_usage(self, session: AdapterSession) -> tuple[int, int]:
-        """Get context window usage."""
+        """Get context window usage.
+
+        Returns current context window size (not cumulative tokens).
+        Updated from session.usage_info events during send().
+        """
         stats = self.session_stats.get(session.id)
-        if stats:
-            return (stats.total_input_tokens, 128000)
+        if stats and stats.current_context_tokens > 0:
+            return (stats.current_context_tokens, stats.context_token_limit)
 
         copilot_session = session._internal
 
