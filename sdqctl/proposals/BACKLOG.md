@@ -33,7 +33,6 @@
 | Item | Effort | Notes |
 |------|--------|-------|
 | Fix E501 lint issues (203 remaining) | Low | Refactor during normal development |
-| Fix W293 whitespace (5) + I001 imports (2) | Low | Quick ruff --fix |
 | Update "cycle command" comments to "iterate" | Low | GETTING-STARTED.md, VALIDATION-WORKFLOW.md |
 | Modularize copilot.py (~1127 lines) | Medium | events.py, stats.py, session.py |
 | Modularize run.py (~1541 lines) | Medium | Largest command file |
