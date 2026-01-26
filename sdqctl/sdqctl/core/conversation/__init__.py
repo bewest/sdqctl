@@ -6,22 +6,31 @@ All public APIs are re-exported here for backward compatibility.
 """
 
 # Types and dataclasses
-from .types import (
-    ConversationStep,
-    Directive,
-    DirectiveType,
-    FileRestrictions,
-    SECRET_KEY_PATTERNS,
-    _mask_env_value,
+from .applicator import (
+    _apply_directive,
+    _apply_directive_to_block,
+    apply_directive,
+    apply_directive_to_block,
 )
 
 # Main ConversationFile class
 from .file import ConversationFile
 
+# Parser and applicator (mostly internal, but exported for compatibility)
+from .parser import _parse_line, parse_line
+
 # Template utilities
 from .templates import (
     get_standard_variables,
     substitute_template_variables,
+)
+from .types import (
+    SECRET_KEY_PATTERNS,
+    ConversationStep,
+    Directive,
+    DirectiveType,
+    FileRestrictions,
+    _mask_env_value,
 )
 
 # Content utilities
@@ -30,15 +39,6 @@ from .utilities import (
     build_output_with_injection,
     build_prompt_with_injection,
     resolve_content_reference,
-)
-
-# Parser and applicator (mostly internal, but exported for compatibility)
-from .parser import parse_line, _parse_line
-from .applicator import (
-    apply_directive,
-    apply_directive_to_block,
-    _apply_directive,
-    _apply_directive_to_block,
 )
 
 __all__ = [

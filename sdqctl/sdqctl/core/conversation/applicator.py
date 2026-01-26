@@ -8,7 +8,7 @@ from .types import ConversationStep, Directive, DirectiveType
 
 def apply_directive(conv, directive: Directive) -> None:
     """Apply a parsed directive to the ConversationFile.
-    
+
     Args:
         conv: The ConversationFile being built
         directive: The parsed directive to apply

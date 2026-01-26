@@ -8,7 +8,7 @@ PermissionError, or OSError.
 
 import functools
 import sys
-from typing import Callable, TypeVar, ParamSpec
+from typing import Callable, ParamSpec, TypeVar
 
 import click
 

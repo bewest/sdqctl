@@ -8,11 +8,11 @@ from .types import Directive, DirectiveType
 
 def parse_line(line: str, line_num: int) -> Optional[Directive]:
     """Parse a single line into a Directive.
-    
+
     Args:
         line: The line text to parse
         line_num: The line number for error reporting
-        
+
     Returns:
         A Directive if the line matches a known directive, None otherwise
     """

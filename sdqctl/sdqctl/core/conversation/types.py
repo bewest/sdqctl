@@ -14,11 +14,11 @@ SECRET_KEY_PATTERNS = ('KEY', 'SECRET', 'TOKEN', 'PASSWORD', 'AUTH', 'CREDENTIAL
 
 def _mask_env_value(key: str, value: str) -> str:
     """Mask environment variable value if key suggests it's a secret.
-    
+
     Args:
         key: Environment variable name
         value: Environment variable value
-        
+
     Returns:
         Original value or masked version (first 3 chars + ***)
     """
