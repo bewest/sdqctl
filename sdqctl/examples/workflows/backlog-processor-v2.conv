@@ -74,15 +74,15 @@ PROLOGUE ---
 # === Phase 1: Select and Assess ===
 PROMPT ## Phase 1: Work Selection
 
-Review the Ready Queue in BACKLOG.md and select work for this iteration.
+Let's assess the project status and review the Ready Queue in BACKLOG.md and
+select work for this iteration.
 
-**SDK Economy - Batch Selection:**
-When possible, select 2-4 RELATED items that can complete together:
+Let's evaluate enough high value taskable work areas we can complete in a
+germaine, comprehensible way for future reviewers and future collaborators.
+When possible, select a modest number related low effort items that make sense to complete together:
 - Items sharing the same files or modules
 - Items with similar complexity (all Low or all Medium)
 - Items that can be verified together
-
-If only 1 high-priority item exists, that's acceptable.
 
 **Selection criteria (in order):**
 1. **P0 items** - Critical/blocking work
@@ -95,7 +95,6 @@ If only 1 high-priority item exists, that's acceptable.
 Before selecting, scan ALL sources for candidates:
 - proposals/BACKLOG.md - Ready Queue
 - docs/QUIRKS.md - Active quirks
-- Any --prologue files provided
 
 **Scan for these markers:**
 - `[ ]` unchecked items (ready to work)
@@ -105,7 +104,7 @@ Before selecting, scan ALL sources for candidates:
 
 **Output format:**
 ```
-### Selected Work Package (N items)
+### Selected Work (N items)
 **Items:**
 1. [Item Name] - [brief description]
 2. [Item Name] - [brief description]
@@ -127,11 +126,15 @@ COMPACT
 # === Phase 2: Execute ===
 PROMPT ## Phase 2: Execute
 
-Implement the selected work package now. **Edit files directly, don't just describe.**
+Let's start to do the relevant work that we've been planning.
+**Edit files directly, don't just describe.**
 
-**Iteration Budget Guidance:**
-- Target: Complete all items in selected work package
-- Maximum: ~300 lines changed (split larger work across cycles)
+- Target: Complete all items in selected work, group small taskable and
+  relevant tasks together while, preserving scope and focus for complicated
+  work or a high volume of work material.
+- Maximum: If there is too much work to reasonably do, or too complicated for
+  potential viewers and future collaborators, let's do what makes sense and
+  document need for chunking or defering for future work.
 - Batch trivial work: 5+ lint fixes together, or defer
 
 **For Implementation tasks:**
@@ -211,7 +214,9 @@ Ensure changes are reflected in project documentation.
 4. **Cross-references**: Do links still work?
 
 **Actions:**
-- Docs need updates → make changes now (minimal, surgical)
+- Docs need updates relevant to our changes → make changes now
+- Docs inaccurate? Surface inaccuracies to be fixed in quirks/backlog as
+  appropriate.
 - Docs current → note "No updates needed"
 - Major doc work → add to candidates for Phase 7
 
@@ -223,12 +228,12 @@ Ensure changes are reflected in project documentation.
 **Deferred:** [items for Phase 7 or "None"]
 ```
 
-COMPACT
+ELIDE
 
 # === Phase 5: Backlog Hygiene ===
 PROMPT ## Phase 5: Backlog Hygiene
 
-Light cleanup of tracking files.
+Light cleanup of relevant tracking files.
 
 **Quick hygiene:**
 1. Mark completed items with ✅ and date
@@ -282,7 +287,7 @@ Review these for potential work items considering our recent progress:
 3. **docs/OPEN-QUESTIONS.md** - Recently answered questions that unlock work
 4. **Code observations** - Issues noticed during implementation this cycle
 
-### 7.2 Generate 5 Candidates
+### 7.2 Generate 5 - 8 Candidates
 
 Enumerate clearly with proper taxonomy:
 
@@ -352,6 +357,7 @@ For each candidate, decide destination:
 **Skipped:** N (already tracked)
 ```
 
+ELIDE
 # No COMPACT - librarian needs routing context
 
 # ============================================================================
@@ -368,12 +374,15 @@ Consider subtle categorizing, chunking and archiving.
 ### 9.1 Size Check
 
 Review these files for bloat (check line counts):
-- `proposals/BACKLOG.md` - target <300 lines active content
-- `docs/QUIRKS.md` - target <200 lines active content
+- `proposals/BACKLOG.md` - target <500 lines active content
+- `docs/QUIRKS.md` - target <400 lines active content
 - `docs/OPEN-QUESTIONS.md` - answered items should be fully integrated into project details and then move out
 
 ### 9.2 Archive Actions
 
+Collect plans/proposals to archive materials in open questions for approval.
+Enact the archival plan for appropriately approved or egregiously bloated
+documents or trackers that need reorganization.
 **Completed proposals** (all phases ✅, >30 days old):
 - Important persistent knowledge captured in project documentation and only
   ephemeral discussion of work remains?
