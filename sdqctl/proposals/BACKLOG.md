@@ -24,6 +24,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
+| **Loop detection: tool-aware minimal response** | Low | Skip minimal check if tools called. See [Loop Detection Refinement](#loop-detection-refinement). |
 | Extract StepExecutor from iterate.py | Medium | Q-020 done. See [Architecture Roadmap](#architecture-roadmap). |
 | CONSULT-DIRECTIVE Phase 4 | Medium | Timeout → fail with clear error. Needs CONSULT-TIMEOUT directive. |
 | Fix E501 lint issues (65 in core) | Low | run.py(51), iterate.py(14), tests(55). Core down from 172 to 65. |
@@ -35,7 +36,7 @@
 | Modularize copilot.py (~1127 lines) | Medium | events.py, stats.py, session.py |
 | Modularize run.py (~1541 lines) | Medium | Largest command file |
 | Add integration tests | Medium | Beyond loop stress testing |
-| Default verbosity key actions | Low | **Blocked by OQ-004** - needs impact/alternatives proposal |
+| Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
 | Performance benchmark suite | Medium | Track regressions |
 | Error path test coverage | Medium | File I/O errors, permissions, timeouts |
 
@@ -214,6 +215,57 @@ adapters/copilot/
 | `docs/QUIRKS.md` | Active quirks only (Q-017, Q-019A) + quick reference |
 | `archive/quirks/` | Archived resolved quirks with full details |
 | `docs/SDK-LEARNINGS.md` | Extracted patterns/learnings from resolved quirks |
+
+### Loop Detection Refinement (P2)
+
+**Problem:** Minimal response detection (100 chars) triggers false positives on short but valid responses like Phase 6 commit acknowledgments.
+
+**Evidence:** Run #4 stopped at Cycle 5, Phase 6 with 98-char response after successful commit.
+
+**Root Cause:** `_check_minimal_response()` checks only response length, ignoring tool activity.
+
+**Proposed Fix:** Skip minimal response check if tools were called in the turn.
+
+```python
+# In loop_detector.py, modify check() signature:
+def check(
+    self,
+    reasoning: Optional[str],
+    response: str,
+    cycle_number: int = 0,
+    tools_called: int = 0  # NEW: tool count for this turn
+) -> Optional[LoopDetected]:
+
+# In _check_minimal_response():
+def _check_minimal_response(
+    self, response: str, cycle_number: int, tools_called: int = 0
+) -> bool:
+    if cycle_number == 0:
+        return False
+    if tools_called > 0:  # Agent was productive
+        return False
+    return len(response.strip()) < self.min_response_length
+```
+
+**Call Site Change (iterate.py):**
+```python
+# Get tool count from turn stats
+turn_tools = stats._send_turn_stats.tool_calls if stats else 0
+loop_result = loop_detector.check(combined, response, cycle_num, turn_tools)
+```
+
+**Rationale:**
+- If tools were called, agent was doing work (not stuck)
+- Short text responses after tool calls are normal (acknowledgments)
+- Preserves detection for truly stuck loops (no tools, minimal text)
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Add `tools_called` param to `check()` | Low | 🔲 Open |
+| Modify `_check_minimal_response()` | Low | 🔲 Open |
+| Update call site in iterate.py | Low | 🔲 Open |
+| Add test for tool-aware detection | Low | 🔲 Open |
+| Update docstrings | Low | 🔲 Open |
 
 ---
 
