@@ -497,13 +497,11 @@ class CopilotAdapter(AdapterBase):
                                 if entitlement is not None:
                                     stats.quota_entitlement_requests = int(entitlement)
 
-                                # Warn when quota is low
-                                if remaining < 20 and not stats.is_unlimited_quota:
-                                    logger.warning(
-                                        f"⚠️  Quota low: {remaining:.0f}% remaining "
-                                        f"({quota_type})"
-                                    )
-                                    progress(f"  ⚠️  Quota: {remaining:.0f}% remaining")
+                                # Warn when quota is low (uses rate limit prediction)
+                                warning = stats.get_rate_limit_warning()
+                                if warning:
+                                    logger.warning(f"⚠️  {warning}")
+                                    progress(f"  ⚠️  {warning}")
 
             elif event_type == "session.usage_info":
                 # Extract only meaningful usage fields

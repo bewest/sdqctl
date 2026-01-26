@@ -1675,3 +1675,106 @@ class TestSessionPersistence:
         
         with pytest.raises(RuntimeError, match="Session not found"):
             await adapter.delete_session("nonexistent")
+
+
+
+class TestRateLimitPrediction:
+    """Test rate limit prediction in SessionStats (Phase 3)."""
+
+    def test_estimated_remaining_requests_from_quota(self):
+        """Test calculating remaining requests from quota data."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.quota_remaining = 50.0  # 50%
+        stats.quota_entitlement_requests = 1000
+
+        assert stats.estimated_remaining_requests == 500
+
+    def test_estimated_remaining_requests_unlimited(self):
+        """Test that unlimited quota returns None."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.is_unlimited_quota = True
+        stats.quota_remaining = 100.0
+        stats.quota_entitlement_requests = 1000
+
+        assert stats.estimated_remaining_requests is None
+
+    def test_estimated_remaining_requests_no_data(self):
+        """Test that missing quota data returns None."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        assert stats.estimated_remaining_requests is None
+
+    def test_estimated_minutes_remaining(self):
+        """Test time-to-rate-limit calculation."""
+        from datetime import datetime, timedelta
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.session_start_time = datetime.now() - timedelta(minutes=10)
+        stats.turns = 100  # 10 requests/minute
+        stats.quota_remaining = 50.0
+        stats.quota_entitlement_requests = 1000
+
+        # 500 remaining / 10 per minute = 50 minutes
+        mins = stats.estimated_minutes_remaining
+        assert mins is not None
+        assert 45 < mins < 55  # Allow some tolerance
+
+    def test_should_warn_rate_limit_below_threshold(self):
+        """Test warning triggered when quota low."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.quota_remaining = 15.0  # Below 20% threshold
+
+        assert stats.should_warn_rate_limit() is True
+        assert stats.should_warn_rate_limit(threshold=10.0) is False
+
+    def test_should_warn_rate_limit_healthy(self):
+        """Test no warning when quota healthy."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.quota_remaining = 80.0
+
+        assert stats.should_warn_rate_limit() is False
+
+    def test_should_warn_rate_limit_unlimited(self):
+        """Test no warning for unlimited quota."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.is_unlimited_quota = True
+        stats.quota_remaining = 5.0  # Would normally warn
+
+        assert stats.should_warn_rate_limit() is False
+
+    def test_get_rate_limit_warning_message(self):
+        """Test warning message generation."""
+        from datetime import datetime, timedelta
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.session_start_time = datetime.now() - timedelta(minutes=10)
+        stats.turns = 100
+        stats.quota_remaining = 15.0
+        stats.quota_entitlement_requests = 1000
+
+        warning = stats.get_rate_limit_warning()
+        assert warning is not None
+        assert "15%" in warning
+        assert "requests left" in warning
+
+    def test_get_rate_limit_warning_none_when_healthy(self):
+        """Test no warning when quota healthy."""
+        from sdqctl.adapters.stats import SessionStats
+
+        stats = SessionStats()
+        stats.quota_remaining = 80.0
+
+        assert stats.get_rate_limit_warning() is None

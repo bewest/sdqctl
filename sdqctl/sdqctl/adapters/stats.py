@@ -121,3 +121,71 @@ class SessionStats:
     def total_tokens_saved(self) -> int:
         """Cumulative tokens saved by compaction (negative = net increase)."""
         return -sum(e.token_delta for e in self.compaction_events)
+
+    @property
+    def estimated_remaining_requests(self) -> Optional[int]:
+        """Estimate remaining requests before rate limit.
+
+        Based on quota_remaining percentage and entitlement.
+        Returns None if quota data not available.
+        """
+        if self.is_unlimited_quota:
+            return None
+        if self.quota_remaining is not None and self.quota_entitlement_requests:
+            return int((self.quota_remaining / 100) * self.quota_entitlement_requests)
+        return None
+
+    @property
+    def estimated_minutes_remaining(self) -> Optional[float]:
+        """Estimate minutes until rate limit at current request rate.
+
+        Returns None if insufficient data.
+        """
+        remaining = self.estimated_remaining_requests
+        rate = self.requests_per_minute
+        if remaining is None or rate is None or rate < 0.1:
+            return None
+        return remaining / rate
+
+    def should_warn_rate_limit(self, threshold: float = 20.0) -> bool:
+        """Check if we should warn about approaching rate limit.
+
+        Args:
+            threshold: Warn when quota_remaining falls below this percentage
+
+        Returns:
+            True if warning should be displayed
+        """
+        if self.is_unlimited_quota:
+            return False
+        if self.quota_remaining is not None:
+            return self.quota_remaining < threshold
+        return False
+
+    def get_rate_limit_warning(self) -> Optional[str]:
+        """Get rate limit warning message if applicable.
+
+        Returns:
+            Warning message string, or None if no warning needed
+        """
+        if not self.should_warn_rate_limit():
+            return None
+
+        parts = []
+        if self.quota_remaining is not None:
+            parts.append(f"Quota: {self.quota_remaining:.0f}% remaining")
+
+        remaining = self.estimated_remaining_requests
+        if remaining is not None:
+            parts.append(f"~{remaining} requests left")
+
+        mins = self.estimated_minutes_remaining
+        if mins is not None:
+            if mins < 5:
+                parts.append(f"⚠️  ~{mins:.0f} min until rate limit")
+            else:
+                parts.append(f"~{mins:.0f} min at current rate")
+
+        if parts:
+            return " | ".join(parts)
+        return "⚠️  Approaching rate limit"

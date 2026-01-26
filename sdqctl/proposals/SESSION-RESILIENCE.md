@@ -1,9 +1,9 @@
 # Session Resilience & Observability
 
-> **Status**: Phase 0-2 Complete ✅  
+> **Status**: Phase 0-3 Complete ✅  
 > **Created**: 2026-01-26  
 > **Updated**: 2026-01-26  
-> **Priority**: P3 (remaining phases: 3-4)  
+> **Priority**: P3 (remaining: Phase 4)  
 > **Source**: backlog-processor-v2 Run #5 observations + SDK research
 
 ---
@@ -412,17 +412,27 @@ Validate and document resume flow:
 - `resume` command handles local checkpoint files
 - CONSULT-TIMEOUT expiration check prevents stale resumes
 
-### Phase 3: Predictive Rate Limiting (P3) - Medium Effort
+### Phase 3: Predictive Rate Limiting (P2) - ✅ COMPLETE
 
 Add proactive warnings:
 - Rate limit prediction algorithm
 - Warning thresholds
 - Suggested actions
 
-**Deliverables**:
-- Rate limit prediction in SessionStats
-- Warning output at 80% threshold
-- `--rate-limit-aware` flag
+**Deliverables** (Completed 2026-01-26):
+- ✅ Rate limit prediction in SessionStats
+  - `estimated_remaining_requests` - calculates from quota data
+  - `estimated_minutes_remaining` - time until rate limit at current rate
+  - `should_warn_rate_limit(threshold)` - check if warning needed
+  - `get_rate_limit_warning()` - formatted warning message
+- ✅ Warning output at 20% threshold (integrated into copilot adapter)
+- ⏸️ `--rate-limit-aware` flag deferred (current warning is automatic)
+- ✅ 9 new tests for rate limit prediction
+
+**Example warning output**:
+```
+⚠️  Quota: 15% remaining | ~150 requests left | ~15 min at current rate
+```
 
 ### Phase 4: Compaction Strategy Tuning (Future)
 
