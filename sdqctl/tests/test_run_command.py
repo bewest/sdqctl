@@ -765,6 +765,7 @@ class TestRunSubprocessHelper:
         assert result.returncode == 0
         assert str(tmp_path) in result.stdout
 
+    @pytest.mark.slow
     def test_timeout_parameter_raises(self, tmp_path):
         """Test timeout parameter causes TimeoutExpired."""
         import subprocess
