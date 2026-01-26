@@ -11,7 +11,7 @@
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
 | 1 | Add integration tests | P2 | Medium | Ongoing: Total 1296 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
-| 2 | artifact.py modularization | P2 | Medium | 689 lines. Similar pattern to help.py extraction. |
+| 2 | verify.py modularization | P2 | Medium | 641 lines. Similar pattern to artifact.py extraction. |
 | 3 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. |
 
 ---
@@ -60,6 +60,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **artifact.py modularization (P2)** | 2026-01-26 | Complete: 689 → 500 lines (-27%). Extracted core/artifact_ids.py (213 lines). |
 | **help.py modularization (P2)** | 2026-01-26 | Complete: 698 → 156 lines (-78%). Extracted COMMAND_HELP to core/help_commands.py (550 lines). |
 | **Compaction config unification (P2)** | 2026-01-26 | Complete: COMPACTION-MAX directive, CLI naming alignment, None defaults. +8 tests. Total 1296 tests. |
 | **`run` command deprecation (P2)** | 2026-01-26 | Complete: 972 → 125 lines. Thin wrapper forwards to `iterate -n 1`. All 1288 tests pass. |

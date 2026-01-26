@@ -52,6 +52,7 @@ sdqctl/
 │   ├── models.py         # ModelRequirements, model selection
 │   ├── refcat.py         # REFCAT line-level excerpts
 │   ├── exceptions.py     # Custom exceptions with exit codes
+│   ├── artifact_ids.py   # Artifact ID patterns and utilities (213 lines)
 │   ├── help_commands.py  # Command help content (550 lines)
 │   ├── help_topics.py    # Topic help content (623 lines)
 │   ├── logging.py        # Logging configuration
@@ -76,7 +77,7 @@ sdqctl/
 │   ├── verify.py         # Verification command
 │   ├── sessions.py       # Session management (list, resume)
 │   ├── status.py         # Adapter status (auth, models)
-│   ├── artifact.py       # Artifact ID generation
+│   ├── artifact.py       # Artifact ID CLI commands (500 lines, uses core/artifact_ids.py)
 │   ├── refcat.py         # REFCAT extraction
 │   ├── flow.py           # Workflow parsing info
 │   ├── help.py           # Help command (156 lines, uses core/help_*.py)
