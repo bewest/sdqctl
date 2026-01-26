@@ -81,6 +81,8 @@ sdqctl/
 │   ├── help.py           # Help topics display
 │   ├── blocks.py         # ON-FAILURE/ON-SUCCESS block execution
 │   ├── elide.py          # Elision step processing
+│   ├── compact_steps.py  # COMPACT/CHECKPOINT step handlers
+│   ├── iterate_helpers.py # Target parsing, config builders for iterate
 │   ├── run_steps.py      # RUN/RUN-ASYNC/RUN-WAIT step handlers
 │   ├── verify_steps.py   # VERIFY/VERIFY-TRACE/VERIFY-COVERAGE handlers
 │   └── utils.py          # Shared command utilities

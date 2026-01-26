@@ -58,7 +58,7 @@ Large files are harder to maintain, test, and understand.
 |------|-------|----------------|----------|
 | `core/conversation.py` | 1,768 | Split into parser/validator/directives/templates | ✅ Done |
 | `commands/run.py` | 973 | ✅ Extracted elide.py, blocks.py, verify_steps.py, run_steps.py (-550 lines). Target <1000 achieved. | ✅ Done |
-| `commands/iterate.py` | 1,079 | Share execution engine with run.py | P2 |
+| `commands/iterate.py` | 1,180 | Extracted iterate_helpers.py, compact_steps.py (-217 lines). Prompt handler extraction pending. | P2 |
 | `adapters/copilot.py` | 1,054 | ✅ Extracted events.py, stats.py | Done |
 
 ### Refactoring Strategy

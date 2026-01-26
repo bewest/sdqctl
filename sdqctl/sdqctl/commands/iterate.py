@@ -22,7 +22,6 @@ Session Modes:
 """
 
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -41,154 +40,21 @@ from ..core.progress import WorkflowProgress
 from ..core.progress import progress as progress_print
 from ..core.session import Session
 from ..utils.output import PromptWriter, handle_error
+from .compact_steps import execute_checkpoint_step, execute_compact_step
+from .iterate_helpers import (
+    SESSION_MODES,
+    TURN_SEPARATOR,
+    TurnGroup,
+    build_infinite_session_config,
+    is_workflow_file,
+    parse_targets,
+    validate_targets,
+)
 from .utils import run_async
+from .verify_steps import execute_verify_coverage_step, execute_verify_trace_step
 
 logger = get_logger(__name__)
 console = Console()
-
-
-# Turn separator for forcing turn boundaries in mixed mode
-TURN_SEPARATOR = "---"
-
-
-@dataclass
-class TurnGroup:
-    """A group of items that will be elided into a single turn."""
-    items: list[str] = field(default_factory=list)
-
-
-def is_workflow_file(item: str) -> bool:
-    """Check if item is an existing .conv or .copilot file."""
-    path = Path(item)
-    return path.exists() and path.suffix in (".conv", ".copilot")
-
-
-def parse_targets(targets: tuple[str, ...]) -> list[TurnGroup]:
-    """Parse mixed targets into turn groups separated by ---.
-
-    Args:
-        targets: Tuple of target strings (prompts, file paths, or separators)
-
-    Returns:
-        List of TurnGroup objects. Empty groups are filtered out.
-    """
-    groups: list[TurnGroup] = []
-    current: list[str] = []
-
-    for item in targets:
-        if item == TURN_SEPARATOR:
-            if current:
-                groups.append(TurnGroup(items=current))
-                current = []
-        else:
-            current.append(item)
-
-    if current:
-        groups.append(TurnGroup(items=current))
-
-    return groups
-
-
-def validate_targets(groups: list[TurnGroup]) -> tuple[Optional[str], list[str], list[str]]:
-    """Validate mixed target constraints and extract components.
-
-    Args:
-        groups: List of TurnGroup objects from parse_targets
-
-    Returns:
-        Tuple of (workflow_path, pre_prompts, post_prompts)
-        - workflow_path: Path to the single .conv file, or None
-        - pre_prompts: Prompts before the workflow file
-        - post_prompts: Prompts after the workflow file
-
-    Raises:
-        click.UsageError: If more than one .conv file is found
-    """
-    workflow_path: Optional[str] = None
-    pre_prompts: list[str] = []
-    post_prompts: list[str] = []
-    workflow_found = False
-    conv_files: list[str] = []
-
-    # First pass: find all .conv files
-    for group in groups:
-        for item in group.items:
-            if is_workflow_file(item):
-                conv_files.append(item)
-
-    if len(conv_files) > 1:
-        raise click.UsageError(
-            f"Mixed mode allows only ONE .conv file, found {len(conv_files)}: {conv_files}"
-        )
-
-    # Second pass: categorize items
-    for group in groups:
-        for item in group.items:
-            if is_workflow_file(item):
-                workflow_path = item
-                workflow_found = True
-            elif workflow_found:
-                post_prompts.append(item)
-            else:
-                pre_prompts.append(item)
-
-    return workflow_path, pre_prompts, post_prompts
-
-
-# Session mode descriptions for help and documentation
-SESSION_MODES = {
-    "accumulate": "Context grows, compact only at limit",
-    "compact": "Summarize after each cycle",
-    "fresh": "New session each cycle, reload files",
-}
-
-
-def build_infinite_session_config(
-    no_infinite_sessions: bool,
-    compaction_threshold: int,
-    buffer_threshold: int = 95,
-    min_compaction_density: int = 30,
-    conv_infinite_sessions: Optional[bool] = None,
-    conv_compaction_min: Optional[float] = None,
-    conv_compaction_threshold: Optional[float] = None,
-) -> InfiniteSessionConfig:
-    """Build InfiniteSessionConfig from CLI options and ConversationFile directives.
-
-    Priority: CLI options > ConversationFile directives > defaults
-    """
-    # Enabled: CLI flag takes precedence, then conv directive, then default (True)
-    if no_infinite_sessions:
-        enabled = False
-    elif conv_infinite_sessions is not None:
-        enabled = conv_infinite_sessions
-    else:
-        enabled = True
-
-    # Min compaction density: CLI > conv > default (30%)
-    if min_compaction_density != 30:  # CLI override
-        min_density = min_compaction_density / 100.0
-    elif conv_compaction_min is not None:
-        min_density = conv_compaction_min
-    else:
-        min_density = 0.30
-
-    # Background threshold: CLI > conv > default (80%)
-    if compaction_threshold != 80:  # CLI override
-        bg_threshold = compaction_threshold / 100.0
-    elif conv_compaction_threshold is not None:
-        bg_threshold = conv_compaction_threshold
-    else:
-        bg_threshold = 0.80
-
-    # Buffer exhaustion: CLI > default (95%)
-    buf_threshold = buffer_threshold / 100.0
-
-    return InfiniteSessionConfig(
-        enabled=enabled,
-        min_compaction_density=min_density,
-        background_threshold=bg_threshold,
-        buffer_exhaustion=buf_threshold,
-    )
 
 
 @click.command("iterate")
@@ -1180,104 +1046,21 @@ async def _cycle_async(
                             prompt_idx += 1
 
                         elif step_type == "compact":
-                            # Execute inline COMPACT directive (conditional on threshold)
-                            if session.needs_compaction(min_compaction_density):
-                                console.print("[yellow]🗜  Compacting conversation...[/yellow]")
-                                progress_print("  🗜  Compacting conversation...")
-
-                                preserve = step.preserve if hasattr(step, 'preserve') else []
-                                all_preserve = conv.compact_preserve + preserve
-                                compact_prompt = session.get_compaction_prompt()
-                                if all_preserve:
-                                    preserve_list = ', '.join(all_preserve)
-                                    compact_prompt = (
-                                        f"Preserve these items: {preserve_list}\n\n"
-                                        f"{compact_prompt}"
-                                    )
-
-                                compact_response = await ai_adapter.send(
-                                    adapter_session, compact_prompt
-                                )
-                                summary_msg = f"[Compaction summary]\n{compact_response}"
-                                session.add_message("system", summary_msg)
-
-                                # Sync local context tracking with SDK token count
-                                tokens_after, _ = await ai_adapter.get_context_usage(
-                                    adapter_session
-                                )
-                                session.context.window.used_tokens = tokens_after
-
-                                console.print("[green]🗜  Compaction complete[/green]")
-                                progress_print("  🗜  Compaction complete")
-                            else:
-                                skip_msg = "📊 Skipping COMPACT - context below threshold"
-                                console.print(f"[dim]{skip_msg}[/dim]")
-                                progress_print(f"  {skip_msg}")
+                            await execute_compact_step(
+                                step, conv, session, ai_adapter, adapter_session,
+                                min_compaction_density, console, progress_print
+                            )
 
                         elif step_type == "checkpoint":
-                            # Save checkpoint mid-cycle
-                            checkpoint_name = step_content or f"cycle-{cycle_num}-step"
-                            checkpoint = session.create_checkpoint(checkpoint_name)
-                            console.print(f"[blue]📌 Checkpoint: {checkpoint.name}[/blue]")
-                            progress_print(f"  📌 Checkpoint: {checkpoint.name}")
+                            execute_checkpoint_step(
+                                step, session, cycle_num, console, progress_print
+                            )
 
                         elif step_type == "verify_trace":
-                            # Run VERIFY-TRACE step (check specific trace link)
-                            from ..verifiers.traceability import TraceabilityVerifier
-
-                            opts = step.verify_options if hasattr(step, 'verify_options') \
-                                else step.get('verify_options', {})
-                            from_id = opts.get('from', '')
-                            to_id = opts.get('to', '')
-
-                            console.print(f"[cyan]🔍 VERIFY-TRACE: {from_id} -> {to_id}[/cyan]")
-
-                            verify_path = (
-                                conv.source_path.parent if conv.source_path else Path.cwd()
-                            )
-                            verifier = TraceabilityVerifier()
-                            result = verifier.verify_trace(from_id, to_id, verify_path)
-
-                            if result.passed:
-                                msg = f"  [green]✓ Trace verified: {result.summary}[/green]"
-                                console.print(msg)
-                            else:
-                                console.print(f"  [red]✗ Trace failed: {result.summary}[/red]")
-                                if conv.verify_on_error == "fail":
-                                    err = f"VERIFY-TRACE failed: {from_id} -> {to_id}"
-                                    raise RuntimeError(err)
+                            execute_verify_trace_step(step, conv, progress_print)
 
                         elif step_type == "verify_coverage":
-                            # Run VERIFY-COVERAGE step (check coverage metrics)
-                            from ..verifiers.traceability import TraceabilityVerifier
-
-                            opts = step.verify_options if hasattr(step, 'verify_options') \
-                                else step.get('verify_options', {})
-                            report_only = opts.get('report_only', False)
-                            metric = opts.get('metric')
-                            op = opts.get('op')
-                            threshold = opts.get('threshold')
-
-                            console.print("[cyan]🔍 VERIFY-COVERAGE[/cyan]")
-
-                            verify_path = (
-                                conv.source_path.parent if conv.source_path else Path.cwd()
-                            )
-                            verifier = TraceabilityVerifier()
-
-                            if report_only:
-                                result = verifier.verify_coverage(verify_path)
-                            else:
-                                result = verifier.verify_coverage(
-                                    verify_path, metric=metric, op=op, threshold=threshold
-                                )
-
-                            if result.passed:
-                                console.print(f"  [green]✓ Coverage: {result.summary}[/green]")
-                            else:
-                                console.print(f"  [red]✗ Coverage failed: {result.summary}[/red]")
-                                if conv.verify_on_error == "fail":
-                                    raise RuntimeError(f"VERIFY-COVERAGE failed: {result.summary}")
+                            execute_verify_coverage_step(step, conv, progress_print)
 
                     progress.update(cycle_task, completed=cycle_num + 1)
 

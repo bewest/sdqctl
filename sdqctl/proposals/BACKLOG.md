@@ -26,7 +26,7 @@
 |------|--------|-------|
 | Add integration tests | Medium | ✅ Phase 1 done: 15 adapter + workflow tests. Extend coverage. |
 | Performance benchmark suite | Medium | Track regressions. Promoted from P3. |
-| Modularize iterate.py (~1079 lines) | Medium | Share execution engine with run.py. Target <800 lines. |
+| Modularize iterate.py (~1180 lines) | Medium | Phase 1 done: -217 lines. Target <800 needs prompt handler extraction. |
 
 ### P3: Low
 
@@ -52,6 +52,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **iterate.py Phase 1 (P2)** | 2026-01-26 | Modularize: 1397 → 1180 (-217 lines). Created iterate_helpers.py, compact_steps.py. |
 | **Modularize run.py (P2)** | 2026-01-26 | Complete: 1523 → 973 lines (-550 lines, 36%). Extracted elide.py, blocks.py, verify_steps.py, run_steps.py. Target <1000 ✅ |
 | **run_steps.py extraction (P2)** | 2026-01-26 | Modularize run.py Phase 4: Extract RUN handlers (-211 lines, 973 total). 4 new tests. |
 | **verify_steps.py extraction (P2)** | 2026-01-26 | Modularize run.py Phase 3: Extract verify handlers (-115 lines). 5 new tests. |
