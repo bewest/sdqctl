@@ -232,22 +232,23 @@ Turn N: [last work.conv prompt] + [work.conv epilogues] + [promptC] + [D]
 
 ### Separator Syntax: `---`
 
-Force turn boundaries with `---`:
+Force turn boundaries with `---` (use `--` before targets containing `---`):
 
 ```bash
-sdqctl iterate --prologue "A" --- "promptB" --- work.conv "promptC"
+sdqctl iterate --prologue "A" -- "promptB" --- work.conv --- "promptC"
 ```
 
 ```
-Turn 1: [A]
-Turn 2: [promptB]
-Turn 3+: work.conv prompts with [promptC] elided into final
+Turn 1: [A + promptB]
+Turn 2+: work.conv prompts
+Turn N: [promptC]
 ```
 
 ### Constraints
 
 - Maximum ONE `.conv` file per invocation
 - `---` is reserved (cannot be prompt content)
+- Use `--` before targets when using `---` separators (Click parsing requirement)
 - At least one target required
 
 ---
