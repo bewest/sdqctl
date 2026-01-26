@@ -101,10 +101,17 @@ tests/
 | Practice | Description |
 |----------|-------------|
 | Use parametrize | `@pytest.mark.parametrize` for test variants |
-| Add markers | `@pytest.mark.unit`, `@pytest.mark.integration` |
+| Add markers | `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow` |
 | Scope fixtures | Use `scope="session"` for expensive setup |
 | Test error paths | Include malformed input tests |
 | Use mock adapter | Test workflow mechanics without AI calls |
+
+**Running selective tests:**
+```bash
+pytest -m unit           # Fast tests only (0.36s, 219 tests)
+pytest -m integration    # Integration tests
+pytest -m "not slow"     # Skip slow tests
+```
 
 ### Current Gaps
 
@@ -112,7 +119,7 @@ tests/
 |-----|--------|----------------|
 | No error path tests | Unknown failure behavior | Add malformed .conv tests |
 | Missing parametrization | Incomplete variant coverage | Use `@pytest.mark.parametrize` |
-| No test markers | Can't run selective tests | Add `@pytest.mark.unit/integration` |
+| ~~No test markers~~ | ~~Can't run selective tests~~ | ✅ Markers added (unit/integration/slow) |
 | Fixtures not scoped | Slow test runs | Add session-scoped fixtures |
 | Limited integration tests | Only loop stress testing | Add adapter, CLI integration tests |
 
