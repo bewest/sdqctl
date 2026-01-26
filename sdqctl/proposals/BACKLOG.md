@@ -24,7 +24,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Modularize run.py (~1520 lines) | Medium | Largest command file. Continue modularization theme. |
+| Modularize run.py (~1400 lines) | Medium | Phase 1 done: elide.py extracted (-117 lines). Continue with _execute_block_steps. |
 | Add integration tests | Medium | Beyond loop stress testing. Adapter + end-to-end scenarios. |
 | Performance benchmark suite | Medium | Track regressions. Promoted from P3. |
 

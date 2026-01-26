@@ -30,41 +30,112 @@ These issues become critical as we move toward longer autonomous workflows.
 - Token consumption rate: ~723K tokens/minute
 - Rate limit hit at turn 353
 
+#### Key Finding: Request Frequency, Not Token Consumption
+
+Analysis of Run #5 rate limit reveals the limit is **request-based**, not token-based:
+
+| Evidence | Value | Implication |
+|----------|-------|-------------|
+| Error message | "restricts the number of **Copilot model requests**" | Explicitly says "requests" |
+| Context at limit | 88K/128K tokens (68%) | Plenty of token headroom |
+| Turns at limit | 353 | Request count is the constraint |
+| Cumulative tokens | 28.9M | Misleading - this is sum of all turns |
+
+**Rate Limit Characterization**:
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Turns per cycle | ~78 | 353 turns / 4.5 cycles |
+| Implied limit | ~350-400 requests | Per 40-60 min window |
+| Cooldown | 46 minutes | From error message |
+
+**Cycle Planning Guide**:
+
+| -n Value | Est. Turns | Safety |
+|----------|------------|--------|
+| **3** | 234 | ✅ Safe (66% of limit) |
+| **4** | 312 | ✅ Likely safe (89% of limit) |
+| **5** | 390 | ⚠️ Borderline (111% of limit) |
+| **6+** | 468+ | ❌ Will hit limit |
+
+**Critical Insight**: Compaction does NOT help with rate limits:
+- Compaction reduces context window tokens
+- But adds request count (compaction request + re-injection)
+- May actually *accelerate* rate limit hit
+
 **Proposed Solution**:
 
-Add token consumption rate tracking to `SessionStats`:
+Add request rate tracking to `SessionStats`:
 
 ```python
 @dataclass
 class SessionStats:
     # ... existing fields ...
     
-    # Rate limit awareness
+    # Rate limit awareness (REQUEST-based, not token-based)
     session_start_time: Optional[datetime] = None
-    tokens_per_minute: float = 0.0  # Rolling average
-    estimated_remaining_turns: Optional[int] = None
+    requests_per_minute: float = 0.0  # Rolling average
+    total_requests: int = 0  # Same as turns
+    estimated_remaining_requests: Optional[int] = None
     rate_limit_warning_threshold: float = 0.8  # Warn at 80% of limit
 ```
 
 Display warnings when approaching limits:
 
 ```
-⚠️  Token consumption rate: 723K/min
-⚠️  At current rate, ~15 minutes before rate limit
-💡 Consider: --max-cycles 3 or adding COMPACT between phases
+⚠️  Request rate: 8.8/min (353 total)
+⚠️  Estimated limit: ~350-400 requests per window
+⚠️  At current rate, ~5 minutes before rate limit
+💡 Recommendation: Complete current cycle, then stop
 ```
 
-**Research Needed**:
-- [ ] What is the actual rate limit? (tokens/minute? tokens/hour?)
-- [ ] Does Copilot SDK expose rate limit metadata?
-- [ ] Can we get remaining quota from API?
-- [ ] Is rate limit per-session or per-user?
+**Research Completed (2026-01-26)**:
 
-**Implementation Tasks** (if feasible):
-- [ ] Add `session_start_time` to SessionStats
-- [ ] Track token consumption rate (rolling 5-minute window)
-- [ ] Calculate estimated remaining capacity
-- [ ] Add warning output at 80% threshold
+The SDK **does** expose quota information! Found in `copilot-sdk/python/copilot/generated/session_events.py`:
+
+```python
+@dataclass
+class QuotaSnapshot:
+    entitlement_requests: float      # Total allowed requests
+    is_unlimited_entitlement: bool   # Unlimited plan?
+    overage: float                   # Amount over quota
+    overage_allowed_with_exhausted_quota: bool
+    remaining_percentage: float      # ← KEY: How much quota left (0-100)
+    usage_allowed_with_exhausted_quota: bool
+    used_requests: float             # Requests consumed
+    reset_date: Optional[datetime]   # When quota resets
+```
+
+This is attached to the `assistant.usage` event in `data.quota_snapshots: Dict[str, QuotaSnapshot]`.
+
+**Key Findings**:
+- ✅ `remaining_percentage` - exact remaining quota percentage
+- ✅ `reset_date` - when quota resets (tells us window duration)
+- ✅ `entitlement_requests` / `used_requests` - absolute counts
+- ✅ `is_unlimited_entitlement` - can skip tracking for unlimited plans
+- ❓ Not yet verified: Is this per-session, per-user, or per-organization?
+
+**Error Event Structure** (for rate limit detection):
+
+```python
+@dataclass
+class ErrorClass:
+    message: str
+    code: Optional[str] = None  # ← May contain rate limit error code
+    stack: Optional[str] = None
+
+# Session error event data fields:
+error_type: Optional[str] = None  # ← Type classification
+error: Optional[Union[ErrorClass, str]] = None  # ← Full error object
+```
+
+**Implementation Tasks** (updated with SDK knowledge):
+- [ ] Parse `quota_snapshots` from `assistant.usage` events
+- [ ] Add `quota_remaining_percentage` to SessionStats
+- [ ] Add `quota_reset_date` to SessionStats  
+- [ ] Skip quota tracking if `is_unlimited_entitlement`
+- [ ] Warn when `remaining_percentage < 20%`
+- [ ] Parse `error_type` and `error.code` for rate limit codes
 - [ ] Add `--rate-limit-aware` flag to enable predictive behavior
 
 ---
@@ -202,6 +273,67 @@ Display in session summary:
 
 ## Implementation Phases
 
+### Phase 0: Quota Event Parsing (P2) - Quick Win
+
+Parse existing SDK events that already contain quota data:
+
+```python
+# In event handler (adapters/copilot.py)
+elif event_type == "assistant.usage":
+    # ... existing token tracking ...
+    
+    # NEW: Extract quota snapshots
+    quota_snapshots = _get_field(data, "quota_snapshots", "quotaSnapshots", default={})
+    for quota_type, snapshot in quota_snapshots.items():
+        remaining = snapshot.get("remainingPercentage", 100)
+        if remaining < 20:
+            logger.warning(f"⚠️  Quota low: {remaining:.0f}% remaining ({quota_type})")
+            progress(f"  ⚠️  Quota: {remaining:.0f}% remaining")
+        stats.quota_remaining = min(stats.quota_remaining, remaining)
+        stats.quota_reset_date = snapshot.get("resetDate")
+```
+
+**Deliverables**:
+- Add `quota_remaining`, `quota_reset_date` to SessionStats
+- Parse `quota_snapshots` from `assistant.usage` events
+- Log warning when quota < 20%
+
+**Effort**: ~30 lines of code changes
+
+### Phase 0.5: Error Event Enhancement (P2) - Quick Win
+
+Parse `session.error` for rate limit specifics:
+
+```python
+elif event_type == "session.error":
+    error = _get_field(data, "error", "message", default=str(data))
+    error_type = _get_field(data, "error_type", "errorType", default=None)
+    error_code = None
+    
+    # Extract code from ErrorClass structure
+    if isinstance(error, dict):
+        error_code = error.get("code")
+        error_msg = error.get("message", str(error))
+    else:
+        error_msg = str(error)
+    
+    # Detect rate limit errors
+    if error_code == "429" or error_type == "rate_limit" or "rate limit" in error_msg.lower():
+        logger.warning(f"Rate limit hit: {error_msg}")
+        stats.rate_limited = True
+        progress(f"  🛑 Rate limited - wait before retrying")
+    else:
+        logger.error(f"Session error: {error_msg}")
+        progress(f"  ⚠️  Error: {error_msg}")
+```
+
+**Deliverables**:
+- Add `rate_limited: bool` to SessionStats
+- Specific handling for rate limit errors
+- User-friendly rate limit message
+
+**Effort**: ~20 lines of code changes
+
 ### Phase 1: Observability (P3) - Low Effort
 
 Add metrics without changing behavior:
@@ -252,6 +384,47 @@ Research optimal strategies:
 
 ---
 
+## SDK Data Sources Reference
+
+### QuotaSnapshot (from `assistant.usage` event)
+
+Located in `copilot-sdk/python/copilot/generated/session_events.py`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `remaining_percentage` | float | Quota remaining (0-100) |
+| `entitlement_requests` | float | Total allowed requests |
+| `used_requests` | float | Requests consumed |
+| `overage` | float | Amount over quota |
+| `is_unlimited_entitlement` | bool | Unlimited plan flag |
+| `reset_date` | datetime? | When quota resets |
+| `overage_allowed_with_exhausted_quota` | bool | Overage policy |
+| `usage_allowed_with_exhausted_quota` | bool | Continued usage policy |
+
+**Accessed via**: `event.data.quota_snapshots["<quota_type>"]`
+
+### ErrorClass (from `session.error` event)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `message` | str | Error message |
+| `code` | str? | Error code (may be "429" for rate limits) |
+| `stack` | str? | Stack trace |
+
+**Additional fields on error event data**:
+- `error_type` - Classification of error type
+- `error` - Either ErrorClass object or string
+
+### Usage Events Currently Parsed
+
+| Event | Current Handling | Data Available |
+|-------|-----------------|----------------|
+| `assistant.usage` | ✅ Tokens counted | + `quota_snapshots` (not parsed) |
+| `session.usage_info` | ✅ Context tracked | `current_tokens`, `token_limit` |
+| `session.error` | ⚠️ Generic log | `error_type`, `error.code` (not parsed) |
+
+---
+
 ## Success Criteria
 
 | Metric | Current | Target |
@@ -277,3 +450,55 @@ Research optimal strategies:
 - SessionStats: `sdqctl/adapters/stats.py`
 - Compaction: `sdqctl/adapters/copilot.py` (lines 750-842)
 - Session Resume: `sdqctl/commands/sessions.py`
+
+---
+
+## Appendix: Operational Guidance (from Run #5)
+
+### Rate Limit Avoidance
+
+Based on empirical data from Run #5 (353 turns, 40 min, 4.5 cycles):
+
+```
+Rule of Thumb: 78 turns per cycle, limit ~350 requests per window
+
+Safe:      -n 3  (234 turns, 66% of limit)
+Optimal:   -n 4  (312 turns, 89% of limit)  
+Risky:     -n 5  (390 turns, 111% of limit)
+Unsafe:    -n 6+ (468+ turns)
+```
+
+### Why Compaction Doesn't Help Rate Limits
+
+| Action | Token Impact | Request Impact |
+|--------|--------------|----------------|
+| Normal turn | +varies | +1 request |
+| Compaction | Reduces context | +2 requests (compact + reinject) |
+| Long turn with tools | +many | +1 request |
+
+**Implication**: Minimize turn count, not token count:
+- Batch tool calls where possible
+- Combine related operations
+- Skip verbose verification phases in long runs
+
+### Cooldown Strategy
+
+When rate-limited at 40 min with 46 min cooldown:
+1. Save checkpoint (automatic on graceful shutdown)
+2. Wait for cooldown (use timer/alarm)
+3. Resume with: `sdqctl sessions resume <session_id>`
+4. Or start fresh with `-n 4` to stay under limit
+
+### Context % vs Rate Limit
+
+These are **independent** constraints:
+
+| Constraint | Metric | Symptom |
+|------------|--------|---------|
+| Context window | 128K tokens (68% at limit) | Compaction needed |
+| Rate limit | ~350 requests/window | Cooldown needed |
+
+Run #5 hit rate limit at 68% context utilization - context was fine, requests weren't.
+- SDK Session Events: `copilot-sdk/python/copilot/generated/session_events.py`
+- QuotaSnapshot: lines 205-240
+- ErrorClass: lines 160-181
