@@ -26,12 +26,12 @@
 |------|--------|-------|
 | Extract StepExecutor from iterate.py | Medium | Q-020 done. See [Architecture Roadmap](#architecture-roadmap). |
 | CONSULT-DIRECTIVE Phase 4 | Medium | Timeout → fail with clear error. Needs CONSULT-TIMEOUT directive. |
+| Modularize copilot.py (~1127 lines) | Medium | Split to events.py, stats.py, session.py |
 
 ### P3: Low
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Modularize copilot.py (~1127 lines) | Medium | events.py, stats.py, session.py |
 | Modularize run.py (~1541 lines) | Medium | Largest command file |
 | Add integration tests | Medium | Beyond loop stress testing |
 | Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
