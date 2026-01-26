@@ -260,7 +260,7 @@ Documented in [`docs/SECURITY-MODEL.md`](../docs/SECURITY-MODEL.md).
 | Missing parametrization | Incomplete variant coverage | 🔲 Open |
 | No test markers | Can't run selective tests | 🔲 Open |
 | Fixtures not scoped | Slow test runs | 🔲 Open |
-| No `test_exceptions.py` | Exit codes untested | 🔲 Open |
+| No `test_exceptions.py` | Exit codes untested | ✅ Complete |
 | No `test_renderer_core.py` | Renderer logic untested | 🔲 Open |
 | No `test_command_utils.py` | `run_async()` untested | 🔲 Open |
 
