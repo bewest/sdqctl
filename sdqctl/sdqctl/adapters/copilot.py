@@ -9,7 +9,6 @@ import asyncio
 import json
 import logging
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -17,6 +16,8 @@ if TYPE_CHECKING:
     from sdqctl.core.models import ModelRequirements
 
 from .base import AdapterBase, AdapterConfig, AdapterSession, CompactionResult
+from .events import EventCollector
+from .stats import SessionStats, TurnStats
 
 # Lazy import to avoid hard dependency
 CopilotClient = None
@@ -138,107 +139,6 @@ def _ensure_copilot_sdk():
                 "GitHub Copilot SDK not installed. "
                 "Install with: pip install github-copilot-sdk"
             )
-
-
-@dataclass
-class EventRecord:
-    """Record of a single SDK event for export."""
-    event_type: str
-    timestamp: str  # ISO format
-    data: dict
-    session_id: str
-    turn: int
-    ephemeral: bool = False
-
-
-class EventCollector:
-    """Accumulates SDK events during a session for export."""
-
-    def __init__(self, session_id: str):
-        self.session_id = session_id
-        self.events: list[EventRecord] = []
-
-    def add(self, event_type: str, data: Any, turn: int, ephemeral: bool = False) -> None:
-        """Record an event."""
-        # Convert data to dict for serialization
-        if data is None:
-            data_dict = {}
-        elif hasattr(data, '__dict__'):
-            data_dict = {k: str(v) for k, v in vars(data).items() if not k.startswith('_')}
-        elif isinstance(data, dict):
-            data_dict = {k: str(v) for k, v in data.items()}
-        else:
-            data_dict = {"value": str(data)}
-
-        record = EventRecord(
-            event_type=event_type,
-            timestamp=datetime.now().isoformat(),
-            data=data_dict,
-            session_id=self.session_id,
-            turn=turn,
-            ephemeral=ephemeral,
-        )
-        self.events.append(record)
-
-    def export_jsonl(self, path: str) -> int:
-        """Export events to JSONL file. Returns count of events written."""
-        from dataclasses import asdict
-        from pathlib import Path
-
-        output_path = Path(path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, 'w') as f:
-            for event in self.events:
-                f.write(json.dumps(asdict(event)) + '\n')
-
-        return len(self.events)
-
-    def clear(self) -> None:
-        """Clear accumulated events."""
-        self.events.clear()
-
-
-@dataclass
-class TurnStats:
-    """Statistics for a single turn."""
-    input_tokens: int = 0
-    output_tokens: int = 0
-    tool_calls: int = 0
-    reasoning_shown: bool = False
-
-
-@dataclass
-class SessionStats:
-    """Accumulated statistics for a session."""
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    total_tool_calls: int = 0
-    tool_calls_succeeded: int = 0
-    tool_calls_failed: int = 0
-    turns: int = 0
-    model: Optional[str] = None
-    context_info: Optional[dict] = None
-    # Intent tracking
-    current_intent: Optional[str] = None
-    intent_history: list = field(default_factory=list)
-    # Active tools (for timing)
-    active_tools: dict = field(default_factory=dict)
-    # Event collector for export
-    event_collector: Optional[EventCollector] = None
-    # Abort tracking
-    abort_reason: Optional[str] = None
-    abort_details: Optional[str] = None
-    # Handler registration tracking (Q-014 fix)
-    handler_registered: bool = False
-    # Per-send state (reset each send, used by persistent handler)
-    _send_done: Optional[asyncio.Event] = None
-    _send_chunks: list = field(default_factory=list)
-    _send_full_response: str = ""
-    _send_reasoning_parts: list = field(default_factory=list)
-    _send_on_chunk: Optional[Callable] = None
-    _send_on_reasoning: Optional[Callable] = None
-    _send_turn_stats: Optional[TurnStats] = None
 
 
 class CopilotAdapter(AdapterBase):

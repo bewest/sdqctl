@@ -8,14 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from sdqctl.adapters.base import AdapterConfig
-from sdqctl.adapters.copilot import (
-    CopilotAdapter,
-    EventCollector,
-    EventRecord,
-    SessionStats,
-    TurnStats,
-    _ensure_copilot_sdk,
-)
+from sdqctl.adapters.copilot import CopilotAdapter, _ensure_copilot_sdk
+from sdqctl.adapters.events import EventCollector, EventRecord
+from sdqctl.adapters.stats import SessionStats, TurnStats
 
 
 # Mock event types for testing
