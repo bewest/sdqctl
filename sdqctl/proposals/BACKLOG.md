@@ -36,7 +36,7 @@
 | Modularize copilot.py (~1127 lines) | Medium | events.py, stats.py, session.py |
 | Modularize run.py (~1541 lines) | Medium | Largest command file |
 | Add integration tests | Medium | Beyond loop stress testing |
-| Default verbosity key actions | Low | See [SDK-LEARNINGS](../docs/SDK-LEARNINGS.md) |
+| Default verbosity key actions | Low | **Blocked by OQ-004** - needs scope clarification |
 | Test parametrization and markers | Low | `@pytest.mark.unit/integration` |
 | Performance benchmark suite | Medium | Track regressions |
 | Error path test coverage | Medium | File I/O errors, permissions, timeouts |

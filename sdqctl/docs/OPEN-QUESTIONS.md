@@ -17,6 +17,7 @@ Questions awaiting human decision or clarification.
 | OQ-001 | What should CONSULT Phase 4 timeout behavior be? | proposals/CONSULT-DIRECTIVE.md | P2 | 2026-01-26 | Options: return partial, retry, fail |
 | OQ-002 | Should claude/openai adapters be full implementations or stubs? | proposals/BACKLOG.md | P2 | 2026-01-26 | Stubs would raise NotImplementedError |
 | OQ-003 | StepExecutor priority - implement now or defer? | proposals/BACKLOG.md | P2 | 2026-01-26 | Medium effort, uses ExecutionContext |
+| OQ-004 | What are "default verbosity key actions"? | proposals/BACKLOG.md | P3 | 2026-01-26 | Item lacks scope. What specific actions should show at verbosity=0? |
 
 ---
 
