@@ -77,8 +77,8 @@
 | **I/O Utilities** | 2026-01-26 | print_json, write_json_file, read_json_file, write_text_file. 7 new tests. |
 | **ExecutionContext dataclass** | 2026-01-26 | Unified context for workflow execution. In core/session.py. 4 new tests. |
 | **Phase 6: Mixed Prompt Support** | 2026-01-26 | Variadic targets, `---` separator, elision into boundaries. 16 new tests. |
-| **Groom QUIRKS.md** | 2026-01-25 | 960 → 135 lines. Archived 13 resolved quirks. Created SDK-LEARNINGS.md |
-| **Consolidate run+cycle → iterate** | 2026-01-25 | [ITERATE-CONSOLIDATION.md](ITERATE-CONSOLIDATION.md) Phase 1-5 complete. `cycle` renamed to `iterate`, deprecated alias added. |
+
+*Older items archived to [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)*
 
 ---
 
