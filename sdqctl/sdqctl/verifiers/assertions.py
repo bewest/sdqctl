@@ -211,8 +211,12 @@ class AssertionsVerifier:
                     ))
 
         # Calculate coverage
-        message_coverage = (assertions_with_message / assertions_found * 100) if assertions_found > 0 else 0
-        trace_coverage = (assertions_with_trace / assertions_found * 100) if assertions_found > 0 else 0
+        if assertions_found > 0:
+            message_coverage = assertions_with_message / assertions_found * 100
+            trace_coverage = assertions_with_trace / assertions_found * 100
+        else:
+            message_coverage = 0
+            trace_coverage = 0
 
         # Build result
         passed = len(errors) == 0

@@ -138,7 +138,8 @@ def verify_all(json_output: bool, verbose: bool, path: str, strict: bool):
                 for err in result.errors:
                     console.print(f"  [red]ERROR[/red] {err.file}:{err.line}: {err.message}")
                 for warn in result.warnings:
-                    console.print(f"  [yellow]WARN[/yellow] {warn.file}:{warn.line}: {warn.message}")
+                    msg = f"  [yellow]WARN[/yellow] {warn.file}:{warn.line}: {warn.message}"
+                    console.print(msg)
 
         # Summary
         console.print()
@@ -349,7 +350,8 @@ def verify_trace(link: str, json_output: bool, verbose: bool, path: str):
     import re
 
     # Parse the link argument
-    match = re.match(r'^([A-Z]+-[A-Z0-9-]+[a-z]?)\s*(?:->|→)\s*([A-Z]+-[A-Z0-9-]+[a-z]?)$', link.strip())
+    link_pattern = r'^([A-Z]+-[A-Z0-9-]+[a-z]?)\s*(?:->|→)\s*([A-Z]+-[A-Z0-9-]+[a-z]?)$'
+    match = re.match(link_pattern, link.strip())
     if not match:
         console.print(f"[red]Invalid link format:[/red] {link}")
         console.print("Expected format: FROM_ID -> TO_ID (e.g., UCA-001 -> SC-001)")

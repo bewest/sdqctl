@@ -229,7 +229,8 @@ class RefsVerifier:
                     continue
 
             # Skip if looks like domain name (common TLDs at end, case-insensitive)
-            if re.match(r'^[a-zA-Z0-9.-]+\.(com|org|net|io|de|be|co|uk|edu|gov)$', ref_path, re.IGNORECASE):
+            tld_pattern = r'^[a-zA-Z0-9.-]+\.(com|org|net|io|de|be|co|uk|edu|gov)$'
+            if re.match(tld_pattern, ref_path, re.IGNORECASE):
                 continue
 
             total_count += 1
@@ -255,8 +256,9 @@ class RefsVerifier:
             if resolved.exists():
                 valid_count += 1
             else:
+                rel_file = filepath.relative_to(root) if filepath.is_relative_to(root) else filepath
                 errors.append(VerificationError(
-                    file=str(filepath.relative_to(root) if filepath.is_relative_to(root) else filepath),
+                    file=str(rel_file),
                     line=line_num,
                     message=f"Broken reference: @{ref_path}",
                     fix_hint=f"Create {resolved} or fix the reference",
@@ -319,8 +321,9 @@ class RefsVerifier:
                 else:
                     hint = f"Could not resolve path for alias '{alias}'"
 
+                rel_file = filepath.relative_to(root) if filepath.is_relative_to(root) else filepath
                 errors.append(VerificationError(
-                    file=str(filepath.relative_to(root) if filepath.is_relative_to(root) else filepath),
+                    file=str(rel_file),
                     line=line_num,
                     message=f"Broken alias reference: {full_ref}",
                     fix_hint=hint,

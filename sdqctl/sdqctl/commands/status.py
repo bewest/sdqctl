@@ -33,8 +33,14 @@ SDQCTL_DIR = Path.home() / ".sdqctl"
 @click.option("--adapters", is_flag=True, help="Show available adapters")
 @click.option("--models", is_flag=True, help="Show available models")
 @click.option("--auth", is_flag=True, help="Show authentication status")
-@click.option("--all", "show_all", is_flag=True, help="Show all details (adapters, models, auth, sessions)")
-@click.option("--adapter", "-a", default="copilot", help="Adapter to query for --models/--auth (default: copilot)")
+@click.option(
+    "--all", "show_all", is_flag=True,
+    help="Show all details (adapters, models, auth, sessions)"
+)
+@click.option(
+    "--adapter", "-a", default="copilot",
+    help="Adapter to query for --models/--auth (default: copilot)"
+)
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 def status(
     sessions: bool,
@@ -288,7 +294,9 @@ async def _show_all_async(adapter_name: str, json_output: bool) -> None:
             if auth_status.get("authenticated"):
                 login = auth_status.get("login", "unknown")
                 auth_type = auth_status.get("auth_type", "?")
-                console.print(f"Auth:           [green]✓[/green] Authenticated as {login} ({auth_type})")
+                console.print(
+                    f"Auth:           [green]✓[/green] Authenticated as {login} ({auth_type})"
+                )
                 if auth_status.get("host"):
                     console.print(f"Host:           {auth_status.get('host')}")
             else:
@@ -430,7 +438,8 @@ def _show_sessions(json_output: bool, show_checkpoints: bool = False) -> None:
                 if "checkpoint_details" in session and session["checkpoint_details"]:
                     console.print(f"\n[bold]Session {session['id']} checkpoints:[/bold]")
                     for cp in session["checkpoint_details"]:
-                        console.print(f"  - {cp['name']} (cycle {cp['cycle']}) at {cp['timestamp'][:19]}")
+                        ts = cp['timestamp'][:19]
+                        console.print(f"  - {cp['name']} (cycle {cp['cycle']}) at {ts}")
 
         if len(session_data) > 20:
             console.print(f"\n[dim]...and {len(session_data) - 20} more sessions[/dim]")

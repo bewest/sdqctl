@@ -140,7 +140,10 @@ def apply_directive(conv, directive: Directive) -> None:
             elif value_lower in ("disabled", "false", "no", "off", "0"):
                 conv.infinite_sessions = False
             else:
-                raise ValueError(f"Invalid INFINITE-SESSIONS value: {directive.value} (expected enabled/disabled)")
+                raise ValueError(
+                    f"Invalid INFINITE-SESSIONS value: {directive.value} "
+                    "(expected enabled/disabled)"
+                )
         case DirectiveType.COMPACTION_MIN:
             # Parse "30" or "30%" -> 0.30
             value = directive.value.rstrip("%")
@@ -285,7 +288,8 @@ def apply_directive(conv, directive: Directive) -> None:
             # Parse trace link: "UCA-001 -> REQ-020" or "UCA-001 → REQ-020"
             value = directive.value.strip()
             # Support both -> and → as arrow
-            match = re.match(r'^([A-Z]+-[A-Z0-9-]+[a-z]?)\s*(?:->|→)\s*([A-Z]+-[A-Z0-9-]+[a-z]?)$', value)
+            trace_pattern = r'^([A-Z]+-[A-Z0-9-]+[a-z]?)\s*(?:->|→)\s*([A-Z]+-[A-Z0-9-]+[a-z]?)$'
+            match = re.match(trace_pattern, value)
             if match:
                 from_id = match.group(1)
                 to_id = match.group(2)

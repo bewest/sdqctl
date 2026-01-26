@@ -54,7 +54,10 @@ def resolve_content_reference(value: str, base_path: Optional[Path] = None) -> s
 
         # Neither worked - log warning with both attempted paths
         if base_path:
-            logger.warning(f"File reference not found: {value} (tried {cwd_path} and {base_path / file_path})")
+            logger.warning(
+                f"File reference not found: {value} "
+                f"(tried {cwd_path} and {base_path / file_path})"
+            )
         else:
             logger.warning(f"File reference not found: {value} (resolved to {cwd_path})")
         return value
@@ -107,8 +110,12 @@ def apply_iteration_context(conv: "ConversationFile", component_path: str,
     new_conv.epilogues = [substitute_template_variables(e, variables) for e in new_conv.epilogues]
 
     # Substitute in headers and footers (output context, includes WORKFLOW_NAME)
-    new_conv.headers = [substitute_template_variables(h, output_variables) for h in new_conv.headers]
-    new_conv.footers = [substitute_template_variables(f, output_variables) for f in new_conv.footers]
+    new_conv.headers = [
+        substitute_template_variables(h, output_variables) for h in new_conv.headers
+    ]
+    new_conv.footers = [
+        substitute_template_variables(f, output_variables) for f in new_conv.footers
+    ]
 
     # Substitute in steps (no WORKFLOW_NAME - Q-001 fix)
     for step in new_conv.steps:

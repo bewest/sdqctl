@@ -162,7 +162,10 @@ class TerminologyVerifier:
                             errors.append(VerificationError(
                                 file=str(self._rel_path(filepath, root)),
                                 line=line_num,
-                                message=f"Deprecated term '{match.group()}' - use '{replacement}' instead",
+                                message=(
+                                    f"Deprecated term '{match.group()}' - "
+                                    f"use '{replacement}' instead"
+                                ),
                                 fix_hint=f"Replace '{match.group()}' with '{replacement}'",
                             ))
 
@@ -188,7 +191,8 @@ class TerminologyVerifier:
                             # Skip copilot in CLI context (--adapter copilot, ADAPTER copilot)
                             if term_lower == 'copilot':
                                 context = line[max(0, match.start()-15):match.end()+5]
-                                if re.search(r'(--adapter|ADAPTER|adapter)\s+copilot', context, re.IGNORECASE):
+                                cli_pattern = r'(--adapter|ADAPTER|adapter)\s+copilot'
+                                if re.search(cli_pattern, context, re.IGNORECASE):
                                     continue
                                 # Skip ALL CAPS in env vars or config names like COPILOT_SDK
                                 if found == 'COPILOT' and re.search(r'\bCOPILOT[_A-Z]', line):

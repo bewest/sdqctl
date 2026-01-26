@@ -25,9 +25,12 @@ class MockAdapter(AdapterBase):
             delay: Simulated response delay in seconds
         """
         self.responses = responses or [
-            "This is a mock response from the test adapter. The real adapter would connect to an AI provider and return actual analysis.",
-            "Mock response #2 for testing workflow execution. This response is long enough to pass loop detection minimum length checks.",
-            "Mock response #3 completing the test cycle. All workflows validated successfully with sufficient response content.",
+            "This is a mock response from the test adapter. "
+            "The real adapter would connect to an AI provider and return actual analysis.",
+            "Mock response #2 for testing workflow execution. "
+            "This response is long enough to pass loop detection minimum length checks.",
+            "Mock response #3 completing the test cycle. "
+            "All workflows validated successfully with sufficient response content.",
         ]
         self.delay = delay
         self.response_index = 0

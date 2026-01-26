@@ -49,8 +49,14 @@ console = Console()
 @click.option("--footer", multiple=True, help="Append to output (inline text or @file)")
 @click.option("--output-dir", "-o", default=None, help="Output directory for results")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
-@click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
-@click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
+@click.option(
+    "--no-stop-file-prologue", is_flag=True,
+    help="Disable automatic stop file instructions"
+)
+@click.option(
+    "--stop-file-nonce", default=None,
+    help="Override stop file nonce (random if not set)"
+)
 def apply(
     workflow: str,
     components: Optional[str],
@@ -289,7 +295,8 @@ async def _apply_async(
                     task = progress.add_task("Processing components...", total=len(component_list))
 
                     for i, comp in enumerate(component_list, 1):
-                        progress.update(task, description=f"[{i}/{len(component_list)}] {comp['path']}")
+                        desc = f"[{i}/{len(component_list)}] {comp['path']}"
+                        progress.update(task, description=desc)
                         await _process_single_component(
                             conv, comp, i, len(component_list),
                             ai_adapter, progress_data, no_stop_file_prologue, nonce
