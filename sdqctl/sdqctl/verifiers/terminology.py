@@ -16,11 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from .base import (
-    DEFAULT_EXCLUDES,
     VerificationError,
     VerificationResult,
-    load_sdqctlignore,
-    should_exclude,
+    scan_files,
 )
 
 
@@ -101,13 +99,10 @@ class TerminologyVerifier:
         root = Path(root)
         scan_ext = extensions or self.SCAN_EXTENSIONS
 
-        # Build exclusion patterns
-        exclude_patterns: set[str] = set()
-        if not no_default_excludes:
-            exclude_patterns.update(DEFAULT_EXCLUDES)
-        exclude_patterns.update(load_sdqctlignore(root))
+        # Build exclusion patterns for scan_files
+        extra_excludes: set[str] = set()
         if exclude:
-            exclude_patterns.update(exclude)
+            extra_excludes.update(exclude)
 
         errors: list[VerificationError] = []
         warnings: list[VerificationError] = []
@@ -121,21 +116,17 @@ class TerminologyVerifier:
         glossary_terms = self._load_glossary(root, glossary)
         glossary_path = self._find_glossary(root, glossary)
 
-        # Find files to scan
-        if recursive:
-            all_files = [f for f in root.rglob('*') if f.suffix in scan_ext and f.is_file()]
-        else:
-            all_files = [f for f in root.glob('*') if f.suffix in scan_ext and f.is_file()]
+        # Find files to scan (scan_files handles exclusion)
+        all_files = scan_files(
+            root,
+            scan_ext,
+            recursive=recursive,
+            exclude_patterns=extra_excludes,
+            no_default_excludes=no_default_excludes,
+        )
 
-        # Filter excluded files (also exclude glossary itself)
-        files = []
-        for f in all_files:
-            if should_exclude(f, root, exclude_patterns):
-                continue
-            # Skip the glossary file itself
-            if glossary_path and f == glossary_path:
-                continue
-            files.append(f)
+        # Exclude glossary file itself
+        files = [f for f in all_files if not (glossary_path and f == glossary_path)]
 
         for filepath in files:
             files_scanned += 1

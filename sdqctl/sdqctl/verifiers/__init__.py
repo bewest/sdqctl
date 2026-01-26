@@ -6,7 +6,7 @@ traceability, and assertions.
 """
 
 from .assertions import AssertionsVerifier
-from .base import VerificationError, VerificationResult, Verifier
+from .base import VerificationError, VerificationResult, Verifier, scan_files
 from .links import LinksVerifier
 from .refs import RefsVerifier
 from .terminology import TerminologyVerifier
@@ -25,6 +25,7 @@ __all__ = [
     "VerificationError",
     "VerificationResult",
     "Verifier",
+    "scan_files",
     "RefsVerifier",
     "LinksVerifier",
     "TraceabilityVerifier",

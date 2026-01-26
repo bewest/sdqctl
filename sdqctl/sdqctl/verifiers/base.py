@@ -96,6 +96,55 @@ def should_exclude(path: Path, root: Path, exclude_patterns: set[str]) -> bool:
     return False
 
 
+def scan_files(
+    root: Path,
+    extensions: set[str],
+    recursive: bool = True,
+    exclude_patterns: set[str] | None = None,
+    no_default_excludes: bool = False,
+) -> list[Path]:
+    """Scan directory for files with specified extensions.
+
+    Consolidates the common file scanning pattern used across verifiers.
+    Respects DEFAULT_EXCLUDES and .sdqctlignore patterns.
+
+    Args:
+        root: Root directory to scan
+        extensions: Set of file extensions to include (e.g., {".py", ".md"})
+        recursive: Whether to scan subdirectories (default: True)
+        exclude_patterns: Additional patterns to exclude (merged with defaults)
+        no_default_excludes: If True, skip DEFAULT_EXCLUDES (default: False)
+
+    Returns:
+        List of Path objects matching the criteria
+
+    Example:
+        files = scan_files(Path("docs"), {".md", ".rst"}, recursive=True)
+    """
+    # Build exclusion patterns
+    excludes: set[str] = set()
+    if not no_default_excludes:
+        excludes.update(DEFAULT_EXCLUDES)
+    excludes.update(load_sdqctlignore(root))
+    if exclude_patterns:
+        excludes.update(exclude_patterns)
+
+    # Scan files
+    if recursive:
+        candidates = root.rglob('*')
+    else:
+        candidates = root.glob('*')
+
+    files = [
+        f for f in candidates
+        if f.is_file()
+        and f.suffix in extensions
+        and not should_exclude(f, root, excludes)
+    ]
+
+    return files
+
+
 @dataclass
 class VerificationError:
     """A single verification error or warning."""

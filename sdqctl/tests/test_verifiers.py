@@ -11,7 +11,70 @@ from sdqctl.verifiers import (
     LinksVerifier,
     TraceabilityVerifier,
     VERIFIERS,
+    scan_files,
 )
+
+
+class TestScanFiles:
+    """Tests for the scan_files utility function."""
+
+    def test_scan_files_basic(self, tmp_path):
+        """Test basic file scanning."""
+        (tmp_path / "file1.md").write_text("# Doc")
+        (tmp_path / "file2.py").write_text("# code")
+        (tmp_path / "file3.txt").write_text("text")
+
+        files = scan_files(tmp_path, {".md", ".py"})
+        names = {f.name for f in files}
+
+        assert names == {"file1.md", "file2.py"}
+
+    def test_scan_files_recursive(self, tmp_path):
+        """Test recursive scanning."""
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        (tmp_path / "root.md").write_text("# Root")
+        (sub / "nested.md").write_text("# Nested")
+
+        files = scan_files(tmp_path, {".md"}, recursive=True)
+        names = {f.name for f in files}
+        assert names == {"root.md", "nested.md"}
+
+        files = scan_files(tmp_path, {".md"}, recursive=False)
+        names = {f.name for f in files}
+        assert names == {"root.md"}
+
+    def test_scan_files_excludes_venv(self, tmp_path):
+        """Test that .venv is excluded by default."""
+        venv = tmp_path / ".venv"
+        venv.mkdir()
+        (venv / "excluded.md").write_text("# Should be excluded")
+        (tmp_path / "included.md").write_text("# Included")
+
+        files = scan_files(tmp_path, {".md"})
+        names = {f.name for f in files}
+        assert names == {"included.md"}
+
+    def test_scan_files_no_default_excludes(self, tmp_path):
+        """Test no_default_excludes option."""
+        venv = tmp_path / "venv"
+        venv.mkdir()
+        (venv / "included.md").write_text("# Now included")
+
+        files = scan_files(tmp_path, {".md"}, no_default_excludes=True)
+        names = {f.name for f in files}
+        assert "included.md" in names
+
+    def test_scan_files_extra_excludes(self, tmp_path):
+        """Test additional exclude patterns."""
+        custom = tmp_path / "custom"
+        custom.mkdir()
+        (custom / "excluded.md").write_text("# Excluded")
+        (tmp_path / "included.md").write_text("# Included")
+
+        files = scan_files(tmp_path, {".md"}, exclude_patterns={"custom"})
+        names = {f.name for f in files}
+        assert names == {"included.md"}
 
 
 class TestVerificationResult:
@@ -177,9 +240,9 @@ class TestRefsVerifierExclusions:
         verifier = RefsVerifier()
         result = verifier.verify(tmp_path)
         
+        # .venv should be excluded - no broken ref error
         assert result.passed
         assert result.details["files_scanned"] == 1
-        assert result.details["files_excluded"] == 1
     
     def test_default_excludes_node_modules(self, tmp_path):
         """Test that node_modules is excluded by default."""
@@ -190,8 +253,8 @@ class TestRefsVerifierExclusions:
         verifier = RefsVerifier()
         result = verifier.verify(tmp_path)
         
+        # node_modules should be excluded - no broken ref error
         assert result.passed
-        assert result.details["files_excluded"] == 1
     
     def test_custom_exclude_pattern(self, tmp_path):
         """Test custom exclude patterns."""
@@ -202,8 +265,8 @@ class TestRefsVerifierExclusions:
         verifier = RefsVerifier()
         result = verifier.verify(tmp_path, exclude={"examples"})
         
+        # examples should be excluded - no broken ref error
         assert result.passed
-        assert result.details["files_excluded"] == 1
     
     def test_no_default_excludes(self, tmp_path):
         """Test disabling default exclusions."""
@@ -218,7 +281,6 @@ class TestRefsVerifierExclusions:
         # Now venv should be scanned (it's in DEFAULT_EXCLUDES)
         assert not result.passed
         assert result.details["files_scanned"] == 1
-        assert result.details["files_excluded"] == 0
     
     def test_sdqctlignore_file(self, tmp_path):
         """Test .sdqctlignore file is loaded."""
@@ -232,8 +294,8 @@ class TestRefsVerifierExclusions:
         verifier = RefsVerifier()
         result = verifier.verify(tmp_path)
         
+        # custom should be excluded - no broken ref error
         assert result.passed
-        assert result.details["files_excluded"] == 1
 
 
 class TestRefsVerifierAliasRefs:

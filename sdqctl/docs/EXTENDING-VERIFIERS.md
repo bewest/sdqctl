@@ -34,6 +34,34 @@ sdqctl/verifiers/
 | `VerificationResult` | Pass/fail status with errors, warnings, details |
 | `VerificationError` | Single error with file, line, message, fix hint |
 | `VERIFIERS` | Registry dict mapping name → class |
+| `scan_files` | Utility for file discovery with exclusion handling |
+
+---
+
+## Utility: scan_files
+
+The `scan_files()` utility consolidates common file scanning logic:
+
+```python
+from pathlib import Path
+from sdqctl.verifiers.base import scan_files
+
+# Basic usage
+files = scan_files(Path("docs"), {".md", ".rst"}, recursive=True)
+
+# With exclusion options
+files = scan_files(
+    root=Path("."),
+    extensions={".py", ".md"},
+    recursive=True,
+    exclude_patterns={"examples"},    # Additional patterns
+    no_default_excludes=False,        # Respect DEFAULT_EXCLUDES
+)
+```
+
+**Default excludes:** `.venv`, `venv`, `node_modules`, `__pycache__`, `.git`, etc.
+
+**Also respects:** `.sdqctlignore` file in root directory.
 
 ---
 
@@ -50,7 +78,7 @@ from pathlib import Path
 from typing import Any
 import re
 
-from .base import VerificationError, VerificationResult
+from .base import VerificationError, VerificationResult, scan_files
 
 
 class LinksVerifier:
@@ -62,10 +90,13 @@ class LinksVerifier:
     # Pattern to match markdown links: [text](url)
     LINK_PATTERN = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
     
+    SCAN_EXTENSIONS = {".md"}  # Define supported extensions
+    
     def verify(
         self,
         root: Path,
         check_urls: bool = False,  # Optional: HTTP HEAD requests
+        recursive: bool = True,
         **options: Any
     ) -> VerificationResult:
         """Verify links in markdown files.
@@ -73,6 +104,7 @@ class LinksVerifier:
         Args:
             root: Directory to scan
             check_urls: Whether to verify external URLs (slow)
+            recursive: Scan subdirectories
             
         Returns:
             VerificationResult with broken link errors
@@ -85,7 +117,8 @@ class LinksVerifier:
         links_found = 0
         links_broken = 0
         
-        for filepath in root.rglob('*.md'):
+        # Use scan_files for consistent exclusion handling
+        for filepath in scan_files(root, self.SCAN_EXTENSIONS, recursive=recursive):
             files_scanned += 1
             content = filepath.read_text(errors='replace')
             

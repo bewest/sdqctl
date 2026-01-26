@@ -17,11 +17,9 @@ from pathlib import Path
 from typing import Any
 
 from .base import (
-    DEFAULT_EXCLUDES,
     VerificationError,
     VerificationResult,
-    load_sdqctlignore,
-    should_exclude,
+    scan_files,
 )
 
 
@@ -127,20 +125,16 @@ class AssertionsVerifier:
         root = Path(root)
         scan_ext = extensions or set(self.EXTENSIONS_BY_LANGUAGE.keys())
 
-        # Build exclusion patterns
-        exclude_patterns: set[str] = set()
-        if not no_default_excludes:
-            exclude_patterns.update(DEFAULT_EXCLUDES)
-        exclude_patterns.update(load_sdqctlignore(root))
+        # Build exclusion patterns for scan_files
+        extra_excludes: set[str] = set()
         if exclude:
-            exclude_patterns.update(exclude)
+            extra_excludes.update(exclude)
 
         errors: list[VerificationError] = []
         warnings: list[VerificationError] = []
 
         # Stats
         files_scanned = 0
-        files_excluded = 0
         assertions_found = 0
         assertions_with_message = 0
         assertions_with_trace = 0
@@ -149,19 +143,14 @@ class AssertionsVerifier:
         # Collect all assertions
         all_assertions: list[Assertion] = []
 
-        # Find files to scan
-        if recursive:
-            all_files = [f for f in root.rglob('*') if f.suffix in scan_ext and f.is_file()]
-        else:
-            all_files = [f for f in root.glob('*') if f.suffix in scan_ext and f.is_file()]
-
-        # Filter excluded files
-        files = []
-        for f in all_files:
-            if should_exclude(f, root, exclude_patterns):
-                files_excluded += 1
-            else:
-                files.append(f)
+        # Find files to scan (scan_files handles exclusion)
+        files = scan_files(
+            root,
+            scan_ext,
+            recursive=recursive,
+            exclude_patterns=extra_excludes,
+            no_default_excludes=no_default_excludes,
+        )
 
         for filepath in files:
             files_scanned += 1
@@ -241,7 +230,6 @@ class AssertionsVerifier:
             summary=summary,
             details={
                 "files_scanned": files_scanned,
-                "files_excluded": files_excluded,
                 "assertions_found": assertions_found,
                 "assertions_with_message": assertions_with_message,
                 "assertions_with_trace": assertions_with_trace,

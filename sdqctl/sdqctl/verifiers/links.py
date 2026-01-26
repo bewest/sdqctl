@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .base import VerificationError, VerificationResult
+from .base import VerificationError, VerificationResult, scan_files
 
 
 class LinksVerifier:
@@ -66,10 +66,7 @@ class LinksVerifier:
         links_external = 0
 
         # Find files to scan
-        if recursive:
-            files = [f for f in root.rglob('*') if f.suffix in scan_ext and f.is_file()]
-        else:
-            files = [f for f in root.glob('*') if f.suffix in scan_ext and f.is_file()]
+        files = scan_files(root, scan_ext, recursive=recursive)
 
         for filepath in files:
             files_scanned += 1

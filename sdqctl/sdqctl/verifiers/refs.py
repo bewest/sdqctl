@@ -17,11 +17,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .base import (
-    DEFAULT_EXCLUDES,
     VerificationError,
     VerificationResult,
-    load_sdqctlignore,
-    should_exclude,
+    scan_files,
 )
 
 
@@ -106,20 +104,16 @@ class RefsVerifier:
         root = Path(root)
         scan_ext = extensions or self.SCAN_EXTENSIONS
 
-        # Build exclusion patterns
-        exclude_patterns: set[str] = set()
-        if not no_default_excludes:
-            exclude_patterns.update(DEFAULT_EXCLUDES)
-        exclude_patterns.update(load_sdqctlignore(root))
+        # Build exclusion patterns for scan_files
+        extra_excludes: set[str] = set()
         if exclude:
-            exclude_patterns.update(exclude)
+            extra_excludes.update(exclude)
 
         errors: list[VerificationError] = []
         warnings: list[VerificationError] = []
 
         # Stats
         files_scanned = 0
-        files_excluded = 0
         refs_found = 0
         refs_valid = 0
         refs_broken = 0
@@ -127,19 +121,14 @@ class RefsVerifier:
         alias_refs_valid = 0
         alias_refs_broken = 0
 
-        # Find files to scan
-        if recursive:
-            all_files = [f for f in root.rglob('*') if f.suffix in scan_ext and f.is_file()]
-        else:
-            all_files = [f for f in root.glob('*') if f.suffix in scan_ext and f.is_file()]
-
-        # Filter excluded files
-        files = []
-        for f in all_files:
-            if should_exclude(f, root, exclude_patterns):
-                files_excluded += 1
-            else:
-                files.append(f)
+        # Find files to scan (scan_files handles exclusion)
+        files = scan_files(
+            root,
+            scan_ext,
+            recursive=recursive,
+            exclude_patterns=extra_excludes,
+            no_default_excludes=no_default_excludes,
+        )
 
         for filepath in files:
             files_scanned += 1
@@ -197,7 +186,6 @@ class RefsVerifier:
                 "alias_refs_found": alias_refs_found,
                 "alias_refs_valid": alias_refs_valid,
                 "alias_refs_broken": alias_refs_broken,
-                "files_excluded": files_excluded,
             },
         )
 

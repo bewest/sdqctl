@@ -23,7 +23,6 @@ No high priority items. Next priorities are in P2.
 | Extract StepExecutor from iterate.py | Medium | See [Architecture Roadmap](#architecture-roadmap). Use ExecutionContext. |
 | CONSULT-DIRECTIVE Phase 4 | Low | Timeout, partial save refinements. Needs scope clarification. |
 | claude/openai adapter stubs | Medium | Implement or clarify scope in ADAPTERS.md |
-| Enhance VerifierBase with shared scanning | Low | Move repeated file scanning logic to base class |
 | Add error handling decorator pattern | Low | `@handle_io_errors` for common exception wrapping |
 
 ### P3: Low
@@ -62,6 +61,7 @@ No high priority items. Next priorities are in P2.
 
 | Item | Date | Notes |
 |------|------|-------|
+| **VerifierBase scan_files utility** | 2026-01-26 | Consolidated 7 duplicate file scanning patterns. 5 new tests. |
 | **I/O Utilities** | 2026-01-26 | print_json, write_json_file, read_json_file, write_text_file. 7 new tests. |
 | **ExecutionContext dataclass** | 2026-01-26 | Unified context for workflow execution. In core/session.py. 4 new tests. |
 | **Phase 6: Mixed Prompt Support** | 2026-01-26 | Variadic targets, `---` separator, elision into boundaries. 16 new tests. |
