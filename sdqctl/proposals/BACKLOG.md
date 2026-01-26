@@ -8,13 +8,17 @@
 
 ## Active Priorities
 
-### P0: Critical (None)
+### P0: Critical
 
-No critical items.
+| Item | Effort | Notes |
+|------|--------|-------|
+| Split conversation.py (~1805 lines) | High | See [ConversationFile Split](#conversationfile-split-p0). Create parser.py, validator.py, directives.py, templates.py |
 
-### P1: High (None)
+### P1: High
 
-No high priority items. Next priorities are in P2.
+| Item | Effort | Notes |
+|------|--------|-------|
+| Create ARCHITECTURE.md | Medium | Document module structure, data flow, extension points. Required before further refactoring. |
 
 ### P2: Medium
 
@@ -31,7 +35,6 @@ No high priority items. Next priorities are in P2.
 | Fix E501 lint issues (192 remaining) | Low | Refactor during normal development |
 | Review F841 unused variables (5) | Low | Needs manual review |
 | Update "cycle command" comments to "iterate" | Low | GETTING-STARTED.md, VALIDATION-WORKFLOW.md |
-| Split conversation.py (~1768 lines) | High | parser.py, validator.py, directives.py |
 | Modularize copilot.py (~1000 lines) | Medium | events.py, stats.py, session.py |
 | Add integration tests | Medium | Beyond loop stress testing |
 | Add py.typed marker | Low | Enable downstream type checking |
@@ -128,9 +131,9 @@ class ExecutionContext:
 | Refactor iterate.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
 | Refactor apply.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
 
-### ConversationFile Split (P3)
+### ConversationFile Split (P0)
 
-**Problem**: `conversation.py` is 1,768 lines with mixed responsibilities
+**Problem**: `conversation.py` is 1,805 lines with mixed responsibilities
 
 **Proposed structure**:
 ```
@@ -141,6 +144,24 @@ core/conversation/
   directives.py    # DirectiveType enum + DirectiveSpec
   templates.py     # Template variable substitution
 ```
+
+### Architecture Documentation (P1)
+
+**Problem**: No centralized architecture documentation. New contributors must read code to understand structure.
+
+**Deliverable**: `docs/ARCHITECTURE.md` covering:
+- Module dependency graph (core/, adapters/, commands/, verifiers/)
+- Data flow: conversation → renderer → adapter → SDK
+- Extension points (adapters, verifiers, directives)
+- Key abstractions (ConversationFile, Session, ExecutionContext, StepExecutor)
+- Configuration hierarchy (CLI → env → defaults)
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Document module structure | Low | 🔲 Open |
+| Create data flow diagram | Low | 🔲 Open |
+| Document extension points | Low | 🔲 Open |
+| Add key abstractions section | Low | 🔲 Open |
 
 ### Copilot Adapter Modularization (P3)
 
