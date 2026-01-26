@@ -327,9 +327,11 @@ class CopilotAdapter(AdapterBase):
                     "background_compaction_threshold": infinite_cfg.background_threshold,
                     "buffer_exhaustion_threshold": infinite_cfg.buffer_exhaustion,
                 }
+                bg_thresh = f"{infinite_cfg.background_threshold:.0%}"
+                buf_thresh = f"{infinite_cfg.buffer_exhaustion:.0%}"
                 logger.info(
-                    f"Infinite sessions enabled: compact at {infinite_cfg.background_threshold:.0%}, "
-                    f"block at {infinite_cfg.buffer_exhaustion:.0%}"
+                    f"Infinite sessions enabled: compact at {bg_thresh}, "
+                    f"block at {buf_thresh}"
                 )
             else:
                 session_config["infinite_sessions"] = {"enabled": False}
@@ -360,15 +362,18 @@ class CopilotAdapter(AdapterBase):
             # Log final stats
             stats = self.session_stats.get(session.id)
             if stats and stats.total_input_tokens > 0:
-                intent_summary = f", {len(stats.intent_history)} intents" if stats.intent_history else ""
+                intent_count = len(stats.intent_history)
+                intent_summary = f", {intent_count} intents" if stats.intent_history else ""
                 tool_summary = ""
                 if stats.total_tool_calls > 0:
                     tool_summary = f", {stats.total_tool_calls} tools"
                     if stats.tool_calls_failed > 0:
                         tool_summary += f" ({stats.tool_calls_failed} failed)"
+                in_tok = stats.total_input_tokens
+                out_tok = stats.total_output_tokens
                 logger.info(
                     f"Session complete: {stats.turns} turns, "
-                    f"{stats.total_input_tokens} in / {stats.total_output_tokens} out tokens{tool_summary}{intent_summary}"
+                    f"{in_tok} in / {out_tok} out tokens{tool_summary}{intent_summary}"
                 )
 
             try:
@@ -491,7 +496,10 @@ class CopilotAdapter(AdapterBase):
             # Reasoning events
             elif event_type == "assistant.reasoning":
                 reasoning = _get_field(data, "content", "reasoning", default=str(data))
-                logger.debug(f"Reasoning: {reasoning[:200]}..." if len(str(reasoning)) > 200 else f"Reasoning: {reasoning}")
+                if len(str(reasoning)) > 200:
+                    logger.debug(f"Reasoning: {reasoning[:200]}...")
+                else:
+                    logger.debug(f"Reasoning: {reasoning}")
                 stats._send_reasoning_parts.append(reasoning)
                 if stats._send_on_reasoning:
                     stats._send_on_reasoning(reasoning)
@@ -522,7 +530,10 @@ class CopilotAdapter(AdapterBase):
                 messages_length = _get_field(data, "messages_length")
                 if current_tokens is not None:
                     pct = int(100 * current_tokens / token_limit) if token_limit else 0
-                    logger.debug(f"Context: {int(current_tokens):,}/{int(token_limit):,} tokens ({pct}%), {int(messages_length or 0)} messages")
+                    cur = int(current_tokens)
+                    lim = int(token_limit)
+                    msgs = int(messages_length or 0)
+                    logger.debug(f"Context: {cur:,}/{lim:,} tokens ({pct}%), {msgs} messages")
                 elif logger.isEnabledFor(TRACE):
                     # Full data only at TRACE
                     logger.log(TRACE, f"Usage info: {_format_data(data)}")
@@ -530,7 +541,13 @@ class CopilotAdapter(AdapterBase):
             # Tool events
             elif event_type == "tool.execution_start":
                 tool_name = _get_tool_name(data)
-                tool_call_id = _get_field(data, "tool_call_id", "id", default=str(stats._send_turn_stats.tool_calls if stats._send_turn_stats else 0))
+                if stats._send_turn_stats:
+                    default_id = str(stats._send_turn_stats.tool_calls)
+                else:
+                    default_id = "0"
+                tool_call_id = _get_field(
+                    data, "tool_call_id", "id", default=default_id
+                )
                 tool_args = _get_field(data, "arguments", "args", default={})
 
                 if stats._send_turn_stats:
@@ -547,7 +564,10 @@ class CopilotAdapter(AdapterBase):
                 logger.info(f"🔧 Tool: {tool_name}")
                 # Log args at DEBUG level (truncated)
                 if tool_args and logger.isEnabledFor(logging.DEBUG):
-                    args_str = json.dumps(tool_args) if isinstance(tool_args, dict) else str(tool_args)
+                    if isinstance(tool_args, dict):
+                        args_str = json.dumps(tool_args)
+                    else:
+                        args_str = str(tool_args)
                     if len(args_str) > 500:
                         args_str = args_str[:500] + "..."
                     logger.debug(f"  Args: {args_str}")
@@ -796,7 +816,10 @@ class CopilotAdapter(AdapterBase):
                     tokens_after=tokens_after,
                 )
             else:
-                logger.debug(f"/compact may not have reduced tokens ({tokens_before} → {tokens_after}), using response as summary")
+                logger.debug(
+                    f"/compact may not have reduced tokens "
+                    f"({tokens_before} → {tokens_after}), using response as summary"
+                )
                 return CompactionResult(
                     preserved_content=response,
                     summary=response,
@@ -852,7 +875,9 @@ class CopilotAdapter(AdapterBase):
         if preserve:
             preserve_hint = f"Preserve: {', '.join(preserve)}. "
 
-        compact_prompt = f"/compact {preserve_hint}Summarize this conversation for continuation.".strip()
+        compact_prompt = (
+            f"/compact {preserve_hint}Summarize this conversation for continuation."
+        ).strip()
 
         try:
             summary = await self.send(session, compact_prompt)
@@ -880,7 +905,9 @@ class CopilotAdapter(AdapterBase):
         if compaction_prologue:
             context_parts.append(compaction_prologue)
         else:
-            context_parts.append("This conversation has been compacted. Summary of previous context:")
+            context_parts.append(
+                "This conversation has been compacted. Summary of previous context:"
+            )
 
         # Add the summary
         context_parts.append(summary)
