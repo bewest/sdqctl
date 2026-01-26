@@ -199,3 +199,135 @@ class TestHandleGenericError:
 
         assert mock_session.state.status == "failed"
         assert mock_console.print.called
+
+
+class TestCompactionSummaryDisplay:
+    """Tests for compaction summary in display_completion."""
+
+    def test_display_completion_shows_compaction_summary(self):
+        """Test compaction summary is displayed when compactions occurred."""
+        from sdqctl.commands.output_steps import display_completion
+        from sdqctl.adapters.stats import SessionStats, CompactionEvent
+
+        mock_conv = MagicMock()
+        mock_conv.max_cycles = 3
+        mock_conv.output_file = None
+
+        mock_session = MagicMock()
+        mock_session.state.messages = []
+
+        # Create stats with compaction events
+        stats = SessionStats()
+        stats.compaction_events = [
+            CompactionEvent(tokens_before=100000, tokens_after=80000),
+            CompactionEvent(tokens_before=120000, tokens_after=90000),
+        ]
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session_stats.return_value = stats
+
+        mock_console = MagicMock()
+
+        display_completion(
+            conv=mock_conv,
+            session=mock_session,
+            cycle_elapsed=10.0,
+            all_responses=[],
+            output_vars={},
+            json_output=False,
+            console=mock_console,
+            progress=MagicMock(),
+            ai_adapter=mock_adapter,
+            adapter_session=MagicMock(),
+        )
+
+        # Check that console.print was called with compaction info
+        print_calls = [str(call) for call in mock_console.print.call_args_list]
+        assert any("Compaction" in str(call) for call in print_calls)
+
+    def test_display_completion_json_includes_compaction_stats(self):
+        """Test JSON output includes compaction stats."""
+        from sdqctl.commands.output_steps import display_completion
+        from sdqctl.adapters.stats import SessionStats, CompactionEvent
+        import json
+
+        mock_conv = MagicMock()
+        mock_conv.max_cycles = 2
+        mock_conv.output_file = None
+
+        mock_session = MagicMock()
+        mock_session.state.messages = []
+        mock_session.to_dict.return_value = {}
+
+        # Create stats with compaction
+        stats = SessionStats()
+        stats.compaction_events = [
+            CompactionEvent(tokens_before=100000, tokens_after=80000),
+        ]
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session_stats.return_value = stats
+
+        mock_console = MagicMock()
+        captured_json = []
+
+        def capture_json(data):
+            captured_json.append(json.loads(data))
+
+        mock_console.print_json = capture_json
+
+        display_completion(
+            conv=mock_conv,
+            session=mock_session,
+            cycle_elapsed=5.0,
+            all_responses=[],
+            output_vars={},
+            json_output=True,
+            console=mock_console,
+            progress=MagicMock(),
+            ai_adapter=mock_adapter,
+            adapter_session=MagicMock(),
+        )
+
+        assert len(captured_json) == 1
+        result = captured_json[0]
+        assert "adapter_stats" in result
+        assert "compaction" in result["adapter_stats"]
+        assert result["adapter_stats"]["compaction"]["count"] == 1
+
+    def test_no_compaction_summary_when_zero_compactions(self):
+        """Test no compaction summary when no compactions occurred."""
+        from sdqctl.commands.output_steps import display_completion
+        from sdqctl.adapters.stats import SessionStats
+
+        mock_conv = MagicMock()
+        mock_conv.max_cycles = 1
+        mock_conv.output_file = None
+
+        mock_session = MagicMock()
+        mock_session.state.messages = []
+
+        stats = SessionStats()
+        stats.compaction_events = []  # No compactions
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session_stats.return_value = stats
+
+        mock_console = MagicMock()
+
+        display_completion(
+            conv=mock_conv,
+            session=mock_session,
+            cycle_elapsed=5.0,
+            all_responses=[],
+            output_vars={},
+            json_output=False,
+            console=mock_console,
+            progress=MagicMock(),
+            ai_adapter=mock_adapter,
+            adapter_session=MagicMock(),
+        )
+
+        # Compaction line should NOT appear
+        print_calls = [str(call) for call in mock_console.print.call_args_list]
+        assert not any("Compaction" in str(call) for call in print_calls)

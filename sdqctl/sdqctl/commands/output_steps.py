@@ -118,10 +118,37 @@ def display_completion(
                 if hasattr(stats, 'current_intent'):
                     result["adapter_stats"]["current_intent"] = stats.current_intent
                     result["adapter_stats"]["intent_history"] = stats.intent_history
+                # Include compaction stats if available
+                if hasattr(stats, 'compaction_count') and stats.compaction_count > 0:
+                    result["adapter_stats"]["compaction"] = {
+                        "count": stats.compaction_count,
+                        "effectiveness": stats.compaction_effectiveness,
+                        "total_tokens_saved": stats.total_tokens_saved,
+                    }
         console.print_json(json_mod.dumps(result))
     else:
         console.print(f"\n[green]✓ Completed {conv.max_cycles} cycles[/green]")
         console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
+
+        # Show compaction summary if any compactions occurred
+        if hasattr(ai_adapter, 'get_session_stats'):
+            stats = ai_adapter.get_session_stats(adapter_session)
+            if stats and hasattr(stats, 'compaction_count'):
+                compaction_count = getattr(stats, 'compaction_count', 0)
+                if isinstance(compaction_count, int) and compaction_count > 0:
+                    effectiveness = stats.compaction_effectiveness
+                    if effectiveness is not None:
+                        eff_str = f"{effectiveness:.2f}x"
+                        if effectiveness < 1.0:
+                            eff_color = "green"
+                            eff_desc = "reduced context"
+                        else:
+                            eff_color = "yellow"
+                            eff_desc = "increased context"
+                        console.print(
+                            f"[dim]Compactions: {compaction_count} "
+                            f"([{eff_color}]{eff_str}[/{eff_color}] - {eff_desc})[/dim]"
+                        )
 
         # Write output file if configured
         write_cycle_output(all_responses, conv, output_vars, console, progress)

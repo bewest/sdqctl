@@ -24,8 +24,8 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Add integration tests | Medium | Ongoing: +39 tests for iterate_helpers, compact_steps, rate limit. Total 1253 tests. |
-| Session resilience Phase 4 | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) Compaction strategy tuning |
+| Add integration tests | Medium | Ongoing: +42 tests this session. Total 1256 tests. |
+| Copilot adapter modularization | Medium | 1145 lines → split into events.py, stats.py, session.py |
 | Performance benchmark suite | Medium | **Blocked by OQ-005** - needs scope decision. Track regressions. |
 
 ### P3: Low
@@ -51,8 +51,10 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Session resilience Phase 4 (P2)** | 2026-01-26 | Compaction summary display complete. +3 tests. Shows effectiveness ratio in completion output. Total 1256 tests. |
 | **Session resilience Phase 3 (P2)** | 2026-01-26 | Predictive rate limiting complete. +9 tests. Added estimated_remaining_requests, estimated_minutes_remaining, warning integration. Total 1253 tests. |
-| **Session resilience Phase 2 (P2)** | 2026-01-26 | Checkpoint resume testing complete. +4 tests. Documented rate-limit recovery in COMMANDS.md. Total 1244 tests. |
+| **Session resilience Phase 2 (P2)** | 2026-01-26 | Checkpoint resume testing complete. +4 tests. Documented rate-limit recovery in COMMANDS.md. |
+| **SESSION-RESILIENCE (P2)** | 2026-01-26 | **PROPOSAL COMPLETE** - All 5 phases (0-4). Quota tracking, rate limit prediction, checkpoint resume, compaction metrics. |
 | **iterate.py Modularization (P2)** | 2026-01-26 | Complete: 1397 → 791 lines (-606, 43%). Extracted 5 modules: iterate_helpers.py, compact_steps.py, prompt_steps.py, json_pipeline.py, output_steps.py. +26 tests. Target <800 ✅ |
 | **run.py Modularization (P2)** | 2026-01-26 | Complete: 1523 → 973 lines (-550, 36%). Extracted elide.py, blocks.py, verify_steps.py, run_steps.py. +9 tests. Target <1000 ✅ |
 | **Integration tests Phase 2 (P2)** | 2026-01-26 | +30 tests for iterate_helpers.py (23) and compact_steps.py (7). Total 1240 tests. |
