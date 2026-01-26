@@ -44,6 +44,8 @@ The `--prologue` and `--epilogue` options (and their ConversationFile equivalent
 - ⚡ **Batch execution** - Parallel workflow execution
 
 > **📖 Design Philosophy**: See [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for workflow design principles, terminology definitions, and the double diamond pattern.
+>
+> **🏗️ Architecture**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module structure, data flow, and extension points.
 
 ## Installation
 

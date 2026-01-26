@@ -174,6 +174,7 @@ Before merging:
 
 ## See Also
 
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Module structure and extension points
 - [SECURITY-MODEL.md](SECURITY-MODEL.md) - Security documentation
 - [../pyproject.toml](../pyproject.toml) - Ruff configuration
 - [EXTENDING-VERIFIERS.md](EXTENDING-VERIFIERS.md) - Adding new verifiers

@@ -284,6 +284,7 @@ Available adapters: copilot, mock
 
 ## See Also
 
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Module structure and adapter extension guide
 - [GETTING-STARTED.md](GETTING-STARTED.md) - Quick start guide
 - [COMMANDS.md](COMMANDS.md) - CLI reference (`status --adapters`)
 - [MODEL-REQUIREMENTS proposal](../proposals/MODEL-REQUIREMENTS.md) - Abstract model selection

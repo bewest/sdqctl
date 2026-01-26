@@ -12,13 +12,13 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Split conversation.py (~1805 lines) | High | See [ConversationFile Split](#conversationfile-split-p0). Create parser.py, validator.py, directives.py, templates.py |
+| *(No P0 items)* | | |
 
 ### P1: High
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Create ARCHITECTURE.md | Medium | Document module structure, data flow, extension points. Required before further refactoring. |
+| *(No P1 items)* | | |
 
 ### P2: Medium
 
@@ -63,6 +63,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **ARCHITECTURE.md (P1)** | 2026-01-26 | Created docs/ARCHITECTURE.md: module structure, data flow, key abstractions, extension points. |
+| **ConversationFile Split (P0)** | 2026-01-26 | Modularized 1819-line file into 7 modules: types.py, parser.py, applicator.py, templates.py, utilities.py, file.py, __init__.py. Largest file now 858 lines. |
 | **Error handling decorator** | 2026-01-26 | @handle_io_errors, @handle_io_errors_async. 16 new tests. |
 | **VerifierBase scan_files utility** | 2026-01-26 | Consolidated 7 duplicate file scanning patterns. 5 new tests. |
 | **I/O Utilities** | 2026-01-26 | print_json, write_json_file, read_json_file, write_text_file. 7 new tests. |
@@ -131,37 +133,45 @@ class ExecutionContext:
 | Refactor iterate.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
 | Refactor apply.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
 
-### ConversationFile Split (P0)
+### ConversationFile Split (P0) - ✅ COMPLETE
 
-**Problem**: `conversation.py` is 1,805 lines with mixed responsibilities
+**Problem**: `conversation.py` was 1,819 lines with mixed responsibilities
 
-**Proposed structure**:
+**Completed**: 2026-01-26
+
+**Final structure**:
 ```
 core/conversation/
-  __init__.py      # Re-exports ConversationFile
-  parser.py        # DirectiveParser (line-by-line parsing)
-  validator.py     # ConversationValidator (semantic checks)
-  directives.py    # DirectiveType enum + DirectiveSpec
-  templates.py     # Template variable substitution
+  __init__.py      # Re-exports for backward compatibility (69 lines)
+  types.py         # DirectiveType enum + dataclasses (246 lines)
+  parser.py        # parse_line() function (37 lines)
+  applicator.py    # apply_directive() functions (419 lines)
+  templates.py     # Template variable substitution (106 lines)
+  utilities.py     # Content resolution, injection builders (204 lines)
+  file.py          # ConversationFile class (858 lines)
 ```
 
-### Architecture Documentation (P1)
+**Result**: 1,819 lines → 7 modules, largest file 858 lines. All 1042 tests pass.
 
-**Problem**: No centralized architecture documentation. New contributors must read code to understand structure.
+### Architecture Documentation (P1) - ✅ COMPLETE
+
+**Completed**: 2026-01-26
 
 **Deliverable**: `docs/ARCHITECTURE.md` covering:
-- Module dependency graph (core/, adapters/, commands/, verifiers/)
-- Data flow: conversation → renderer → adapter → SDK
-- Extension points (adapters, verifiers, directives)
-- Key abstractions (ConversationFile, Session, ExecutionContext, StepExecutor)
-- Configuration hierarchy (CLI → env → defaults)
+- Module structure with package layout diagram
+- Key abstractions: ConversationFile, Session, ExecutionContext, AdapterBase, VerifierBase
+- Data flow diagram: conversation → renderer → adapter → SDK
+- Extension points: adapters, verifiers, directives, commands
+- Configuration hierarchy: defaults → config file → env → workflow → CLI
+- Error handling and exit codes
+- Testing strategy
 
 | Task | Effort | Status |
 |------|--------|--------|
-| Document module structure | Low | 🔲 Open |
-| Create data flow diagram | Low | 🔲 Open |
-| Document extension points | Low | 🔲 Open |
-| Add key abstractions section | Low | 🔲 Open |
+| Document module structure | Low | ✅ Complete |
+| Create data flow diagram | Low | ✅ Complete |
+| Document extension points | Low | ✅ Complete |
+| Add key abstractions section | Low | ✅ Complete |
 
 ### Copilot Adapter Modularization (P3)
 
@@ -187,12 +197,12 @@ adapters/copilot/
 
 ### Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Max file size | 1,768 lines | <500 lines |
-| Lint issues (E501/F841) | 197 | 0 |
-| Integration test files | 1 | 5+ |
-| Code duplication (run/cycle) | ~500 lines | <100 lines |
+| Metric | Current | Target | Notes |
+|--------|---------|--------|-------|
+| Max file size | 858 lines | <500 lines | file.py (down from 1,819) |
+| Lint issues (E501/F841) | 197 | 0 | |
+| Integration test files | 1 | 5+ | |
+| Code duplication (run/cycle) | ~500 lines | <100 lines | |
 
 ### QUIRKS Grooming (P3) - ✅ COMPLETE
 
