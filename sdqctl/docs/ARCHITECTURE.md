@@ -84,6 +84,7 @@ sdqctl/
 │   ├── compact_steps.py  # COMPACT/CHECKPOINT step handlers
 │   ├── iterate_helpers.py # Target parsing, config builders for iterate
 │   ├── json_pipeline.py  # JSON pipeline handler (--from-json)
+│   ├── output_steps.py   # Output writing and error handling
 │   ├── prompt_steps.py   # Prompt building and loop detection
 │   ├── run_steps.py      # RUN/RUN-ASYNC/RUN-WAIT step handlers
 │   ├── verify_steps.py   # VERIFY/VERIFY-TRACE/VERIFY-COVERAGE handlers

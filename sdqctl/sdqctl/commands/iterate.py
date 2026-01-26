@@ -39,7 +39,7 @@ from ..core.loop_detector import LoopDetector, generate_nonce, get_stop_file_ins
 from ..core.progress import WorkflowProgress
 from ..core.progress import progress as progress_print
 from ..core.session import Session
-from ..utils.output import PromptWriter, handle_error
+from ..utils.output import PromptWriter
 from .compact_steps import execute_checkpoint_step, execute_compact_step
 from .iterate_helpers import (
     SESSION_MODES,
@@ -51,6 +51,12 @@ from .iterate_helpers import (
     validate_targets,
 )
 from .json_pipeline import execute_json_pipeline
+from .output_steps import (
+    display_completion,
+    handle_generic_error,
+    handle_loop_error,
+    handle_missing_context_error,
+)
 from .prompt_steps import (
     PromptContext,
     build_full_prompt,
@@ -365,7 +371,6 @@ async def _cycle_async(
     import time
 
     from ..core.conversation import (
-        build_output_with_injection,
         get_standard_variables,
         substitute_template_variables,
     )
@@ -820,59 +825,11 @@ async def _cycle_async(
             session.state.status = "completed"
             cycle_elapsed = time.time() - cycle_start
 
-            # Output
-            if json_output:
-                import json
-                result = {
-                    "status": "completed",
-                    "cycles_completed": conv.max_cycles,
-                    "responses": all_responses,
-                    "session": session.to_dict(),
-                }
-                # Include adapter stats (intents, tokens, tools) if available
-                if hasattr(ai_adapter, 'get_session_stats'):
-                    stats = ai_adapter.get_session_stats(adapter_session)
-                    if stats:
-                        result["adapter_stats"] = {
-                            "total_input_tokens": stats.total_input_tokens,
-                            "total_output_tokens": stats.total_output_tokens,
-                            "total_tool_calls": stats.total_tool_calls,
-                            "tool_calls_succeeded": getattr(stats, 'tool_calls_succeeded', 0),
-                            "tool_calls_failed": getattr(stats, 'tool_calls_failed', 0),
-                            "turns": stats.turns,
-                            "model": stats.model,
-                        }
-                        # Include intent tracking if available
-                        if hasattr(stats, 'current_intent'):
-                            result["adapter_stats"]["current_intent"] = stats.current_intent
-                            result["adapter_stats"]["intent_history"] = stats.intent_history
-                console.print_json(json.dumps(result))
-            else:
-                console.print(f"\n[green]✓ Completed {conv.max_cycles} cycles[/green]")
-                console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
-
-                if conv.output_file:
-                    # Substitute template variables in output path
-                    effective_output = substitute_template_variables(
-                        conv.output_file, output_vars
-                    )
-
-                    # Write final summary with header/footer injection
-                    output_content = "\n\n---\n\n".join(
-                        f"## Cycle {r['cycle']}, Prompt {r['prompt']}\n\n{r['response']}"
-                        for r in all_responses
-                    )
-                    output_content = build_output_with_injection(
-                        output_content, conv.headers, conv.footers,
-                        conv.source_path.parent if conv.source_path else None,
-                        output_vars
-                    )
-                    Path(effective_output).parent.mkdir(parents=True, exist_ok=True)
-                    Path(effective_output).write_text(output_content)
-                    progress_print(f"  Writing to {effective_output}")
-                    console.print(f"[green]Output written to {effective_output}[/green]")
-
-            progress_print(f"Done in {cycle_elapsed:.1f}s")
+            # Display completion and write output
+            display_completion(
+                conv, session, cycle_elapsed, all_responses, output_vars,
+                json_output, console, progress_print, ai_adapter, adapter_session
+            )
 
         finally:
             # Export events before destroying session (if configured via CLI or workflow)
@@ -886,45 +843,13 @@ async def _cycle_async(
             await ai_adapter.destroy_session(adapter_session)
 
     except LoopDetected as e:
-        session.state.status = "failed"
-        # Save checkpoint to preserve session state before exit
-        checkpoint_path = session.save_pause_checkpoint(f"Loop detected: {e.reason.value}")
-        if not json_errors:
-            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-            logger.error(f"Loop detected: {e}")
-        exit_code = handle_error(e, json_errors=json_errors, context={
-            "workflow": workflow_path,
-            "checkpoint": str(checkpoint_path),
-        })
-        sys.exit(exit_code)
+        handle_loop_error(e, session, workflow_path, json_errors, console)
 
     except MissingContextFiles as e:
-        session.state.status = "failed"
-        # Save checkpoint to preserve session state before exit
-        checkpoint_path = session.save_pause_checkpoint(f"Missing context files: {e.files}")
-        if not json_errors:
-            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-            logger.error(f"Missing files: {e}")
-        exit_code = handle_error(e, json_errors=json_errors, context={
-            "workflow": workflow_path,
-            "checkpoint": str(checkpoint_path),
-        })
-        sys.exit(exit_code)
+        handle_missing_context_error(e, session, workflow_path, json_errors, console)
 
     except Exception as e:
-        session.state.status = "failed"
-        # Save checkpoint to preserve session state before exit
-        checkpoint_path = session.save_pause_checkpoint(f"Error: {e}")
-        if json_errors:
-            exit_code = handle_error(e, json_errors=True, context={
-                "workflow": workflow_path,
-                "checkpoint": str(checkpoint_path),
-            })
-            sys.exit(exit_code)
-        else:
-            console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
-            console.print(f"[red]Error: {e}[/red]")
-            raise
+        handle_generic_error(e, session, workflow_path, json_errors, console)
 
     finally:
         # Clear workflow context
