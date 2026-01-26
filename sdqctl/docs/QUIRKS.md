@@ -13,13 +13,13 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 | ID | Quirk | Priority | Status |
 |----|-------|----------|--------|
-| Q-021 | `---` separator requires `--` prefix on CLI | P2 | 🟡 Open |
 | Q-019A | Progress messages lack timestamps after compaction | P3 | 🟡 Open |
 
 ### Resolved Quirks (Archived)
 
 | ID | Quirk | Resolution | Archive |
 |----|-------|------------|---------|
+| Q-021 | `---` separator requires `--` prefix on CLI | Documented in iterate --help | 2026-01-26 |
 | Q-017 | E501 line too long | All E501 fixed (core + tests) | 2026-01-25 |
 | Q-020 | Context percentage shows 0% until compaction | Sync tokens after each send() | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-020-context-percentage-shows-0-until-compaction) |
 | Q-019B | Context percentage diverges after compaction | Sync tokens from SDK | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-019b-context-percentage-diverges-after-compaction) |
@@ -42,7 +42,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 
 **Priority:** P2 - Ergonomics  
 **Discovered:** 2026-01-26  
-**Status:** 🟡 Open
+**Status:** ✅ RESOLVED - Documented in `iterate --help` (2026-01-26)
 
 ### Description
 
@@ -61,6 +61,10 @@ sdqctl iterate -n 2 -- "Focus on X" --- workflow.conv
 
 Click's argument parser sees `---` (starts with `-`) and attempts to parse it as an option before the arguments reach `parse_targets()`.
 
+### Resolution
+
+Help text now documents the `--` requirement before using `---` separators.
+
 ### Workarounds
 
 1. **Use `--` before targets** (recommended):
@@ -77,17 +81,6 @@ Click's argument parser sees `---` (starts with `-`) and attempts to parse it as
    ```bash
    sdqctl iterate -n 2 --prologue "Focus on X" workflow.conv
    ```
-
-### Fix Options
-
-1. **Document the `--` requirement** in help text (low effort)
-2. **Change separator to `:::` or `//`** (breaking change, but Click-safe)
-3. **Use Click's `token_normalize_func`** to escape `---` before parsing
-4. **Add `--separator TEXT`** option to override default
-
-### Recommendation
-
-Option 1 (documentation) for immediate fix, consider Option 2 for v0.2.0.
 
 ---
 

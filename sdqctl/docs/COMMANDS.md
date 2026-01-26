@@ -125,7 +125,8 @@ sdqctl iterate workflow.conv -n 3 --session-mode fresh
 sdqctl iterate "Setup context" workflow.conv "Final summary"
 
 # Mixed with separators (force separate turns)
-sdqctl iterate "First task" --- workflow.conv --- "Final task"
+# NOTE: Use -- before targets when using --- to prevent Click parsing errors
+sdqctl iterate -n 2 -- "First task" --- workflow.conv --- "Final task"
 
 # From pre-rendered JSON
 sdqctl iterate --from-json rendered.json

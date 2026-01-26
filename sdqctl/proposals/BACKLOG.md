@@ -34,7 +34,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| CLI ergonomics: `---` separator | Low | Q-021: Document `--` prefix or change separator. See QUIRKS.md |
+| *(No P2 items)* | | |
 
 ### P3: Low
 
@@ -64,6 +64,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Q-021: `---` separator documentation (P2)** | 2026-01-26 | Documented `--` prefix requirement in `iterate --help` and COMMANDS.md. |
 | **traceability.py modularization (P2)** | 2026-01-26 | Complete: 685 → 571 lines (-17%). Extracted traceability_coverage.py (135 lines). |
 | **verify.py modularization (P2)** | 2026-01-26 | Complete: 641 → 532 lines (-17%). Extracted verify_output.py (114 lines). |
 | **artifact.py modularization (P2)** | 2026-01-26 | Complete: 689 → 500 lines (-27%). Extracted core/artifact_ids.py (213 lines). |

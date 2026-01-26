@@ -159,6 +159,9 @@ def iterate(
     Use --- between items to force separate turns (default: adjacent items elide).
     Maximum one .conv file allowed in mixed mode.
 
+    NOTE: When using --- separators, place -- before targets to prevent Click
+    from parsing --- as an option. Example: sdqctl iterate -n 2 -- "task" --- file.conv
+
     Examples:
 
     \b
@@ -178,8 +181,8 @@ def iterate(
     sdqctl iterate "Setup context" workflow.conv "Final summary"
 
     \b
-    # Mixed with separators (force separate turns)
-    sdqctl iterate "First task" --- workflow.conv --- "Separate final task"
+    # Mixed with separators (use -- first to stop option parsing)
+    sdqctl iterate -n 2 -- "First task" --- workflow.conv --- "Separate task"
 
     \b
     # Fresh session each cycle
