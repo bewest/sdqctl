@@ -82,7 +82,7 @@ sdqctl/
 │   ├── blocks.py         # ON-FAILURE/ON-SUCCESS block execution
 │   ├── elide.py          # Elision step processing
 │   ├── compact_steps.py  # COMPACT/CHECKPOINT step handlers
-│   ├── iterate_helpers.py # Target parsing, config builders for iterate
+│   ├── iterate_helpers.py # Session/compaction helpers, target parsing
 │   ├── json_pipeline.py  # JSON pipeline handler (--from-json)
 │   ├── output_steps.py   # Output writing and error handling
 │   ├── prompt_steps.py   # Prompt building and loop detection
