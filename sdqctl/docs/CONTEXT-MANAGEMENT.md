@@ -213,18 +213,20 @@ sdqctl iterate workflow.conv -n 10 --no-infinite-sessions
 
 # Custom thresholds
 sdqctl iterate workflow.conv -n 10 \
-    --min-compaction-density 25 \
+    --compaction-min 25 \
     --compaction-threshold 75 \
-    --buffer-threshold 90
+    --compaction-max 90
 ```
 
 ### Threshold Behavior
 
-| Threshold | Default | Behavior |
-|-----------|---------|----------|
-| `--min-compaction-density` | 30% | Skip compaction if context below this |
-| `--compaction-threshold` | 80% | Start background compaction |
-| `--buffer-threshold` | 95% | Block until compaction complete |
+| CLI Option | Directive | Default | Behavior |
+|------------|-----------|---------|----------|
+| `--compaction-min` | `COMPACTION-MIN` | 30% | Skip compaction if context below this |
+| `--compaction-threshold` | `COMPACTION-THRESHOLD` | 80% | Start background compaction |
+| `--compaction-max` | `COMPACTION-MAX` | 95% | Block until compaction complete |
+
+> **Note**: `--min-compaction-density` and `--buffer-threshold` are deprecated aliases.
 
 ### When to Use Manual COMPACT
 

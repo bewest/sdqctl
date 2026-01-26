@@ -126,16 +126,27 @@ SESSION_MODES = {
 
 def build_infinite_session_config(
     no_infinite_sessions: bool,
-    compaction_threshold: int,
-    buffer_threshold: int = 95,
-    min_compaction_density: int = 30,
+    compaction_threshold: Optional[int],
+    buffer_threshold: Optional[int] = None,
+    min_compaction_density: Optional[int] = None,
     conv_infinite_sessions: Optional[bool] = None,
     conv_compaction_min: Optional[float] = None,
     conv_compaction_threshold: Optional[float] = None,
+    conv_compaction_max: Optional[float] = None,
 ) -> InfiniteSessionConfig:
     """Build InfiniteSessionConfig from CLI options and ConversationFile directives.
 
     Priority: CLI options > ConversationFile directives > defaults
+
+    Args:
+        no_infinite_sessions: CLI flag to disable infinite sessions
+        compaction_threshold: CLI background threshold (None=use directive/default)
+        buffer_threshold: CLI buffer exhaustion threshold (None=use directive/default)
+        min_compaction_density: CLI min density (None=use directive/default)
+        conv_infinite_sessions: ConversationFile INFINITE-SESSIONS directive
+        conv_compaction_min: ConversationFile COMPACTION-MIN directive (0.0-1.0)
+        conv_compaction_threshold: ConversationFile COMPACTION-THRESHOLD directive (0.0-1.0)
+        conv_compaction_max: ConversationFile COMPACTION-MAX directive (0.0-1.0)
     """
     # Enabled: CLI flag takes precedence, then conv directive, then default (True)
     if no_infinite_sessions:
@@ -146,7 +157,7 @@ def build_infinite_session_config(
         enabled = True
 
     # Min compaction density: CLI > conv > default (30%)
-    if min_compaction_density != 30:  # CLI override
+    if min_compaction_density is not None:
         min_density = min_compaction_density / 100.0
     elif conv_compaction_min is not None:
         min_density = conv_compaction_min
@@ -154,15 +165,20 @@ def build_infinite_session_config(
         min_density = 0.30
 
     # Background threshold: CLI > conv > default (80%)
-    if compaction_threshold != 80:  # CLI override
+    if compaction_threshold is not None:
         bg_threshold = compaction_threshold / 100.0
     elif conv_compaction_threshold is not None:
         bg_threshold = conv_compaction_threshold
     else:
         bg_threshold = 0.80
 
-    # Buffer exhaustion: CLI > default (95%)
-    buf_threshold = buffer_threshold / 100.0
+    # Buffer exhaustion: CLI > conv > default (95%)
+    if buffer_threshold is not None:
+        buf_threshold = buffer_threshold / 100.0
+    elif conv_compaction_max is not None:
+        buf_threshold = conv_compaction_max
+    else:
+        buf_threshold = 0.95
 
     return InfiniteSessionConfig(
         enabled=enabled,

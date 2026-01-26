@@ -111,6 +111,8 @@ class ConversationFile:
     compaction_min: Optional[float] = None
     # SDK background threshold (0.0-1.0), None=use default
     compaction_threshold: Optional[float] = None
+    # SDK buffer exhaustion threshold (0.0-1.0), None=use default
+    compaction_max: Optional[float] = None
 
     # Checkpointing
     checkpoint_after: Optional[str] = None  # each-cycle, each-prompt, never
@@ -817,6 +819,8 @@ class ConversationFile:
             lines.append(f"COMPACTION-MIN {int(self.compaction_min * 100)}")
         if self.compaction_threshold is not None:
             lines.append(f"COMPACTION-THRESHOLD {int(self.compaction_threshold * 100)}")
+        if self.compaction_max is not None:
+            lines.append(f"COMPACTION-MAX {int(self.compaction_max * 100)}")
 
         # Checkpointing
         if self.checkpoint_after:

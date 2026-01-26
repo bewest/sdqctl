@@ -152,6 +152,10 @@ def apply_directive(conv, directive: Directive) -> None:
             # Parse "80" or "80%" -> 0.80
             value = directive.value.rstrip("%")
             conv.compaction_threshold = float(value) / 100
+        case DirectiveType.COMPACTION_MAX:
+            # Parse "95" or "95%" -> 0.95
+            value = directive.value.rstrip("%")
+            conv.compaction_max = float(value) / 100
 
         # Elision - merge adjacent elements
         case DirectiveType.ELIDE:

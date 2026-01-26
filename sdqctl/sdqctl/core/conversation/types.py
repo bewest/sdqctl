@@ -83,6 +83,7 @@ class DirectiveType(Enum):
     INFINITE_SESSIONS = "INFINITE-SESSIONS"  # enabled|disabled
     COMPACTION_MIN = "COMPACTION-MIN"  # Minimum density % to trigger compaction (0-100)
     COMPACTION_THRESHOLD = "COMPACTION-THRESHOLD"  # SDK background compaction threshold % (0-100)
+    COMPACTION_MAX = "COMPACTION-MAX"  # SDK buffer exhaustion threshold % (0-100)
 
     # Elision (merge adjacent elements into single prompt)
     ELIDE = "ELIDE"  # Merge element above with element below

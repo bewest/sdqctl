@@ -2033,3 +2033,52 @@ class TestTimeoutParsing:
         from sdqctl.core.conversation.utilities import parse_timeout_duration
         with pytest.raises(ValueError, match="Invalid timeout number"):
             parse_timeout_duration("abch")
+
+
+class TestCompactionMaxDirective:
+    """Tests for COMPACTION-MAX directive parsing."""
+
+    def test_compaction_max_directive_parsed(self):
+        """COMPACTION-MAX directive should set compaction_max field."""
+        content = """MODEL gpt-4
+ADAPTER mock
+COMPACTION-MAX 90
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.compaction_max == 0.90
+
+    def test_compaction_max_with_percent_sign(self):
+        """COMPACTION-MAX should accept values with % sign."""
+        content = """MODEL gpt-4
+ADAPTER mock
+COMPACTION-MAX 85%
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.compaction_max == 0.85
+
+    def test_all_compaction_directives(self):
+        """All three compaction directives should be parseable."""
+        content = """MODEL gpt-4
+ADAPTER mock
+COMPACTION-MIN 25
+COMPACTION-THRESHOLD 70
+COMPACTION-MAX 90
+PROMPT Test
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.compaction_min == 0.25
+        assert conv.compaction_threshold == 0.70
+        assert conv.compaction_max == 0.90
+
+    def test_compaction_max_serialization(self):
+        """COMPACTION-MAX should be serialized in to_string()."""
+        conv = ConversationFile(
+            model="gpt-4",
+            adapter="mock",
+            prompts=["Test"],
+            compaction_max=0.85,
+        )
+        output = conv.to_string()
+        assert "COMPACTION-MAX 85" in output

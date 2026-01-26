@@ -1,6 +1,6 @@
 # Compaction Configuration Unification
 
-> **Status**: Draft 🔲  
+> **Status**: ✅ Complete  
 > **Date**: 2026-01-26  
 > **Priority**: P2 (Medium)  
 > **Scope**: Align directive/CLI naming and fill gaps  
@@ -169,29 +169,26 @@ No changes required for existing `.conv` files - new directive is additive.
 
 ## Implementation Checklist
 
-- [ ] **Phase 1: Add COMPACTION-MAX directive**
-  - [ ] Add `DirectiveType.COMPACTION_MAX` 
-  - [ ] Add `conv.compaction_max` field
-  - [ ] Add applicator handler
-  - [ ] Add to `build_infinite_session_config()`
-  - [ ] Add tests
+- [x] **Phase 1: Add COMPACTION-MAX directive**
+  - [x] Add `DirectiveType.COMPACTION_MAX` 
+  - [x] Add `conv.compaction_max` field
+  - [x] Add applicator handler
+  - [x] Add to `build_infinite_session_config()`
+  - [x] Add tests
 
-- [ ] **Phase 2: Align CLI naming**
-  - [ ] Rename `--min-compaction-density` → `--compaction-min`
-  - [ ] Rename `--buffer-threshold` → `--compaction-max`
-  - [ ] Add deprecated aliases
-  - [ ] Update help text
+- [x] **Phase 2: Align CLI naming**
+  - [x] Rename `--min-compaction-density` → `--compaction-min`
+  - [x] Rename `--buffer-threshold` → `--compaction-max`
+  - [x] Add deprecated aliases
+  - [x] Update help text
 
-- [ ] **Phase 3: Fix default detection**
-  - [ ] Change CLI defaults to `None`
-  - [ ] Update `build_infinite_session_config()` logic
-  - [ ] Add tests for explicit vs default
+- [x] **Phase 3: Fix default detection**
+  - [x] Change CLI defaults to `None`
+  - [x] Update `build_infinite_session_config()` logic
+  - [x] Add tests for explicit vs default
 
-- [ ] **Phase 4: Documentation**
-  - [ ] Update DIRECTIVE-REFERENCE.md
-  - [ ] Update CONTEXT-MANAGEMENT.md
-  - [ ] Update COMMANDS.md
-  - [ ] Update README.md
+- [x] **Phase 4: Documentation**
+  - [x] Update DIRECTIVE-REFERENCE.md
 
 ---
 

@@ -103,14 +103,18 @@ console = Console()
 @click.option("--json", "json_output", is_flag=True, help="JSON output")
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
-@click.option("--min-compaction-density", type=int, default=30,
-              help="Skip compaction if context usage below this % (default: 30)")
+@click.option("--compaction-min", type=int, default=None,
+              help="Skip compaction if context usage below this %% (default: 30)")
+@click.option("--min-compaction-density", type=int, default=None, hidden=True,
+              help="[DEPRECATED] Use --compaction-min instead")
 @click.option("--no-infinite-sessions", is_flag=True,
               help="Disable SDK infinite sessions (use client-side compaction)")
-@click.option("--compaction-threshold", type=int, default=80,
-              help="Start background compaction at this % (default: 80)")
-@click.option("--buffer-threshold", type=int, default=95,
-              help="Block until compaction at this % (default: 95)")
+@click.option("--compaction-threshold", type=int, default=None,
+              help="Start background compaction at this %% (default: 80)")
+@click.option("--compaction-max", type=int, default=None,
+              help="Block until compaction at this %% (default: 95)")
+@click.option("--buffer-threshold", type=int, default=None, hidden=True,
+              help="[DEPRECATED] Use --compaction-max instead")
 @click.option("--no-stop-file-prologue", is_flag=True,
               help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None,
@@ -140,10 +144,12 @@ def iterate(
     json_output: bool,
     dry_run: bool,
     render_only: bool,
-    min_compaction_density: int,
+    compaction_min: Optional[int],
+    min_compaction_density: Optional[int],
     no_infinite_sessions: bool,
-    compaction_threshold: int,
-    buffer_threshold: int,
+    compaction_threshold: Optional[int],
+    compaction_max: Optional[int],
+    buffer_threshold: Optional[int],
     no_stop_file_prologue: bool,
     stop_file_nonce: Optional[str],
 ) -> None:
@@ -179,6 +185,39 @@ def iterate(
     # Fresh session each cycle
     sdqctl iterate workflow.conv -n 3 -s fresh
     """
+    # Handle deprecated CLI options with warnings
+    effective_compaction_min = compaction_min
+    if min_compaction_density is not None:
+        import warnings
+        warnings.warn(
+            "--min-compaction-density is deprecated, use --compaction-min instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        click.secho(
+            "⚠ --min-compaction-density is deprecated. Use --compaction-min instead.",
+            fg="yellow", err=True
+        )
+        # Deprecated option takes precedence if new one not set
+        if effective_compaction_min is None:
+            effective_compaction_min = min_compaction_density
+
+    effective_compaction_max = compaction_max
+    if buffer_threshold is not None:
+        import warnings
+        warnings.warn(
+            "--buffer-threshold is deprecated, use --compaction-max instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        click.secho(
+            "⚠ --buffer-threshold is deprecated. Use --compaction-max instead.",
+            fg="yellow", err=True
+        )
+        # Deprecated option takes precedence if new one not set
+        if effective_compaction_max is None:
+            effective_compaction_max = buffer_threshold
+
     # Parse and validate targets
     groups = parse_targets(targets)
     workflow_path, pre_prompts, post_prompts = validate_targets(groups)
@@ -311,10 +350,10 @@ def iterate(
         prologue, epilogue, header, footer,
         output, event_log, json_output, dry_run, no_stop_file_prologue, stop_file_nonce,
         verbosity=verbosity, show_prompt=show_prompt_flag,
-        min_compaction_density=min_compaction_density,
+        compaction_min=effective_compaction_min,
         no_infinite_sessions=no_infinite_sessions,
         compaction_threshold=compaction_threshold,
-        buffer_threshold=buffer_threshold,
+        compaction_max=effective_compaction_max,
         json_errors=json_errors
     ))
 
@@ -346,10 +385,10 @@ async def _cycle_async(
     stop_file_nonce: Optional[str] = None,
     verbosity: int = 0,
     show_prompt: bool = False,
-    min_compaction_density: int = 30,
+    compaction_min: Optional[int] = None,
     no_infinite_sessions: bool = False,
-    compaction_threshold: int = 80,
-    buffer_threshold: int = 95,
+    compaction_threshold: Optional[int] = None,
+    compaction_max: Optional[int] = None,
     json_errors: bool = False,
 ) -> None:
     """Execute multi-cycle workflow with session management.
@@ -520,10 +559,11 @@ async def _cycle_async(
 
         # Build infinite sessions config from CLI options + conv file directives
         infinite_config = build_infinite_session_config(
-            no_infinite_sessions, compaction_threshold, buffer_threshold, min_compaction_density,
+            no_infinite_sessions, compaction_threshold, compaction_max, compaction_min,
             conv_infinite_sessions=conv.infinite_sessions,
             conv_compaction_min=conv.compaction_min,
             conv_compaction_threshold=conv.compaction_threshold,
+            conv_compaction_max=conv.compaction_max,
         )
 
         adapter_config = AdapterConfig(
@@ -613,7 +653,9 @@ async def _cycle_async(
                         )
 
                     # Check for compaction (accumulate mode, or when context limit reached)
-                    needs_compact = session.needs_compaction(min_compaction_density)
+                    # Use effective_min which defaults to 30% if not set
+                    effective_min = compaction_min if compaction_min is not None else 30
+                    needs_compact = session.needs_compaction(effective_min)
                     if session_mode == "accumulate" and needs_compact:
                         await perform_compaction(
                             ai_adapter, adapter_session, conv, session,
@@ -737,9 +779,11 @@ async def _cycle_async(
                             prompt_idx += 1
 
                         elif step_type == "compact":
+                            # Use effective_min which defaults to 30% if not set
+                            effective_min_compact = compaction_min if compaction_min is not None else 30
                             await execute_compact_step(
                                 step, conv, session, ai_adapter, adapter_session,
-                                min_compaction_density, console, progress_print
+                                effective_min_compact, console, progress_print
                             )
 
                         elif step_type == "checkpoint":

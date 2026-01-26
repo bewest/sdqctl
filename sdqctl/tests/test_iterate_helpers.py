@@ -177,11 +177,61 @@ class TestBuildInfiniteSessionConfig:
         assert config.min_compaction_density == 0.50
 
     def test_conv_thresholds_used_when_cli_default(self):
+        """When CLI passes None, conv directive values should be used."""
         config = build_infinite_session_config(
             no_infinite_sessions=False,
-            compaction_threshold=80,  # Default
+            compaction_threshold=None,  # None = use conv/default
             conv_compaction_threshold=0.75,
             conv_compaction_min=0.40,
         )
         assert config.background_threshold == 0.75
         assert config.min_compaction_density == 0.40
+
+
+class TestBuildInfiniteSessionConfigCompactionMax:
+    """Tests for COMPACTION-MAX directive and --compaction-max CLI option."""
+
+    def test_conv_compaction_max_used_when_cli_not_set(self):
+        """Conv COMPACTION-MAX directive should be used when CLI not set."""
+        config = build_infinite_session_config(
+            no_infinite_sessions=False,
+            compaction_threshold=None,
+            buffer_threshold=None,
+            min_compaction_density=None,
+            conv_compaction_max=0.90,
+        )
+        assert config.buffer_exhaustion == 0.90
+
+    def test_cli_compaction_max_overrides_conv(self):
+        """CLI --compaction-max should override conv directive."""
+        config = build_infinite_session_config(
+            no_infinite_sessions=False,
+            compaction_threshold=None,
+            buffer_threshold=85,  # CLI override
+            conv_compaction_max=0.90,  # Conv directive
+        )
+        assert config.buffer_exhaustion == 0.85
+
+    def test_default_compaction_max_when_none_set(self):
+        """Default 95% should be used when neither CLI nor conv set."""
+        config = build_infinite_session_config(
+            no_infinite_sessions=False,
+            compaction_threshold=None,
+            buffer_threshold=None,
+        )
+        assert config.buffer_exhaustion == 0.95
+
+    def test_all_thresholds_from_conv(self):
+        """All compaction thresholds should be configurable via conv directives."""
+        config = build_infinite_session_config(
+            no_infinite_sessions=False,
+            compaction_threshold=None,
+            buffer_threshold=None,
+            min_compaction_density=None,
+            conv_compaction_min=0.25,
+            conv_compaction_threshold=0.70,
+            conv_compaction_max=0.85,
+        )
+        assert config.min_compaction_density == 0.25
+        assert config.background_threshold == 0.70
+        assert config.buffer_exhaustion == 0.85

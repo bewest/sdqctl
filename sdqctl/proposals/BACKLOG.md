@@ -10,9 +10,9 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Add integration tests | P2 | Medium | Ongoing: Total 1288 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
-| 2 | Deprecate `run` command | P2 | Low | Forward to `iterate -n 1` with warning. See [ITERATE-CONSOLIDATION.md](ITERATE-CONSOLIDATION.md). |
-| 3 | help.py modularization | P2 | Medium | 698 lines. Consider extracting help sections to separate modules. |
+| 1 | Add integration tests | P2 | Medium | Ongoing: Total 1296 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
+| 2 | help.py modularization | P2 | Medium | 698 lines. Consider extracting help sections to separate modules. |
+| 3 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. |
 
 ---
 
@@ -34,7 +34,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Performance benchmark suite | Medium | **Blocked by OQ-005** - needs scope decision. Track regressions. |
+| *(No unblocked P2 items)* | | |
 
 ### P3: Low
 
@@ -46,13 +46,12 @@
 
 | Item | Source | Notes |
 |------|--------|-------|
-| Compaction config unification | [COMPACTION-UNIFICATION.md](COMPACTION-UNIFICATION.md) | P2 Draft: Align directive/CLI naming |
 | LSP support for refcat | References | Language Server Protocol for IDE integration |
 | Interactive help (`--interactive`) | References | Browsable help system |
-| refcat usage patterns example | P3 Workflow Examples | Cross-repo context injection |
 | Multiple .conv files in mixed mode | Phase 6 deferred | Complex; requires positional prologue tracking |
 | `--once` flag for non-repeating CLI prompts | Phase 6 deferred | Needs use case research |
 | `--prompt` / `--file` disambiguation switches | Phase 6 deferred | Needs impact analysis |
+| Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
 
 ---
 
@@ -60,6 +59,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Compaction config unification (P2)** | 2026-01-26 | Complete: COMPACTION-MAX directive, CLI naming alignment, None defaults. +8 tests. Total 1296 tests. |
+| **`run` command deprecation (P2)** | 2026-01-26 | Complete: 972 → 125 lines. Thin wrapper forwards to `iterate -n 1`. All 1288 tests pass. |
 | **CLI modularization (P2)** | 2026-01-26 | Complete: 966 → 413 lines (-553, 57%). Extracted init.py (276 lines) and resume.py (292 lines). |
 | **Copilot adapter modularization (P2)** | 2026-01-26 | Complete: 1143 → 670 lines (-473, 41%). Extracted CopilotEventHandler class to events.py. +32 tests. Total 1288 tests. |
 | **Session resilience Phase 4 (P2)** | 2026-01-26 | Compaction summary display complete. +3 tests. Shows effectiveness ratio in completion output. Total 1256 tests. |
@@ -318,7 +319,7 @@ def _check_minimal_response(
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | ✅ Complete | --from-json + schema_version |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | ✅ Complete | Templates + traceability verifier |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | ✅ Complete | Help implemented |
-| [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | 🟡 Partial | Phases 1-6 complete. **`run` deprecation NOT done** - still exists as separate 973-line command. |
+| [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | ✅ Complete | All phases complete. `run` deprecated to thin wrapper (972 → 125 lines). |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | ✅ Complete | All 4 phases |
 | [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | ✅ Complete | Phase 1-4 complete. CONSULT-TIMEOUT added. |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | ✅ Complete | Taxonomy + CLI |
@@ -326,7 +327,8 @@ def _check_minimal_response(
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Native SDK compaction |
 | [SDK-SESSION-PERSISTENCE](SDK-SESSION-PERSISTENCE.md) | ✅ Complete | sessions resume + SESSION-NAME |
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | ✅ Complete | Adapter methods + status |
-| [SESSION-RESILIENCE](SESSION-RESILIENCE.md) | 🚀 Ready | P2: Metrics instrumentation (Phase 0-0.5). P3: Rate limit prediction, checkpoint resume |
+| [SESSION-RESILIENCE](archive/SESSION-RESILIENCE.md) | ✅ Complete | All 5 phases. Quota tracking, rate limit prediction, compaction metrics. |
+| [COMPACTION-UNIFICATION](COMPACTION-UNIFICATION.md) | ✅ Complete | COMPACTION-MAX directive, CLI alignment, None defaults. |
 
 ---
 

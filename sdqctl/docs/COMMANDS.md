@@ -49,11 +49,20 @@ sdqctl [OPTIONS] COMMAND [ARGS]...
 
 Execute a single prompt or ConversationFile.
 
+> **Note**: `run` is deprecated. Use `sdqctl iterate` instead.
+
 ```bash
-sdqctl run TARGET [OPTIONS]
+sdqctl run TARGET [OPTIONS]  # Deprecated - forwards to iterate -n 1
 ```
 
-**Examples:**
+**Recommended:**
+```bash
+# Use iterate instead (identical behavior, more features)
+sdqctl iterate "Audit authentication module"
+sdqctl iterate workflow.conv --adapter copilot
+```
+
+**Legacy Examples (still work, but emit warning):**
 ```bash
 # Inline prompt
 sdqctl run "Audit authentication module"
@@ -133,8 +142,10 @@ sdqctl render iterate workflow.conv --json | jq '...' | sdqctl iterate --from-js
 | `--from-json` | Execute from rendered JSON |
 | `--checkpoint-dir` | Checkpoint directory |
 | `--event-log` | Export SDK events to JSONL |
-| `--infinite-sessions` | Enable SDK native compaction |
-| `--compaction-threshold` | Background compaction threshold (%) |
+| `--no-infinite-sessions` | Disable SDK native compaction |
+| `--compaction-min` | Skip compaction below this % (default: 30) |
+| `--compaction-threshold` | Background compaction threshold % (default: 80) |
+| `--compaction-max` | Block until complete at this % (default: 95) |
 
 **Session Modes:**
 | Mode | Behavior |

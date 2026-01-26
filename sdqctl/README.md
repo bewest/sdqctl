@@ -198,6 +198,7 @@ OUTPUT-FILE security-report.md
 | `INFINITE-SESSIONS` | Enable SDK native compaction (enabled/disabled) |
 | `COMPACTION-MIN` | Min context % to trigger compaction (default: 30%) |
 | `COMPACTION-THRESHOLD` | Background compaction threshold (default: 80%) |
+| `COMPACTION-MAX` | Buffer exhaustion threshold (default: 95%) |
 | `ELIDE` | Merge adjacent elements into single prompt |
 | `VERIFY` | Run static verification (refs, traceability) |
 | `VERIFY-ON-ERROR` | Behavior on verification failure (stop, continue) |

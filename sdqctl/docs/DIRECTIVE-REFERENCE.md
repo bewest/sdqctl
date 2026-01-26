@@ -85,6 +85,7 @@ Complete reference for sdqctl ConversationFile directives.
 | `INFINITE-SESSIONS` | Enable/disable SDK compaction | `INFINITE-SESSIONS enabled` |
 | `COMPACTION-MIN` | Min density % to trigger | `COMPACTION-MIN 30%` |
 | `COMPACTION-THRESHOLD` | Background compaction threshold | `COMPACTION-THRESHOLD 80%` |
+| `COMPACTION-MAX` | Buffer exhaustion threshold | `COMPACTION-MAX 95%` |
 
 ### Checkpoint Directives
 
