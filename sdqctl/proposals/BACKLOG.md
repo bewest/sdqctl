@@ -11,8 +11,8 @@
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
 | 1 | Add integration tests | P2 | Medium | Ongoing: Total 1300 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
-| 2 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. Document workspace.lock.json aliases. |
-| 3 | Document test marker usage | P3 | Low | Add examples to README or CONTRIBUTING for `-m slow`, `-m integration`. |
+| 2 | Add session-scoped fixtures | P3 | Low | Improve test performance with shared fixtures. |
+| 3 | Add error path tests | P3 | Low | Test malformed .conv input handling. |
 
 ---
 
@@ -63,6 +63,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Document test markers + refcat patterns (P3)** | 2026-01-26 | Added test marker examples and cross-repo refcat patterns to README.md. |
 | **Add @pytest.mark.slow (P3)** | 2026-01-26 | Marked 1 slow test (timeout test). Enables `pytest -m "not slow"` for faster runs (~1s savings). |
 | **Expand test markers (P3)** | 2026-01-26 | Added tests/integration/conftest.py with auto-marker. 15 integration tests now selectable with `-m integration`. |
 | **Q-019A: Progress timestamps (P3)** | 2026-01-26 | Added `set_timestamps()` to core/progress.py. Enabled when `-v` used. +4 tests. Total 1300 tests. |

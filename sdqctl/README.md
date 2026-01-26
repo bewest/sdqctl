@@ -719,6 +719,27 @@ For cross-repository workflows, use aliases:
 sdqctl refcat loop:LoopKit/Sources/Algorithm.swift#L100-L200
 ```
 
+**Cross-Repo Usage Patterns:**
+
+```bash
+# Compare implementations across projects
+sdqctl refcat loop:Algorithm.swift#L50-100 aaps:DetermineBasalAdapter.kt#L30-80
+
+# In .conv files - reference external code for analysis
+REFCAT loop:LoopKit/Sources/Loop/Models/BolusEntry.swift#L1-50
+REFCAT aaps:app/src/main/java/info/nightscout/androidaps/plugins/aps/loop/LoopPlugin.kt#L100-150
+PROMPT Compare these bolus handling implementations.
+
+# Using workspace.lock.json for project aliases
+# Create workspace.lock.json in project root:
+# {
+#   "aliases": {
+#     "loop": "/path/to/LoopKit",
+#     "aaps": "/path/to/AndroidAPS"
+#   }
+# }
+```
+
 See `proposals/REFCAT-DESIGN.md` for full specification.
 
 ### `sdqctl status`
@@ -784,6 +805,11 @@ pip install -e ".[dev]"
 
 # Run tests
 pytest
+
+# Run tests with markers
+pytest -m integration       # Integration tests only (15 tests)
+pytest -m "not slow"        # Skip slow tests (~1s faster)
+pytest -m "not integration" # Unit tests only
 
 # Lint
 ruff check sdqctl/
