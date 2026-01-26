@@ -25,7 +25,7 @@
 | Item | Effort | Notes |
 |------|--------|-------|
 | Modularize run.py (~1300 lines) | Medium | Phase 2 done: blocks.py extracted (-107 lines). Total -224 lines from 1523. |
-| Add integration tests | Medium | Beyond loop stress testing. Adapter + end-to-end scenarios. |
+| Add integration tests | Medium | ✅ Phase 1 done: 15 adapter + workflow tests. Extend coverage. |
 | Performance benchmark suite | Medium | Track regressions. Promoted from P3. |
 
 ### P3: Low

@@ -92,9 +92,17 @@ core/
 tests/
   conftest.py           # Shared fixtures
   fixtures/             # Test data files
-  integration/          # End-to-end tests
+  integration/          # End-to-end tests (adapter, workflow, loop stress)
   test_<module>.py      # Unit tests per module
 ```
+
+### Integration Test Coverage
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `test_adapter_integration.py` | 7 | Adapter lifecycle, sessions, isolation |
+| `test_workflow_integration.py` | 8 | Conversation parsing, directives, ELIDE |
+| `test_loop_stress.py` | - | Live API loop detection (requires --integration) |
 
 ### Testing Guidelines
 
