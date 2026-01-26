@@ -14,7 +14,7 @@ Questions awaiting human decision or clarification.
 
 | ID | Question | Source | Priority | Asked | Context |
 |----|----------|--------|----------|-------|---------|
-| OQ-004 | What are "default verbosity key actions"? | proposals/BACKLOG.md | P3 | 2026-01-26 | Needs impact/alternatives proposal before answering |
+| OQ-004 | What output should appear at default verbosity? | [VERBOSITY-DEFAULTS.md](../proposals/VERBOSITY-DEFAULTS.md) | P3 | 2026-01-26 | Proposal drafted with 4 alternatives. Awaiting decision. |
 
 ---
 

@@ -1110,8 +1110,10 @@ async def _cycle_async(
                                 on_reasoning=collect_reasoning
                             )
 
-                            # Sync local context tracking with SDK's actual token count (Q-020 fix)
-                            tokens_used, max_tokens = await ai_adapter.get_context_usage(adapter_session)
+                            # Sync local context tracking with SDK's token count (Q-020)
+                            tokens_used, max_tokens = await ai_adapter.get_context_usage(
+                                adapter_session
+                            )
                             session.context.window.used_tokens = tokens_used
                             session.context.window.max_tokens = max_tokens
 
@@ -1128,7 +1130,15 @@ async def _cycle_async(
 
                             # Check for loop after each response
                             combined = " ".join(last_reasoning) if last_reasoning else None
-                            loop_result = loop_detector.check(combined, response, cycle_num)
+                            # Get tool count from turn stats for tool-aware loop detection
+                            turn_tools = 0
+                            if hasattr(ai_adapter, 'get_session_stats'):
+                                stats = ai_adapter.get_session_stats(adapter_session)
+                                if stats and stats._send_turn_stats:
+                                    turn_tools = stats._send_turn_stats.tool_calls
+                            loop_result = loop_detector.check(
+                                combined, response, cycle_num, turn_tools
+                            )
                             if loop_result:
                                 # Special handling for stop file (agent-initiated stop)
                                 if loop_result.reason == LoopReason.STOP_FILE:
@@ -1156,7 +1166,8 @@ async def _cycle_async(
                                     )
                                 else:
                                     console.print(f"\n[red]⚠️  {loop_result}[/red]")
-                                    progress_print(f"  ⚠️  Loop detected: {loop_result.reason.value}")
+                                    reason_val = loop_result.reason.value
+                                    progress_print(f"  ⚠️  Loop detected: {reason_val}")
                                 raise loop_result
 
                             session.add_message("user", prompt)
@@ -1178,20 +1189,30 @@ async def _cycle_async(
                                 all_preserve = conv.compact_preserve + preserve
                                 compact_prompt = session.get_compaction_prompt()
                                 if all_preserve:
-                                    compact_prompt = f"Preserve these items: {', '.join(all_preserve)}\n\n{compact_prompt}"
+                                    preserve_list = ', '.join(all_preserve)
+                                    compact_prompt = (
+                                        f"Preserve these items: {preserve_list}\n\n"
+                                        f"{compact_prompt}"
+                                    )
 
-                                compact_response = await ai_adapter.send(adapter_session, compact_prompt)
-                                session.add_message("system", f"[Compaction summary]\n{compact_response}")
+                                compact_response = await ai_adapter.send(
+                                    adapter_session, compact_prompt
+                                )
+                                summary_msg = f"[Compaction summary]\n{compact_response}"
+                                session.add_message("system", summary_msg)
 
-                                # Sync local context tracking with SDK's actual token count
-                                tokens_after, _ = await ai_adapter.get_context_usage(adapter_session)
+                                # Sync local context tracking with SDK token count
+                                tokens_after, _ = await ai_adapter.get_context_usage(
+                                    adapter_session
+                                )
                                 session.context.window.used_tokens = tokens_after
 
                                 console.print("[green]🗜  Compaction complete[/green]")
                                 progress_print("  🗜  Compaction complete")
                             else:
-                                console.print("[dim]📊 Skipping COMPACT - context below threshold[/dim]")
-                                progress_print("  📊 Skipping COMPACT - context below threshold")
+                                skip_msg = "📊 Skipping COMPACT - context below threshold"
+                                console.print(f"[dim]{skip_msg}[/dim]")
+                                progress_print(f"  {skip_msg}")
 
                         elif step_type == "checkpoint":
                             # Save checkpoint mid-cycle
@@ -1204,42 +1225,52 @@ async def _cycle_async(
                             # Run VERIFY-TRACE step (check specific trace link)
                             from ..verifiers.traceability import TraceabilityVerifier
 
-                            verify_options = step.verify_options if hasattr(step, 'verify_options') else step.get('verify_options', {})
-                            from_id = verify_options.get('from', '')
-                            to_id = verify_options.get('to', '')
+                            opts = step.verify_options if hasattr(step, 'verify_options') \
+                                else step.get('verify_options', {})
+                            from_id = opts.get('from', '')
+                            to_id = opts.get('to', '')
 
                             console.print(f"[cyan]🔍 VERIFY-TRACE: {from_id} -> {to_id}[/cyan]")
 
-                            verify_path = conv.source_path.parent if conv.source_path else Path.cwd()
+                            verify_path = (
+                                conv.source_path.parent if conv.source_path else Path.cwd()
+                            )
                             verifier = TraceabilityVerifier()
                             result = verifier.verify_trace(from_id, to_id, verify_path)
 
                             if result.passed:
-                                console.print(f"  [green]✓ Trace verified: {result.summary}[/green]")
+                                msg = f"  [green]✓ Trace verified: {result.summary}[/green]"
+                                console.print(msg)
                             else:
                                 console.print(f"  [red]✗ Trace failed: {result.summary}[/red]")
                                 if conv.verify_on_error == "fail":
-                                    raise RuntimeError(f"VERIFY-TRACE failed: {from_id} -> {to_id}")
+                                    err = f"VERIFY-TRACE failed: {from_id} -> {to_id}"
+                                    raise RuntimeError(err)
 
                         elif step_type == "verify_coverage":
                             # Run VERIFY-COVERAGE step (check coverage metrics)
                             from ..verifiers.traceability import TraceabilityVerifier
 
-                            verify_options = step.verify_options if hasattr(step, 'verify_options') else step.get('verify_options', {})
-                            report_only = verify_options.get('report_only', False)
-                            metric = verify_options.get('metric')
-                            op = verify_options.get('op')
-                            threshold = verify_options.get('threshold')
+                            opts = step.verify_options if hasattr(step, 'verify_options') \
+                                else step.get('verify_options', {})
+                            report_only = opts.get('report_only', False)
+                            metric = opts.get('metric')
+                            op = opts.get('op')
+                            threshold = opts.get('threshold')
 
                             console.print("[cyan]🔍 VERIFY-COVERAGE[/cyan]")
 
-                            verify_path = conv.source_path.parent if conv.source_path else Path.cwd()
+                            verify_path = (
+                                conv.source_path.parent if conv.source_path else Path.cwd()
+                            )
                             verifier = TraceabilityVerifier()
 
                             if report_only:
                                 result = verifier.verify_coverage(verify_path)
                             else:
-                                result = verifier.verify_coverage(verify_path, metric=metric, op=op, threshold=threshold)
+                                result = verifier.verify_coverage(
+                                    verify_path, metric=metric, op=op, threshold=threshold
+                                )
 
                             if result.passed:
                                 console.print(f"  [green]✓ Coverage: {result.summary}[/green]")
@@ -1286,8 +1317,10 @@ async def _cycle_async(
                 console.print(f"[dim]Total messages: {len(session.state.messages)}[/dim]")
 
                 if conv.output_file:
-                    # Substitute template variables in output path (use output_vars with WORKFLOW_NAME)
-                    effective_output = substitute_template_variables(conv.output_file, output_vars)
+                    # Substitute template variables in output path
+                    effective_output = substitute_template_variables(
+                        conv.output_file, output_vars
+                    )
 
                     # Write final summary with header/footer injection
                     output_content = "\n\n---\n\n".join(

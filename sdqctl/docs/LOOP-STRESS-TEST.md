@@ -8,7 +8,7 @@ This tool tests four detection mechanisms in the `LoopDetector` class:
 
 1. **REASONING_PATTERN** - Detects when the AI's reasoning contains loop-aware phrases like "in a loop", "repeated prompt", etc.
 2. **IDENTICAL_RESPONSES** - Detects when 2 consecutive responses are identical (lowered from 3 in Q-002 fix)
-3. **MINIMAL_RESPONSE** - Detects when responses become suspiciously short (<100 chars) after the first cycle
+3. **MINIMAL_RESPONSE** - Detects when responses become suspiciously short (<100 chars) after the first cycle. **Skipped if tools were called** (2026-01-26 fix for false positives on commit acknowledgments).
 4. **STOP_FILE** - Detects when the agent creates a `STOPAUTOMATION-{nonce}.json` file to signal stop (✅ verified working)
 
 ## Quick Start

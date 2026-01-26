@@ -194,12 +194,18 @@ class LoopDetector:
         recent = list(self.response_hashes)[-self.identical_threshold:]
         return len(set(recent)) == 1
 
-    def _check_minimal_response(self, response: str, cycle_number: int) -> bool:
+    def _check_minimal_response(
+        self, response: str, cycle_number: int, tools_called: int = 0
+    ) -> bool:
         """Check if response is suspiciously short.
 
         Only triggers after first cycle to allow short initial responses.
+        Skips detection if tools were called (agent was productive).
         """
         if cycle_number == 0:
+            return False
+        if tools_called > 0:
+            # Agent was doing work, short acknowledgment is normal
             return False
 
         return len(response.strip()) < self.min_response_length
@@ -208,7 +214,8 @@ class LoopDetector:
         self,
         reasoning: Optional[str],
         response: str,
-        cycle_number: int = 0
+        cycle_number: int = 0,
+        tools_called: int = 0
     ) -> Optional[LoopDetected]:
         """Check for loop conditions.
 
@@ -216,6 +223,7 @@ class LoopDetector:
             reasoning: AI reasoning text (from assistant.reasoning event)
             response: AI response text
             cycle_number: Current cycle number (0-indexed)
+            tools_called: Number of tool calls in this turn (0 = no tools)
 
         Returns:
             LoopDetected exception if loop detected, None otherwise
@@ -246,8 +254,8 @@ class LoopDetector:
                 cycle_number=cycle_number + 1
             )
 
-        # Check 3: Minimal response (only after first cycle)
-        if self._check_minimal_response(response, cycle_number):
+        # Check 3: Minimal response (only after first cycle, skip if tools used)
+        if self._check_minimal_response(response, cycle_number, tools_called):
             logger.debug(f"Loop detected: minimal response ({len(response)} chars)")
             return LoopDetected(
                 reason=LoopReason.MINIMAL_RESPONSE,

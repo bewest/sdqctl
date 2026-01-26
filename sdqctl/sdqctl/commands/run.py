@@ -167,7 +167,8 @@ async def _execute_block_steps(
                     if result.stderr:
                         output_text += f"\n[stderr]\n{result.stderr}"
                     output_text = _truncate_output(output_text, conv.run_output_limit)
-                    session.add_message("system", f"[Block RUN output]\n```\n$ {command}\n{output_text}\n```")
+                    run_msg = f"[Block RUN output]\n```\n$ {command}\n{output_text}\n```"
+                    session.add_message("system", run_msg)
 
             except subprocess.TimeoutExpired:
                 logger.error("    ✗ Block RUN timed out")
@@ -190,7 +191,8 @@ async def _execute_block_steps(
             session.add_message("system", f"[Compaction summary]\n{response}")
 
         elif step_type == "pause":
-            console.print("[yellow]⏸  Paused by ON-FAILURE/ON-SUCCESS block. Press Enter to continue...[/yellow]")
+            pause_msg = "⏸  Paused by ON-FAILURE/ON-SUCCESS block. Press Enter to continue..."
+            console.print(f"[yellow]{pause_msg}[/yellow]")
             input()
 
         elif step_type == "consult":
@@ -380,8 +382,8 @@ def process_elided_steps(steps: list) -> list:
 @click.option("--adapter", "-a", default=None, help="AI adapter (copilot, claude, openai, mock)")
 @click.option("--model", "-m", default=None, help="Model override")
 @click.option("--context", "-c", multiple=True, help="Additional context files")
-@click.option("--allow-files", multiple=True, help="Glob pattern for allowed files (can be repeated)")
-@click.option("--deny-files", multiple=True, help="Glob pattern for denied files (can be repeated)")
+@click.option("--allow-files", multiple=True, help="Glob pattern for allowed files")
+@click.option("--deny-files", multiple=True, help="Glob pattern for denied files")
 @click.option("--allow-dir", multiple=True, help="Directory to allow (can be repeated)")
 @click.option("--deny-dir", multiple=True, help="Directory to deny (can be repeated)")
 @click.option("--prologue", multiple=True, help="Prepend to each prompt (inline text or @file)")
@@ -394,10 +396,10 @@ def process_elided_steps(steps: list) -> list:
 @click.option("--dry-run", is_flag=True, help="Show what would happen")
 @click.option("--render-only", is_flag=True, help="Render prompts without executing (no AI calls)")
 @click.option("--min-compaction-density", type=int, default=0,
-              help="Skip compaction if context usage below this % (e.g., 30 = skip if < 30% full)")
-@click.option("--no-stop-file-prologue", is_flag=True, help="Disable automatic stop file instructions")
-@click.option("--stop-file-nonce", default=None, help="Override stop file nonce (random if not set)")
-@click.option("--session-name", default=None, help="Named session for resumability (resumes if exists)")
+              help="Skip compaction if context below this % (e.g., 30 = skip if < 30%)")
+@click.option("--no-stop-file-prologue", is_flag=True, help="Disable stop file instructions")
+@click.option("--stop-file-nonce", default=None, help="Override stop file nonce")
+@click.option("--session-name", default=None, help="Named session for resumability")
 @click.pass_context
 def run(
     ctx: click.Context,

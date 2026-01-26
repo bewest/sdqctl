@@ -219,6 +219,45 @@ class TestLoopDetectorMinimalResponse:
         assert result is not None
         assert result.reason == LoopReason.MINIMAL_RESPONSE
 
+    def test_no_detection_when_tools_called(self):
+        """Short response with tool calls doesn't trigger detection.
+        
+        When the agent called tools, a short acknowledgment is normal.
+        This prevents false positives on Phase 6 commit confirmations.
+        """
+        detector = LoopDetector()
+        
+        # First cycle - unique long response
+        detector.check(
+            None,
+            "First response that is unique and long enough to pass the 100 char check.",
+            cycle_number=0
+        )
+        
+        # Second cycle - short response BUT tools were called
+        result = detector.check(
+            None, "Done.", cycle_number=1, tools_called=3
+        )
+        assert result is None  # No detection because tools_called > 0
+
+    def test_detection_when_no_tools_short_response(self):
+        """Short response without tool calls still triggers detection."""
+        detector = LoopDetector()
+        
+        # First cycle
+        detector.check(
+            None,
+            "First response that is unique and long enough to pass length check on first.",
+            cycle_number=0
+        )
+        
+        # Second cycle - short response, no tools
+        result = detector.check(
+            None, "OK", cycle_number=1, tools_called=0
+        )
+        assert result is not None
+        assert result.reason == LoopReason.MINIMAL_RESPONSE
+
 
 class TestLoopDetectorCycleInfo:
     """Test cycle number reporting."""
