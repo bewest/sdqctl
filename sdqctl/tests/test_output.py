@@ -138,3 +138,82 @@ class TestConsoles:
         assert stderr_console is not None
         # stderr_console should write to stderr
         assert stderr_console.file is sys.stderr
+
+
+class TestIOUtilities:
+    """Tests for I/O utility functions."""
+
+    def test_print_json_with_dict(self, capsys):
+        """Test print_json outputs formatted JSON."""
+        from sdqctl.utils.output import print_json
+
+        # print_json uses console.print_json which may not capture well
+        # Just verify it doesn't raise
+        print_json({"key": "value", "number": 42})
+
+    def test_write_json_file(self, tmp_path):
+        """Test write_json_file creates file with formatted JSON."""
+        from sdqctl.utils.output import write_json_file
+        import json
+
+        target = tmp_path / "test.json"
+        data = {"name": "test", "values": [1, 2, 3]}
+
+        write_json_file(target, data)
+
+        assert target.exists()
+        content = json.loads(target.read_text())
+        assert content == data
+
+    def test_write_json_file_creates_parents(self, tmp_path):
+        """Test write_json_file creates parent directories."""
+        from sdqctl.utils.output import write_json_file
+
+        target = tmp_path / "nested" / "dir" / "test.json"
+
+        write_json_file(target, {"key": "value"})
+
+        assert target.exists()
+        assert target.parent.exists()
+
+    def test_read_json_file(self, tmp_path):
+        """Test read_json_file parses JSON."""
+        from sdqctl.utils.output import read_json_file
+        import json
+
+        target = tmp_path / "test.json"
+        data = {"name": "test", "nested": {"a": 1}}
+        target.write_text(json.dumps(data))
+
+        result = read_json_file(target)
+
+        assert result == data
+
+    def test_read_json_file_not_found(self, tmp_path):
+        """Test read_json_file raises FileNotFoundError."""
+        from sdqctl.utils.output import read_json_file
+
+        with pytest.raises(FileNotFoundError):
+            read_json_file(tmp_path / "nonexistent.json")
+
+    def test_write_text_file(self, tmp_path):
+        """Test write_text_file creates file with content."""
+        from sdqctl.utils.output import write_text_file
+
+        target = tmp_path / "test.txt"
+        content = "Hello, World!\nLine 2"
+
+        write_text_file(target, content)
+
+        assert target.exists()
+        assert target.read_text() == content
+
+    def test_write_text_file_creates_parents(self, tmp_path):
+        """Test write_text_file creates parent directories."""
+        from sdqctl.utils.output import write_text_file
+
+        target = tmp_path / "a" / "b" / "c" / "test.txt"
+
+        write_text_file(target, "content")
+
+        assert target.exists()
