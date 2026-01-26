@@ -52,7 +52,8 @@ sdqctl/
 │   ├── models.py         # ModelRequirements, model selection
 │   ├── refcat.py         # REFCAT line-level excerpts
 │   ├── exceptions.py     # Custom exceptions with exit codes
-│   ├── help_topics.py    # Help topic registry
+│   ├── help_commands.py  # Command help content (550 lines)
+│   ├── help_topics.py    # Topic help content (623 lines)
 │   ├── logging.py        # Logging configuration
 │   ├── progress.py       # Progress tracking
 │   └── loop_detector.py  # Infinite loop detection
@@ -78,7 +79,7 @@ sdqctl/
 │   ├── artifact.py       # Artifact ID generation
 │   ├── refcat.py         # REFCAT extraction
 │   ├── flow.py           # Workflow parsing info
-│   ├── help.py           # Help topics display
+│   ├── help.py           # Help command (156 lines, uses core/help_*.py)
 │   ├── blocks.py         # ON-FAILURE/ON-SUCCESS block execution
 │   ├── elide.py          # Elision step processing
 │   ├── compact_steps.py  # COMPACT/CHECKPOINT step handlers

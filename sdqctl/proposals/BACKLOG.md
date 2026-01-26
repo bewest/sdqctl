@@ -11,7 +11,7 @@
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
 | 1 | Add integration tests | P2 | Medium | Ongoing: Total 1296 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
-| 2 | help.py modularization | P2 | Medium | 698 lines. Consider extracting help sections to separate modules. |
+| 2 | artifact.py modularization | P2 | Medium | 689 lines. Similar pattern to help.py extraction. |
 | 3 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. |
 
 ---
@@ -52,7 +52,6 @@
 | `--once` flag for non-repeating CLI prompts | Phase 6 deferred | Needs use case research |
 | `--prompt` / `--file` disambiguation switches | Phase 6 deferred | Needs impact analysis |
 | Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
-| artifact.py modularization | Discovery 2026-01-26 | 689 lines. Similar scope to help.py. |
 | iterate.py exit code alignment | Discovery 2026-01-26 | MissingContextFiles returns 1 instead of 2. Low priority. |
 
 ---
@@ -61,6 +60,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **help.py modularization (P2)** | 2026-01-26 | Complete: 698 → 156 lines (-78%). Extracted COMMAND_HELP to core/help_commands.py (550 lines). |
 | **Compaction config unification (P2)** | 2026-01-26 | Complete: COMPACTION-MAX directive, CLI naming alignment, None defaults. +8 tests. Total 1296 tests. |
 | **`run` command deprecation (P2)** | 2026-01-26 | Complete: 972 → 125 lines. Thin wrapper forwards to `iterate -n 1`. All 1288 tests pass. |
 | **CLI modularization (P2)** | 2026-01-26 | Complete: 966 → 413 lines (-553, 57%). Extracted init.py (276 lines) and resume.py (292 lines). |
