@@ -104,7 +104,7 @@ cli.add_command(help_cmd)
 
 # Deprecated alias for 'cycle' command
 @cli.command("cycle", hidden=True)
-@click.argument("workflow", type=click.Path(exists=True), required=False)
+@click.argument("targets", nargs=-1)
 @click.option("--from-json", "from_json", type=click.Path())
 @click.option("--max-cycles", "-n", type=int, default=None)
 @click.option("--session-mode", "-s", type=click.Choice(["accumulate", "compact", "fresh"]), default="accumulate")

@@ -92,19 +92,31 @@ sdqctl run "Analyze code" --allow-files "./lib/*" --deny-files "./lib/special"
 Run multi-cycle workflow with compaction and checkpointing.
 
 ```bash
-sdqctl iterate [WORKFLOW] [OPTIONS]
+sdqctl iterate [TARGETS]... [OPTIONS]
 ```
+
+**TARGETS** can be a mix of `.conv` file paths and inline prompt strings.
+Use `---` between items to force separate turns.
 
 **Examples:**
 ```bash
+# Single .conv file
+sdqctl iterate workflow.conv
+
+# Inline prompt
+sdqctl iterate "Audit the authentication module"
+
 # 5 cycles with default settings
 sdqctl iterate workflow.conv -n 5
 
 # Fresh session each cycle (for file editing workflows)
 sdqctl iterate workflow.conv -n 3 --session-mode fresh
 
-# Compact between cycles (token management)
-sdqctl iterate workflow.conv -n 10 --session-mode compact
+# Mixed mode: prompts + .conv file (elide at boundaries)
+sdqctl iterate "Setup context" workflow.conv "Final summary"
+
+# Mixed with separators (force separate turns)
+sdqctl iterate "First task" --- workflow.conv --- "Final task"
 
 # From pre-rendered JSON
 sdqctl iterate --from-json rendered.json

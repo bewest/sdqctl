@@ -22,6 +22,7 @@ Session Modes:
 """
 
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -44,6 +45,94 @@ from .utils import run_async
 
 logger = get_logger(__name__)
 console = Console()
+
+
+# Turn separator for forcing turn boundaries in mixed mode
+TURN_SEPARATOR = "---"
+
+
+@dataclass
+class TurnGroup:
+    """A group of items that will be elided into a single turn."""
+    items: list[str] = field(default_factory=list)
+
+
+def is_workflow_file(item: str) -> bool:
+    """Check if item is an existing .conv or .copilot file."""
+    path = Path(item)
+    return path.exists() and path.suffix in (".conv", ".copilot")
+
+
+def parse_targets(targets: tuple[str, ...]) -> list[TurnGroup]:
+    """Parse mixed targets into turn groups separated by ---.
+
+    Args:
+        targets: Tuple of target strings (prompts, file paths, or separators)
+
+    Returns:
+        List of TurnGroup objects. Empty groups are filtered out.
+    """
+    groups: list[TurnGroup] = []
+    current: list[str] = []
+
+    for item in targets:
+        if item == TURN_SEPARATOR:
+            if current:
+                groups.append(TurnGroup(items=current))
+                current = []
+        else:
+            current.append(item)
+
+    if current:
+        groups.append(TurnGroup(items=current))
+
+    return groups
+
+
+def validate_targets(groups: list[TurnGroup]) -> tuple[Optional[str], list[str], list[str]]:
+    """Validate mixed target constraints and extract components.
+
+    Args:
+        groups: List of TurnGroup objects from parse_targets
+
+    Returns:
+        Tuple of (workflow_path, pre_prompts, post_prompts)
+        - workflow_path: Path to the single .conv file, or None
+        - pre_prompts: Prompts before the workflow file
+        - post_prompts: Prompts after the workflow file
+
+    Raises:
+        click.UsageError: If more than one .conv file is found
+    """
+    workflow_path: Optional[str] = None
+    pre_prompts: list[str] = []
+    post_prompts: list[str] = []
+    workflow_found = False
+    conv_files: list[str] = []
+
+    # First pass: find all .conv files
+    for group in groups:
+        for item in group.items:
+            if is_workflow_file(item):
+                conv_files.append(item)
+
+    if len(conv_files) > 1:
+        raise click.UsageError(
+            f"Mixed mode allows only ONE .conv file, found {len(conv_files)}: {conv_files}"
+        )
+
+    # Second pass: categorize items
+    for group in groups:
+        for item in group.items:
+            if is_workflow_file(item):
+                workflow_path = item
+                workflow_found = True
+            elif workflow_found:
+                post_prompts.append(item)
+            else:
+                pre_prompts.append(item)
+
+    return workflow_path, pre_prompts, post_prompts
 
 
 # Session mode descriptions for help and documentation
@@ -103,7 +192,7 @@ def build_infinite_session_config(
 
 
 @click.command("iterate")
-@click.argument("workflow", type=click.Path(exists=True), required=False)
+@click.argument("targets", nargs=-1)
 @click.option("--from-json", "from_json", type=click.Path(),
               help="Read workflow from JSON file or - for stdin")
 @click.option("--max-cycles", "-n", type=int, default=None, help="Override max cycles")
@@ -140,7 +229,7 @@ def build_infinite_session_config(
 @click.pass_context
 def iterate(
     ctx: click.Context,
-    workflow: Optional[str],
+    targets: tuple[str, ...],
     from_json: Optional[str],
     max_cycles: Optional[int],
     session_mode: str,
@@ -171,25 +260,45 @@ def iterate(
 ) -> None:
     """Execute a workflow with optional multi-cycle iteration.
 
+    TARGETS can be a mix of .conv file paths and inline prompt strings.
+    Use --- between items to force separate turns (default: adjacent items elide).
+    Maximum one .conv file allowed in mixed mode.
+
     Examples:
 
     \b
-    # Single execution (default)
+    # Single .conv file
     sdqctl iterate workflow.conv
+
+    \b
+    # Inline prompt
+    sdqctl iterate "Audit authentication module"
 
     \b
     # Multi-cycle execution
     sdqctl iterate workflow.conv -n 5
 
     \b
+    # Mixed: prompts + .conv (items elide at boundaries)
+    sdqctl iterate "Setup context" workflow.conv "Final summary"
+
+    \b
+    # Mixed with separators (force separate turns)
+    sdqctl iterate "First task" --- workflow.conv --- "Separate final task"
+
+    \b
     # Fresh session each cycle
     sdqctl iterate workflow.conv -n 3 -s fresh
     """
-    # Validate: need either workflow or --from-json
-    if not workflow and not from_json:
-        raise click.UsageError("Either WORKFLOW argument or --from-json is required")
-    if workflow and from_json:
-        raise click.UsageError("Cannot use both WORKFLOW argument and --from-json")
+    # Parse and validate targets
+    groups = parse_targets(targets)
+    workflow_path, pre_prompts, post_prompts = validate_targets(groups)
+
+    # Validate: need either targets or --from-json
+    if not targets and not from_json:
+        raise click.UsageError("Either TARGETS argument(s) or --from-json is required")
+    if targets and from_json:
+        raise click.UsageError("Cannot use both TARGETS argument(s) and --from-json")
 
     # Handle --render-only by delegating to render logic
     if render_only:
@@ -206,13 +315,16 @@ def iterate(
         )
         console.print("[yellow]⚠ --render-only is deprecated. Use: sdqctl render cycle workflow.conv[/yellow]")
 
-        conv = ConversationFile.from_file(Path(workflow))
+        if not workflow_path:
+            raise click.UsageError("--render-only requires a .conv file")
 
-        # Apply CLI options
-        if prologue:
-            conv.prologues = list(prologue) + conv.prologues
-        if epilogue:
-            conv.epilogues = list(epilogue) + conv.epilogues
+        conv = ConversationFile.from_file(Path(workflow_path))
+
+        # Apply mixed mode prompts as prologues/epilogues
+        effective_prologues = list(prologue) + pre_prompts + conv.prologues
+        effective_epilogues = conv.epilogues + post_prompts + list(epilogue)
+        conv.prologues = effective_prologues
+        conv.epilogues = effective_epilogues
 
         # Map session mode names for render (accumulate is canonical)
         render_session_mode = session_mode
@@ -300,7 +412,8 @@ def iterate(
     json_errors = ctx.obj.get("json_errors", False) if ctx.obj else False
 
     run_async(_cycle_async(
-        workflow, max_cycles, session_mode, adapter, model,
+        workflow_path, pre_prompts, post_prompts,
+        max_cycles, session_mode, adapter, model,
         context, allow_files, deny_files, allow_dir, deny_dir, session_name,
         checkpoint_dir,
         prologue, epilogue, header, footer,
@@ -501,7 +614,9 @@ async def _cycle_from_json_async(
 
 
 async def _cycle_async(
-    workflow_path: str,
+    workflow_path: Optional[str],
+    pre_prompts: list[str],
+    post_prompts: list[str],
     max_cycles_override: Optional[int],
     session_mode: str,
     adapter_name: Optional[str],
@@ -533,6 +648,9 @@ async def _cycle_async(
 ) -> None:
     """Execute multi-cycle workflow with session management.
 
+    Supports mixed mode: inline prompts can be combined with a .conv file.
+    Pre-prompts elide into the first turn, post-prompts into the last.
+
     Session modes control how context is managed across cycles:
 
     - accumulate: Keep full conversation history. Compaction only triggers
@@ -557,9 +675,22 @@ async def _cycle_async(
     )
     cycle_start = time.time()
 
-    # Load workflow
-    conv = ConversationFile.from_file(Path(workflow_path))
-    progress_print(f"Running {Path(workflow_path).name} (cycle mode, session={session_mode})...")
+    # Handle mixed mode: load .conv file or create from inline prompts
+    if workflow_path:
+        # Load workflow file
+        conv = ConversationFile.from_file(Path(workflow_path))
+        progress_print(f"Running {Path(workflow_path).name} (cycle mode, session={session_mode})...")
+    else:
+        # Pure inline prompt mode - combine pre_prompts and post_prompts as single prompt
+        all_prompts = pre_prompts + post_prompts
+        if not all_prompts:
+            raise click.UsageError("No prompts provided")
+        conv = ConversationFile(
+            prompts=all_prompts,
+            adapter=adapter_name or "copilot",
+            model=model or "gpt-4",
+        )
+        progress_print(f"Running inline prompt(s) (cycle mode, session={session_mode})...")
 
     # Validate mandatory context files before execution
     # Respect VALIDATION-MODE directive from the workflow file
@@ -591,11 +722,14 @@ async def _cycle_async(
     if output_file:
         conv.output_file = output_file
 
-    # Add CLI-provided prologues/epilogues (prepend to file-defined ones)
-    if cli_prologues:
-        conv.prologues = list(cli_prologues) + conv.prologues
-    if cli_epilogues:
-        conv.epilogues = list(cli_epilogues) + conv.epilogues
+    # Mixed mode elision: pre_prompts elide into first turn, post_prompts into last
+    # Priority: CLI prologues > pre_prompts > file prologues
+    # Priority: file epilogues > post_prompts > CLI epilogues
+    effective_prologues = list(cli_prologues) + pre_prompts + conv.prologues
+    effective_epilogues = conv.epilogues + post_prompts + list(cli_epilogues)
+    conv.prologues = effective_prologues
+    conv.epilogues = effective_epilogues
+
     if cli_headers:
         conv.headers = list(cli_headers) + conv.headers
     if cli_footers:

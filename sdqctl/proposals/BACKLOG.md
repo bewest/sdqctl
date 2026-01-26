@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-25  
+> **Last Updated**: 2026-01-26  
 > **Purpose**: Track active work items and proposals only  
 > **Archive**: Completed work → [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)
 
@@ -12,18 +12,14 @@
 
 No critical items.
 
-### P1: High
+### P1: High (None)
 
-| Item | Effort | Notes |
-|------|--------|-------|
-| **Mixed prompt/file CLI support** | Medium | Variadic targets, see ITERATE-CONSOLIDATION.md Phase 6 |
-| **`---` separator syntax** | Low | Force turn boundaries in mixed mode |
+No high priority items. Next priorities are in P2.
 
 ### P2: Medium
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| **Document-based elision logic** | Medium | Default merge, `---` breaks - part of iterate Phase 6 |
 | Extract StepExecutor from iterate.py | Medium | See [Architecture Roadmap](#architecture-roadmap) |
 | Create shared ExecutionContext dataclass | Low | Unify adapter initialization |
 | CONSULT-DIRECTIVE Phase 4 | Low | Timeout, partial save refinements |
@@ -36,7 +32,7 @@ No critical items.
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Fix E501 lint issues (202 remaining) | Low | Refactor during normal development |
+| Fix E501 lint issues (192 remaining) | Low | Refactor during normal development |
 | Review F841 unused variables (5) | Low | Needs manual review |
 | Update "cycle command" comments to "iterate" | Low | GETTING-STARTED.md, VALIDATION-WORKFLOW.md |
 | Split conversation.py (~1768 lines) | High | parser.py, validator.py, directives.py |
@@ -58,6 +54,9 @@ No critical items.
 | LSP support for refcat | References | Language Server Protocol for IDE integration |
 | Interactive help (`--interactive`) | References | Browsable help system |
 | refcat usage patterns example | P3 Workflow Examples | Cross-repo context injection |
+| Multiple .conv files in mixed mode | Phase 6 deferred | Complex; requires positional prologue tracking |
+| `--once` flag for non-repeating CLI prompts | Phase 6 deferred | Needs use case research |
+| `--prompt` / `--file` disambiguation switches | Phase 6 deferred | Needs impact analysis |
 
 ---
 
@@ -65,6 +64,7 @@ No critical items.
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Phase 6: Mixed Prompt Support** | 2026-01-26 | Variadic targets, `---` separator, elision into boundaries. 16 new tests. |
 | **Groom QUIRKS.md** | 2026-01-25 | 960 → 135 lines. Archived 13 resolved quirks. Created SDK-LEARNINGS.md |
 | **Consolidate run+cycle → iterate** | 2026-01-25 | [ITERATE-CONSOLIDATION.md](ITERATE-CONSOLIDATION.md) Phase 1-5 complete. `cycle` renamed to `iterate`, deprecated alias added. |
 
@@ -191,7 +191,7 @@ adapters/copilot/
 | [PIPELINE-ARCHITECTURE](PIPELINE-ARCHITECTURE.md) | ✅ Complete | --from-json + schema_version |
 | [STPA-INTEGRATION](STPA-INTEGRATION.md) | ✅ Complete | Templates + traceability verifier |
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | ✅ Complete | Help implemented |
-| [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | 🟡 Ready | run+cycle → iterate + mixed prompts (Phase 6) |
+| [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | ✅ Complete | All 6 phases complete. Mixed mode, separators, elision. |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | ✅ Complete | All 4 phases |
 | [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | ✅ Verified | Phase 1-3 complete, tested. Phase 4 optional |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | ✅ Complete | Taxonomy + CLI |

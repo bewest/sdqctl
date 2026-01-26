@@ -1,7 +1,7 @@
 # Conversation Lifecycle
 
 > **Status**: Living Document  
-> **Last Updated**: 2026-01-25  
+> **Last Updated**: 2026-01-26  
 > **Related**: [ITERATE-CONSOLIDATION.md](../proposals/ITERATE-CONSOLIDATION.md), [PHILOSOPHY.md](PHILOSOPHY.md)
 
 ---
@@ -12,6 +12,7 @@ This document describes how `sdqctl iterate` processes workflows from file parsi
 
 - When prologues/epilogues are injected
 - How elision merges adjacent items into single turns
+- **Mixed mode**: Combining inline prompts with `.conv` files
 - Session management across cycles
 
 ---

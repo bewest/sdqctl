@@ -349,3 +349,161 @@ PROMPT Step 2: Continue after compaction.
         ])
         assert result.exit_code == 0
         # Dry run shows config - default mode should be applied
+
+
+class TestParseTargets:
+    """Test parse_targets function for mixed prompt mode (Phase 6)."""
+
+    def test_single_prompt(self):
+        """Test single inline prompt."""
+        from sdqctl.commands.iterate import parse_targets, TurnGroup
+        groups = parse_targets(("Hello world",))
+        assert len(groups) == 1
+        assert groups[0].items == ["Hello world"]
+
+    def test_single_file(self, tmp_path):
+        """Test single .conv file."""
+        from sdqctl.commands.iterate import parse_targets
+        workflow = tmp_path / "test.conv"
+        workflow.write_text("PROMPT Test")
+        groups = parse_targets((str(workflow),))
+        assert len(groups) == 1
+        assert groups[0].items == [str(workflow)]
+
+    def test_separator_creates_groups(self):
+        """Test --- separator creates separate turn groups."""
+        from sdqctl.commands.iterate import parse_targets
+        groups = parse_targets(("prompt1", "---", "prompt2"))
+        assert len(groups) == 2
+        assert groups[0].items == ["prompt1"]
+        assert groups[1].items == ["prompt2"]
+
+    def test_multiple_items_in_group(self):
+        """Test multiple items without separator stay in same group."""
+        from sdqctl.commands.iterate import parse_targets
+        groups = parse_targets(("prompt1", "prompt2", "prompt3"))
+        assert len(groups) == 1
+        assert groups[0].items == ["prompt1", "prompt2", "prompt3"]
+
+    def test_empty_groups_filtered(self):
+        """Test empty groups from consecutive separators are filtered."""
+        from sdqctl.commands.iterate import parse_targets
+        groups = parse_targets(("prompt1", "---", "---", "prompt2"))
+        assert len(groups) == 2  # Empty middle group filtered
+
+    def test_leading_separator_ignored(self):
+        """Test leading separator creates no empty group."""
+        from sdqctl.commands.iterate import parse_targets
+        groups = parse_targets(("---", "prompt1"))
+        assert len(groups) == 1
+        assert groups[0].items == ["prompt1"]
+
+    def test_trailing_separator_ignored(self):
+        """Test trailing separator creates no empty group."""
+        from sdqctl.commands.iterate import parse_targets
+        groups = parse_targets(("prompt1", "---"))
+        assert len(groups) == 1
+        assert groups[0].items == ["prompt1"]
+
+
+class TestValidateTargets:
+    """Test validate_targets function for mixed prompt mode (Phase 6)."""
+
+    def test_no_conv_file(self):
+        """Test validation with only inline prompts."""
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        groups = parse_targets(("prompt1", "prompt2"))
+        workflow_path, pre, post = validate_targets(groups)
+        assert workflow_path is None
+        assert pre == ["prompt1", "prompt2"]
+        assert post == []
+
+    def test_single_conv_file(self, tmp_path):
+        """Test validation with single .conv file."""
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        workflow = tmp_path / "test.conv"
+        workflow.write_text("PROMPT Test")
+        groups = parse_targets((str(workflow),))
+        workflow_path, pre, post = validate_targets(groups)
+        assert workflow_path == str(workflow)
+        assert pre == []
+        assert post == []
+
+    def test_mixed_pre_and_post(self, tmp_path):
+        """Test prompts before and after .conv file."""
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        workflow = tmp_path / "test.conv"
+        workflow.write_text("PROMPT Test")
+        groups = parse_targets(("before1", "before2", str(workflow), "after1"))
+        workflow_path, pre, post = validate_targets(groups)
+        assert workflow_path == str(workflow)
+        assert pre == ["before1", "before2"]
+        assert post == ["after1"]
+
+    def test_multiple_conv_files_error(self, tmp_path):
+        """Test error when multiple .conv files provided."""
+        import click
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        w1 = tmp_path / "first.conv"
+        w2 = tmp_path / "second.conv"
+        w1.write_text("PROMPT First")
+        w2.write_text("PROMPT Second")
+        groups = parse_targets((str(w1), str(w2)))
+        with pytest.raises(click.UsageError) as exc_info:
+            validate_targets(groups)
+        assert "only ONE .conv file" in str(exc_info.value)
+
+    def test_copilot_extension_recognized(self, tmp_path):
+        """Test .copilot extension files are recognized."""
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        workflow = tmp_path / "test.copilot"
+        workflow.write_text("PROMPT Test")
+        groups = parse_targets((str(workflow),))
+        workflow_path, pre, post = validate_targets(groups)
+        assert workflow_path == str(workflow)
+
+    def test_nonexistent_file_treated_as_prompt(self, tmp_path):
+        """Test non-existent file path treated as prompt text."""
+        from sdqctl.commands.iterate import parse_targets, validate_targets
+        groups = parse_targets(("nonexistent.conv", "prompt"))
+        workflow_path, pre, post = validate_targets(groups)
+        # nonexistent.conv doesn't exist, so treated as prompt
+        assert workflow_path is None
+        assert pre == ["nonexistent.conv", "prompt"]
+
+
+class TestIterateMixedMode:
+    """Integration tests for iterate command mixed mode."""
+
+    def test_iterate_help_shows_mixed_mode(self, cli_runner):
+        """Test iterate --help documents mixed mode."""
+        result = cli_runner.invoke(cli, ["iterate", "--help"])
+        assert result.exit_code == 0
+        assert "TARGETS" in result.output
+        assert "---" in result.output
+
+    def test_iterate_inline_prompt(self, cli_runner):
+        """Test iterate with inline prompt only."""
+        result = cli_runner.invoke(cli, [
+            "iterate", "Hello world",
+            "--adapter", "mock",
+            "--dry-run"
+        ])
+        assert result.exit_code == 0
+
+    def test_iterate_mixed_prompts_and_file(self, cli_runner, tmp_path):
+        """Test iterate with prompts before and after .conv file."""
+        workflow = tmp_path / "mixed.conv"
+        workflow.write_text("""MODEL gpt-4
+ADAPTER mock
+PROMPT Middle step.
+""")
+        result = cli_runner.invoke(cli, [
+            "iterate",
+            "Setup context",
+            str(workflow),
+            "Final summary",
+            "--adapter", "mock",
+            "--dry-run"
+        ])
+        assert result.exit_code == 0

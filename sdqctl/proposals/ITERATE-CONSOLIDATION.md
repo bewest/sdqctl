@@ -789,8 +789,28 @@ def iterate(ctx, target, from_json, max_cycles, session_mode, ...):
 ## Phase 6: Mixed Prompt List Support
 
 > **Added**: 2026-01-25  
-> **Status**: Designed  
-> **Depends on**: Phases 1-5 complete
+> **Status**: Ready for Implementation  
+> **Depends on**: Phases 1-5 complete  
+> **Decisions Confirmed**: 2026-01-26
+
+### Design Decisions (Confirmed)
+
+| Question | Decision | Rationale |
+|----------|----------|-----------|
+| **Elision semantics** | Elide into boundaries | CLI prompts merge with first/last workflow turns; more compact |
+| **Prologue/epilogue** | First/last turn only | `--prologue` → first turn, `--epilogue` → last turn |
+| **Multiple .conv files** | One .conv limit | Deferred due to complexity; use `sdqctl flow` for multiple |
+| **Multi-cycle behavior** | Every cycle | CLI prompts repeat each cycle with `-n N` |
+| **Empty `---` groups** | Ignore silently | Skip empty groups, no warning |
+| **File detection** | Existence + extension | Must exist on disk AND have `.conv`/`.copilot` extension |
+
+### Deferred to Future Proposals
+
+| Item | Rationale |
+|------|-----------|
+| Multiple .conv files with positional prologues | Complex; requires tracking which `--prologue` goes with which .conv |
+| `--once` flag for non-repeating CLI prompts | Unclear if desirable; needs use case research |
+| Explicit `--prompt` / `--file` switches | Disambiguation option; needs impact analysis |
 
 ### Problem
 
@@ -915,13 +935,15 @@ def iterate(ctx, targets, from_json, max_cycles, session_mode, ...):
 
 ### Phase 6 Checklist
 
-- [ ] Change `target` to variadic `targets` argument
-- [ ] Implement `parse_targets()` separator parsing
-- [ ] Implement `validate_targets()` constraint checking
-- [ ] Update turn building logic for elision
-- [ ] Add unit tests for separator parsing
-- [ ] Add integration tests for mixed mode
-- [ ] Update help text and examples
+- [x] Change `target` to variadic `targets` argument
+- [x] Implement `parse_targets()` separator parsing
+- [x] Implement `validate_targets()` constraint checking
+- [x] Update turn building logic for elision
+- [x] Add unit tests for separator parsing
+- [x] Add integration tests for mixed mode
+- [x] Update help text and examples
+
+**Completed**: 2026-01-26
 
 ### Documentation
 

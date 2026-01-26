@@ -197,12 +197,16 @@ This is useful for:
 - Work that exceeds one context window
 - Self-improving workflows
 - **Workflows with CHECKPOINT directives**
+- **Mixed mode**: Combine inline prompts with `.conv` files
 
 **Session modes** control context across cycles:
 ```bash
 sdqctl iterate workflow.conv -n 5 --session-mode fresh      # New session each cycle
 sdqctl iterate workflow.conv -n 5 --session-mode accumulate # Context grows (default)
 sdqctl iterate workflow.conv -n 10 --session-mode compact   # Summarize between cycles
+
+# Mixed mode: inline prompts + workflow file
+sdqctl iterate "Setup context" workflow.conv "Summarize" -n 3
 ```
 
 #### Session Modes Comparison
