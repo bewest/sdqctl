@@ -11,8 +11,8 @@
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
 | 1 | Add integration tests | P2 | Medium | Ongoing: Total 1296 tests. Focus: adapter integration, CLI integration, end-to-end workflows. |
-| 2 | copilot.py modularization | P2 | Medium | 670 lines. Session handling could extract. |
-| 3 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. |
+| 2 | refcat usage patterns example | P3 | Low | Cross-repo context injection examples. Document workspace.lock.json aliases. |
+| 3 | Q-019A: Progress timestamps | P3 | Low | Progress messages lack timestamps during compaction. |
 
 ---
 
@@ -52,7 +52,6 @@
 | `--once` flag for non-repeating CLI prompts | Phase 6 deferred | Needs use case research |
 | `--prompt` / `--file` disambiguation switches | Phase 6 deferred | Needs impact analysis |
 | Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
-| iterate.py exit code alignment | Discovery 2026-01-26 | MissingContextFiles returns 1 instead of 2. Low priority. |
 | Work package markers in BACKLOG.md | [SDK-ECONOMY.md](SDK-ECONOMY.md) | `## Work Package:` sections for batch selection |
 | Domain-partitioned queues | [SDK-ECONOMY.md](SDK-ECONOMY.md) | Separate backlogs per domain? Needs research |
 | Iteration metrics tracking | [SDK-ECONOMY.md](SDK-ECONOMY.md) | Items/cycle, lines/cycle metrics |
@@ -64,6 +63,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **iterate.py exit code alignment** | 2026-01-26 | Verified: MissingContextFiles already returns exit code 2 via `ExitCode.MISSING_FILES`. No fix needed. |
+| **copilot.py further modularization (P2)** | 2026-01-26 | Reassessed: 670 lines includes 121 blank + docstrings. Core logic ~500 lines. Already extracted events.py (585) + stats.py (191). No further extraction needed. |
 | **Q-021: `---` separator documentation (P2)** | 2026-01-26 | Documented `--` prefix requirement in `iterate --help` and COMMANDS.md. |
 | **traceability.py modularization (P2)** | 2026-01-26 | Complete: 685 → 571 lines (-17%). Extracted traceability_coverage.py (135 lines). |
 | **verify.py modularization (P2)** | 2026-01-26 | Complete: 641 → 532 lines (-17%). Extracted verify_output.py (114 lines). |
