@@ -27,7 +27,7 @@ This document catalogs non-obvious behaviors discovered while developing and usi
 | Q-015 | Duplicate tool calls at session termination | Fixed by Q-014 | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-015-duplicate-tool-calls-at-session-termination) |
 | Q-013 | Tool name shows "unknown" in completion logs | Fixed by Q-014 | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-013-tool-name-shows-unknown-in-completion-logs) |
 | Q-011 | Compaction threshold options not fully wired | Respects threshold | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-011-compaction-threshold-options-not-fully-wired) |
-| Q-010 | COMPACT directive ignored by cycle command | Iterate conv.steps | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-010-compact-directive-ignored-by-cycle-command) |
+| Q-010 | COMPACT directive ignored by iterate command | Iterate conv.steps | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-010-compact-directive-ignored-by-cycle-command) |
 | Q-005 | Tool names show "unknown" in verbose logs | Added `_get_tool_name()` | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-005-tool-names-show-unknown-in-verbose-logs) |
 | Q-004 | Verbose logging shows duplicate content | Removed delta logging | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-004-verbose-logging-shows-duplicate-content) |
 | Q-003 | Template variables encourage problematic patterns | Q-001 fix + examples | [2026-01](../archive/quirks/2026-01-resolved-quirks.md#q-003-template-variables-encourage-problematic-patterns) |

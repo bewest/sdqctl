@@ -150,7 +150,7 @@ The `render` command shows fully-resolved prompts without calling AI:
 # Render for run command (single execution)
 sdqctl render run my-audit.conv
 
-# Render for cycle command (multi-cycle)
+# Render for iterate command (multi-cycle)
 sdqctl render iterate my-audit.conv -n 3
 
 # Quick overview: show @file references without expanding

@@ -124,7 +124,7 @@ sdqctl show workflow.conv
 # Render for run command
 sdqctl render run workflow.conv
 
-# Render for cycle command
+# Render for iterate command
 sdqctl render iterate workflow.conv -n 3
 
 # Quick overview (show refs, don't expand content)
