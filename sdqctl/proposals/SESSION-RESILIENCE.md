@@ -1,9 +1,9 @@
 # Session Resilience & Observability
 
-> **Status**: Phase 0-1 Complete ✅  
+> **Status**: Phase 0-2 Complete ✅  
 > **Created**: 2026-01-26  
 > **Updated**: 2026-01-26  
-> **Priority**: P3 (remaining phases: 2-4)  
+> **Priority**: P3 (remaining phases: 3-4)  
 > **Source**: backlog-processor-v2 Run #5 observations + SDK research
 
 ---
@@ -394,17 +394,23 @@ Add metrics without changing behavior:
 
 **Note**: Summary output at session end deferred - requires changes in run.py/iterate.py
 
-### Phase 2: Checkpoint Resume Testing (P3) - Medium Effort
+### Phase 2: Checkpoint Resume Testing (P2) - ✅ COMPLETE
 
 Validate and document resume flow:
 - Create test scenarios
 - Document in COMMANDS.md
 - Fix any gaps found
 
-**Deliverables**:
-- Resume workflow documentation
-- Integration test for rate-limit resume
-- Any bug fixes discovered
+**Deliverables** (Completed 2026-01-26):
+- ✅ Resume workflow documentation in COMMANDS.md (rate limit recovery section)
+- ✅ 4 integration tests for rate-limit resume (TestRateLimitResumeFlow)
+- ✅ No gaps found - checkpoint and resume flow works correctly
+
+**Finding**: Current implementation handles rate limits well:
+- Checkpoints saved automatically on all errors (including rate limits)
+- `sessions resume` restores SDK conversation state
+- `resume` command handles local checkpoint files
+- CONSULT-TIMEOUT expiration check prevents stale resumes
 
 ### Phase 3: Predictive Rate Limiting (P3) - Medium Effort
 

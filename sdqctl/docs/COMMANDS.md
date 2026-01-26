@@ -375,6 +375,33 @@ sdqctl sessions resume my-session
 > **Note:** `sessions resume` restores **SDK conversation history** (server-side).
 > For resuming from a local **PAUSE checkpoint file**, see [`resume`](#resume).
 
+### Resuming After Rate Limit
+
+When a workflow hits a rate limit, sdqctl automatically:
+1. Saves a checkpoint with current state
+2. Displays the cooldown period (typically 30-60 minutes)
+3. Suggests resume instructions
+
+**Recovery workflow:**
+```bash
+# 1. Workflow hits rate limit and exits
+# Output: "Rate limited - wait before retrying"
+# Output: "Checkpoint saved: ~/.sdqctl/sessions/<id>/pause.json"
+
+# 2. Wait for cooldown (check the displayed time)
+
+# 3. Resume using session ID
+sdqctl sessions resume <session-id> --prompt "Continue from where you left off"
+
+# Or use the checkpoint file directly
+sdqctl resume ~/.sdqctl/sessions/<id>/pause.json
+```
+
+**Tips for avoiding rate limits:**
+- Use `-n 4` or fewer cycles (stays under ~350 requests/window)
+- Check quota with `sdqctl status` before long runs
+- Consider `--session-mode fresh` to start clean sessions
+
 ---
 
 ## resume

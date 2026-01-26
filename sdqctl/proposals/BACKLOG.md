@@ -24,8 +24,8 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Add integration tests | Medium | Phase 2 done: +30 tests for iterate_helpers, compact_steps. Total 1240 tests. |
-| Session resilience Phase 2 | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) - Checkpoint resume from failure |
+| Add integration tests | Medium | Phase 2 done: +30 tests for iterate_helpers, compact_steps. Total 1244 tests. |
+| Session resilience Phase 3 | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) - Predictive rate limiting |
 | Performance benchmark suite | Medium | **Blocked by OQ-005** - needs scope decision. Track regressions. |
 
 ### P3: Low
@@ -33,7 +33,7 @@
 | Item | Effort | Notes |
 |------|--------|-------|
 | Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
-| Session resilience Phase 3-4 | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) Rate limit prediction, compaction tuning |
+| Session resilience Phase 4 | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) Compaction strategy tuning |
 
 ### Future (Unstarted)
 
@@ -52,6 +52,7 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Session resilience Phase 2 (P2)** | 2026-01-26 | Checkpoint resume testing complete. +4 tests. Documented rate-limit recovery in COMMANDS.md. Total 1244 tests. |
 | **iterate.py Modularization (P2)** | 2026-01-26 | Complete: 1397 → 791 lines (-606, 43%). Extracted 5 modules: iterate_helpers.py, compact_steps.py, prompt_steps.py, json_pipeline.py, output_steps.py. +26 tests. Target <800 ✅ |
 | **run.py Modularization (P2)** | 2026-01-26 | Complete: 1523 → 973 lines (-550, 36%). Extracted elide.py, blocks.py, verify_steps.py, run_steps.py. +9 tests. Target <1000 ✅ |
 | **Integration tests Phase 2 (P2)** | 2026-01-26 | +30 tests for iterate_helpers.py (23) and compact_steps.py (7). Total 1240 tests. |
