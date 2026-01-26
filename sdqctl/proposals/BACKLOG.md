@@ -46,6 +46,8 @@
 
 | Item | Source | Notes |
 |------|--------|-------|
+| Compaction config unification | [COMPACTION-UNIFICATION.md](COMPACTION-UNIFICATION.md) | P2 Draft: Align directive/CLI naming |
+| help.py modularization | Candidate Discovery | 698 lines - could extract to help/ module |
 | LSP support for refcat | References | Language Server Protocol for IDE integration |
 | Interactive help (`--interactive`) | References | Browsable help system |
 | refcat usage patterns example | P3 Workflow Examples | Cross-repo context injection |
