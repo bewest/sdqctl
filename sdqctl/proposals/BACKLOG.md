@@ -39,7 +39,6 @@
 | Default verbosity key actions | Low | See [SDK-LEARNINGS](../docs/SDK-LEARNINGS.md) |
 | Test parametrization and markers | Low | `@pytest.mark.unit/integration` |
 | Performance benchmark suite | Medium | Track regressions |
-| Add `test_exceptions.py` | Low | Test exit codes, JSON serialization |
 | Add `test_renderer_core.py` | Low | Unit tests for RenderedPrompt, RenderedCycle |
 | Add `test_command_utils.py` | Low | Test `run_async()` function |
 | Error path test coverage | Medium | File I/O errors, permissions, timeouts |
