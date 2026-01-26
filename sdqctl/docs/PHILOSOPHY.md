@@ -84,8 +84,8 @@ Implement the selected item now.
 - If blocked, document the blocker and stop
 ```
 
-### 3. Escape Hatch for Blockers
-Provide a way to surface problems without derailing the workflow.
+### 3. Scope Partitioning for Blockers
+Provide a way to surface problems and partition work without derailing the workflow. This "categorical chunking" separates actionable items from open questions that need human input.
 
 ```dockerfile
 # In Phase 2:
@@ -369,7 +369,7 @@ Well-designed workflows that demonstrate these principles:
 | Workflow | Pattern | Why It's Effective |
 |----------|---------|-------------------|
 | [`backlog-processor.conv`](../examples/workflows/backlog-processor.conv) | **Universal** | Reusable across domains via `--prologue` injection |
-| [`fix-quirks.conv`](../examples/workflows/fix-quirks.conv) | Synthesis cycle | Clear terminology docs, escape hatches, backlog-driven |
+| [`fix-quirks.conv`](../examples/workflows/fix-quirks.conv) | Synthesis cycle | Clear terminology docs, scope partitioning, backlog-driven |
 | [`implement-improvements.conv`](../examples/workflows/implement-improvements.conv) | Synthesis cycle | Triage→Implement→Document with COMPACT between phases |
 | [`proposal-development.conv`](../examples/workflows/proposal-development.conv) | State relay | Assess→Work→Commit with backlog persistence |
 | [`sdk-debug-integration.conv`](../examples/workflows/sdk-debug-integration.conv) | Backlog-driven | Single item selection, blocker acknowledgment |
@@ -403,7 +403,7 @@ sdqctl iterate examples/workflows/backlog-processor.conv \
 2. **Generic selection** — P0 > P1 > P2, unblocked > blocked
 3. **COMPACT after each phase** — Essential for `-n 10+` runs
 4. **Git commit per change** — State persists across cycles
-5. **Built-in escape hatch** — Surface blockers, add to backlog, stop cleanly
+5. **Built-in scope partitioning** — Surface blockers, route to appropriate queues, stop cleanly
 
 **Anti-pattern note**: Single-pass audit workflows (`MAX-CYCLES 1`, `MODE audit`) are valid for analysis tasks but should not be confused with synthesis cycles. They produce reports; they don't iterate on improvements.
 

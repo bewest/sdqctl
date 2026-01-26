@@ -53,6 +53,10 @@
 | `--prompt` / `--file` disambiguation switches | Phase 6 deferred | Needs impact analysis |
 | Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
 | iterate.py exit code alignment | Discovery 2026-01-26 | MissingContextFiles returns 1 instead of 2. Low priority. |
+| Work package markers in BACKLOG.md | [SDK-ECONOMY.md](SDK-ECONOMY.md) | `## Work Package:` sections for batch selection |
+| Domain-partitioned queues | [SDK-ECONOMY.md](SDK-ECONOMY.md) | Separate backlogs per domain? Needs research |
+| Iteration metrics tracking | [SDK-ECONOMY.md](SDK-ECONOMY.md) | Items/cycle, lines/cycle metrics |
+| backlog-processor-v3.conv | [SDK-ECONOMY.md](SDK-ECONOMY.md) | Full economy optimization, after v2 validation |
 
 ---
 
@@ -334,6 +338,7 @@ def _check_minimal_response(
 | [SDK-METADATA-APIS](SDK-METADATA-APIS.md) | ✅ Complete | Adapter methods + status |
 | [SESSION-RESILIENCE](archive/SESSION-RESILIENCE.md) | ✅ Complete | All 5 phases. Quota tracking, rate limit prediction, compaction metrics. |
 | [COMPACTION-UNIFICATION](COMPACTION-UNIFICATION.md) | ✅ Complete | COMPACTION-MAX directive, CLI alignment, None defaults. |
+| [SDK-ECONOMY](SDK-ECONOMY.md) | 📝 Draft | Iteration efficiency: batch selection, work packages, protection policies. |
 
 ---
 

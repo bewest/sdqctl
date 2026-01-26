@@ -438,7 +438,7 @@ Branching blocks **cannot** be modified via JSON round-trip in meaningful ways:
 - External tools can't know which branch will execute
 - Modifying `on_failure` blocks is speculative
 
-**Recommendation**: For complex branching logic, prefer synthesis cycles with escape hatches over JSON manipulation.
+**Recommendation**: For complex branching logic, prefer synthesis cycles with scope partitioning over JSON manipulation.
 
 ---
 

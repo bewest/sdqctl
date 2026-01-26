@@ -79,13 +79,13 @@ Behaviors:
 
 ---
 
-## Escape Hatch Pattern
+## Blocker Surfacing Pattern
 
 From [PHILOSOPHY.md](../docs/PHILOSOPHY.md):
 
-> "Every synthesis cycle needs an escape hatch for when AI gets stuck."
+> "Every synthesis cycle needs scope partitioning for when AI encounters blockers."
 
-Error handling should support escape hatches:
+Error handling should support blocker surfacing and categorical chunking:
 
 ```dockerfile
 # If AI can't fix after N retries, document the blocker
@@ -284,4 +284,4 @@ sdqctl --json-errors run workflow.conv
 - [RUN-BRANCHING.md](RUN-BRANCHING.md) - ON-FAILURE proposal
 - [VERIFICATION-DIRECTIVES.md](VERIFICATION-DIRECTIVES.md) - VERIFY-ON-ERROR
 - [QUIRKS.md](../docs/QUIRKS.md) - Q-002 abort events
-- [PHILOSOPHY.md](../docs/PHILOSOPHY.md) - Escape hatch pattern
+- [PHILOSOPHY.md](../docs/PHILOSOPHY.md) - Blocker surfacing pattern

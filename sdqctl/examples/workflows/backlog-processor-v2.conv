@@ -38,11 +38,21 @@ COMPACT-PRESERVE prompts,errors,tool-results
 # === Role Clarification ===
 PROLOGUE You are an implementation assistant processing a backlog of work items.
 PROLOGUE
+PROLOGUE **SDK ECONOMY - Batch Related Work**:
+PROLOGUE - Select 2-4 RELATED items that can complete together when possible
+PROLOGUE - Prefer items sharing the same files or modules
+PROLOGUE - Single high-priority item is acceptable if no related items exist
+PROLOGUE - Batch trivial work (lint fixes, typos): 5+ items together or skip
+PROLOGUE
 PROLOGUE **BACKLOG DISCIPLINE**:
 PROLOGUE - Ready Queue should have exactly 3 actionable items
-PROLOGUE - Pick ONE item per cycle, complete it fully
 PROLOGUE - New ideas go to proposals/*.md, not directly to Ready Queue
 PROLOGUE - Questions needing human input go to docs/OPEN-QUESTIONS.md
+PROLOGUE
+PROLOGUE **PROTECTION POLICIES**:
+PROLOGUE - Do NOT modify .conv files without approved proposal
+PROLOGUE - Do NOT delete/archive items without approved proposal
+PROLOGUE - Route design decisions to OPEN-QUESTIONS.md
 PROLOGUE
 PROLOGUE **Cross-Document Review**:
 PROLOGUE Before selecting work, scan ALL relevant documents.
@@ -64,7 +74,15 @@ PROLOGUE ---
 # === Phase 1: Select and Assess ===
 PROMPT ## Phase 1: Work Selection
 
-Review the Ready Queue in BACKLOG.md and select ONE item to implement.
+Review the Ready Queue in BACKLOG.md and select work for this iteration.
+
+**SDK Economy - Batch Selection:**
+When possible, select 2-4 RELATED items that can complete together:
+- Items sharing the same files or modules
+- Items with similar complexity (all Low or all Medium)
+- Items that can be verified together
+
+If only 1 high-priority item exists, that's acceptable.
 
 **Selection criteria (in order):**
 1. **P0 items** - Critical/blocking work
@@ -72,6 +90,12 @@ Review the Ready Queue in BACKLOG.md and select ONE item to implement.
 3. **P2/P3 items** - Only if P0/P1 are clear or blocked
 4. **Unblocked over blocked** - Skip items needing research you can't do
 5. **Clear scope over ambiguous** - Pick items with defined deliverables
+
+**Cross-Domain Scan (Required):**
+Before selecting, scan ALL sources for candidates:
+- proposals/BACKLOG.md - Ready Queue
+- docs/QUIRKS.md - Active quirks
+- Any --prologue files provided
 
 **Scan for these markers:**
 - `[ ]` unchecked items (ready to work)
@@ -81,30 +105,38 @@ Review the Ready Queue in BACKLOG.md and select ONE item to implement.
 
 **Output format:**
 ```
-### Selected: [Item Name]
-**Source:** [BACKLOG.md Ready Queue item #]
-**Priority:** P0/P1/P2/P3
+### Selected Work Package (N items)
+**Items:**
+1. [Item Name] - [brief description]
+2. [Item Name] - [brief description]
+(etc.)
+
+**Shared Context:** [What files/modules these items share]
+**Priority:** P0/P1/P2
 **Type:** Implementation | Documentation | Design | Bug Fix | Refactor
 **Goal:** [What we're trying to achieve]
 **Approach:** [Specific steps]
 **Files to modify:** [List]
-**Effort:** Low/Medium/High
+**Estimated effort:** Low/Medium/High
 ```
 
 If ALL items are blocked, list blockers and create STOPAUTOMATION file.
-Evaluate a comprehensive plan for our selected task.
 
 COMPACT
 
 # === Phase 2: Execute ===
 PROMPT ## Phase 2: Execute
 
-Implement the selected task now. **Edit files directly, don't just describe.**
+Implement the selected work package now. **Edit files directly, don't just describe.**
+
+**Iteration Budget Guidance:**
+- Target: Complete all items in selected work package
+- Maximum: ~300 lines changed (split larger work across cycles)
+- Batch trivial work: 5+ lint fixes together, or defer
 
 **For Implementation tasks:**
 1. Read relevant source files
-# 2. Make changes with minimal modifications
-2. Make the appropriate changes relevant for our task.
+2. Make the appropriate changes relevant for our task
 3. Add or update tests if applicable
 
 **For Documentation tasks:**
@@ -119,6 +151,10 @@ Implement the selected task now. **Edit files directly, don't just describe.**
 4. Document in appropriate proposal file
 
 **CRITICAL: Actually edit files. Do not just describe changes.**
+
+**Protection Policies:**
+- Do NOT modify .conv files without approved proposal
+- Do NOT delete archives without approved proposal
 
 If you encounter a blocker:
 1. Document it clearly

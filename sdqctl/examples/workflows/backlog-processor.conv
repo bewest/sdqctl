@@ -35,7 +35,7 @@
 # Design principles:
 #   1. No hardcoded file paths - reads from injected --prologue content
 #   2. Generic selection criteria - P0 > P1 > P2, unblocked > blocked
-#   3. Escape hatch built-in - surface blockers, add to backlog, stop cleanly
+#   3. Scope partitioning built-in - surface blockers, route to queues, stop cleanly
 #   4. COMPACT after each cycle - critical for -n 10+ runs
 #   5. Git commit per meaningful change - state persists across cycles
 

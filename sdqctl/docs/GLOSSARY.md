@@ -161,6 +161,38 @@ Earlier terminology for synthesis cycles. A true quine is a program that outputs
 
 **Prefer**: Use the specific term for what you mean (synthesis cycle, state relay, convergence, traceability pipeline).
 
+### "Escape Hatch" (deprecated)
+
+Earlier terminology for blocker handling. The term suggested an emergency exit mechanism, but the actual concept is more deliberate:
+
+**Actual intent**: Systematic handling of back-pressure through:
+1. **Scope partitioning** — Dividing work into manageable chunks per iteration
+2. **Categorical chunking** — Separating items by type (open questions vs actionable)
+3. **Blocker surfacing** — Routing blocked items to appropriate queues (OPEN-QUESTIONS.md, proposals/)
+
+**Prefer**: Use "scope partitioning", "blocker surfacing", or "categorical chunking" depending on which aspect you mean.
+
+---
+
+## Workflow Concepts
+
+### Scope Partitioning
+
+The practice of handling back-pressure by dividing work into appropriate categories:
+
+| Category | Destination | When to Use |
+|----------|-------------|-------------|
+| **Actionable** | BACKLOG.md Ready Queue | Clear scope, unblocked, can complete now |
+| **Open Questions** | OPEN-QUESTIONS.md | Needs human input or design decision |
+| **Design Decisions** | proposals/*.md | Architectural impact, needs proposal |
+| **Deferred** | Future/Backlog | Low priority, not ready yet |
+
+This prevents context window exhaustion by routing items appropriately rather than accumulating everything in one iteration.
+
+### Categorical Chunking
+
+Synonym for scope partitioning, emphasizing the division of work by kind rather than just priority. Helps agents evaluate and select batches of related work that can complete together efficiently.
+
 ---
 
 ## Disambiguation
