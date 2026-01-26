@@ -808,22 +808,16 @@ class CopilotAdapter(AdapterBase):
             for epilogue in epilogues:
                 context_parts.append(epilogue)
 
-        # Add compaction prologue
+        # Only add prologue/epilogue if explicitly configured
+        # Phase 5: No default wrapper - /compact summary is self-contained
         if compaction_prologue:
             context_parts.append(compaction_prologue)
-        else:
-            context_parts.append(
-                "This conversation has been compacted. Summary of previous context:"
-            )
 
         # Add the summary
         context_parts.append(summary)
 
-        # Add compaction epilogue
         if compaction_epilogue:
             context_parts.append(compaction_epilogue)
-        else:
-            context_parts.append("Continue from the context above.")
 
         compacted_context = "\n\n".join(context_parts)
 

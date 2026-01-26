@@ -95,6 +95,7 @@ Complete reference for sdqctl ConversationFile directives.
 | `CHECKPOINT-NAME` | Named checkpoint | `CHECKPOINT-NAME phase-1` |
 | `PAUSE` | Stop for human review | `PAUSE Review findings` |
 | `CONSULT` | Pause with question presentation | `CONSULT Need clarification` |
+| `CONSULT-TIMEOUT` | Expiration for CONSULT | `CONSULT-TIMEOUT 1h` |
 
 ### Output Directives
 

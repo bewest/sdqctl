@@ -336,8 +336,18 @@ class Session:
 
         checkpoint_file.write_text(json.dumps(data, indent=2))
 
-    def save_pause_checkpoint(self, message: str) -> Path:
-        """Save a checkpoint for PAUSE directive and return the file path."""
+    def save_pause_checkpoint(
+        self, message: str, expires_at: Optional[str] = None
+    ) -> Path:
+        """Save a checkpoint for PAUSE directive and return the file path.
+
+        Args:
+            message: Pause/consult message
+            expires_at: Optional ISO timestamp when this checkpoint expires
+
+        Returns:
+            Path to the checkpoint file
+        """
         self.session_dir.mkdir(parents=True, exist_ok=True)
 
         checkpoint_file = self.session_dir / "pause.json"
@@ -346,6 +356,7 @@ class Session:
             "message": message,
             "status": self.state.status,  # Include session status (e.g., "consulting")
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "expires_at": expires_at,  # CONSULT-TIMEOUT expiration
             "session_id": self.id,
             "sdk_session_id": self.sdk_session_id,  # SDK's UUID for resume (Q-018)
             "conversation_file": (

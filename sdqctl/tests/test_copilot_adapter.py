@@ -1052,10 +1052,10 @@ class TestCompactWithSessionReset:
         assert result.summary == "Summary of previous conversation."
         
     @pytest.mark.asyncio
-    async def test_compact_with_session_reset_default_prologue_epilogue(
+    async def test_compact_with_session_reset_no_wrapper_by_default(
         self, mock_copilot_client, mock_copilot_session
     ):
-        """Test that default prologue/epilogue is used when not specified."""
+        """Test that no wrapper is injected when prologue/epilogue not specified."""
         mock_copilot_client.create_session.return_value = mock_copilot_session
         
         adapter = CopilotAdapter()
@@ -1092,15 +1092,66 @@ class TestCompactWithSessionReset:
             old_session,
             config,
             preserve=["key decisions"],
-            # No prologue/epilogue specified - should use defaults
+            # No prologue/epilogue specified - summary injected without wrapper
         )
         
-        # Check that default texts are in the context sent to new session
-        # First send is /compact, second is to new session with context
+        # Phase 5: No default wrapper - just the summary
+        # First send is /compact, second is to new session with just summary
         assert len(sent_prompts) >= 2
         context_prompt = sent_prompts[-1]
-        assert "compacted" in context_prompt.lower() or "summary" in context_prompt.lower()
-        assert "Continue" in context_prompt
+        # Should be just the summary content, no "compacted" or "Continue" wrapper
+        assert context_prompt == "Summarized content"
+
+    @pytest.mark.asyncio
+    async def test_compact_with_session_reset_with_prologue_epilogue(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test that prologue/epilogue are injected when explicitly specified."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+        
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+        
+        config = AdapterConfig(model="gpt-4")
+        old_session = await adapter.create_session(config)
+        
+        # Track what was sent to sessions
+        sent_prompts = []
+        
+        async def capture_send(prompt_dict, *args, **kwargs):
+            sent_prompts.append(prompt_dict.get("prompt", str(prompt_dict)))
+            handler = mock_copilot_session._event_handler
+            
+            event = MagicMock()
+            event.type = MockEventType("assistant.turn_start")
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("assistant.message")
+            event.data = MagicMock(content="Summarized content")
+            handler(event)
+            
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+        
+        mock_copilot_session.send = capture_send
+        mock_copilot_session.get_messages = AsyncMock(return_value=[])
+        
+        new_session, result = await adapter.compact_with_session_reset(
+            old_session,
+            config,
+            preserve=["key decisions"],
+            compaction_prologue="Previous context:",
+            compaction_epilogue="Continue from above.",
+        )
+        
+        # Wrapper should be injected
+        assert len(sent_prompts) >= 2
+        context_prompt = sent_prompts[-1]
+        assert "Previous context:" in context_prompt
+        assert "Continue from above." in context_prompt
+        assert "Summarized content" in context_prompt
 
 
 class TestSessionPersistence:

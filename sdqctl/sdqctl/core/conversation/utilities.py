@@ -209,3 +209,53 @@ def build_output_with_injection(output: str, headers: list[str], footers: list[s
         parts.append(content)
 
     return "\n\n".join(parts)
+
+
+def parse_timeout_duration(value: str) -> int:
+    """Parse a timeout string like "1h", "30m", "7d" to seconds.
+
+    Supported units:
+    - s: seconds
+    - m: minutes
+    - h: hours
+    - d: days
+
+    Args:
+        value: Timeout string (e.g., "1h", "30m", "7d", "90s")
+
+    Returns:
+        Duration in seconds
+
+    Raises:
+        ValueError: If the format is invalid
+    """
+    value = value.strip().lower()
+    if not value:
+        raise ValueError("Empty timeout value")
+
+    # Try to parse as plain number (assume seconds)
+    try:
+        return int(value)
+    except ValueError:
+        pass
+
+    # Parse with unit suffix
+    unit_multipliers = {
+        "s": 1,
+        "m": 60,
+        "h": 3600,
+        "d": 86400,
+    }
+
+    unit = value[-1]
+    if unit not in unit_multipliers:
+        raise ValueError(
+            f"Invalid timeout unit '{unit}'. Use s/m/h/d (e.g., '1h', '30m', '7d')"
+        )
+
+    try:
+        amount = int(value[:-1])
+    except ValueError:
+        raise ValueError(f"Invalid timeout number: {value[:-1]}")
+
+    return amount * unit_multipliers[unit]

@@ -334,6 +334,36 @@ RUN-RETRY 1 Fix build errors
         # CONSULT works with SESSION-NAME
         assert conv.session_name == "feature-design"
 
+    def test_parse_consult_timeout(self):
+        """Test parsing CONSULT-TIMEOUT directive."""
+        content = """MODEL gpt-4
+ADAPTER copilot
+SESSION-NAME test-session
+CONSULT-TIMEOUT 1h
+PROMPT Analyze the proposal.
+CONSULT "Design Decisions"
+"""
+        conv = ConversationFile.parse(content)
+
+        assert conv.consult_timeout == "1h"
+        assert len(conv.consult_points) == 1
+
+    def test_parse_consult_timeout_various_formats(self):
+        """Test CONSULT-TIMEOUT with different time formats."""
+        test_cases = [
+            ("30m", "30m"),
+            ("7d", "7d"),
+            ("90s", "90s"),
+            ("2h", "2h"),
+        ]
+        for input_val, expected in test_cases:
+            content = f"""MODEL gpt-4
+CONSULT-TIMEOUT {input_val}
+PROMPT Test.
+"""
+            conv = ConversationFile.parse(content)
+            assert conv.consult_timeout == expected, f"Failed for {input_val}"
+
     def test_parse_debug_directives(self):
         """Test parsing DEBUG, DEBUG-INTENTS, and EVENT-LOG directives."""
         content = """MODEL gpt-4
@@ -1948,3 +1978,58 @@ PROMPT Analyze.
         assert conv.verify_coverage_checks[1] == ("spec_to_test", "<", 90.0)
         # Third check: ==
         assert conv.verify_coverage_checks[2] == ("loss_to_haz", "==", 100.0)
+
+
+class TestTimeoutParsing:
+    """Tests for parse_timeout_duration utility."""
+
+    def test_parse_seconds(self):
+        """Test parsing seconds."""
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        assert parse_timeout_duration("90s") == 90
+        assert parse_timeout_duration("1s") == 1
+
+    def test_parse_minutes(self):
+        """Test parsing minutes."""
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        assert parse_timeout_duration("30m") == 1800
+        assert parse_timeout_duration("1m") == 60
+
+    def test_parse_hours(self):
+        """Test parsing hours."""
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        assert parse_timeout_duration("1h") == 3600
+        assert parse_timeout_duration("24h") == 86400
+
+    def test_parse_days(self):
+        """Test parsing days."""
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        assert parse_timeout_duration("7d") == 604800
+        assert parse_timeout_duration("1d") == 86400
+
+    def test_parse_plain_number_as_seconds(self):
+        """Test that plain numbers are interpreted as seconds."""
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        assert parse_timeout_duration("120") == 120
+        assert parse_timeout_duration("3600") == 3600
+
+    def test_parse_invalid_unit_raises(self):
+        """Test that invalid units raise ValueError."""
+        import pytest
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        with pytest.raises(ValueError, match="Invalid timeout unit"):
+            parse_timeout_duration("1x")
+
+    def test_parse_empty_raises(self):
+        """Test that empty value raises ValueError."""
+        import pytest
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        with pytest.raises(ValueError, match="Empty timeout value"):
+            parse_timeout_duration("")
+
+    def test_parse_invalid_number_raises(self):
+        """Test that invalid numbers raise ValueError."""
+        import pytest
+        from sdqctl.core.conversation.utilities import parse_timeout_duration
+        with pytest.raises(ValueError, match="Invalid timeout number"):
+            parse_timeout_duration("abch")

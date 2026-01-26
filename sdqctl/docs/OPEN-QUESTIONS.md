@@ -24,7 +24,7 @@ Questions that have been answered and can be routed to work queues.
 
 | ID | Question | Answer | Answered | Routed To |
 |----|----------|--------|----------|-----------|
-| OQ-001 | CONSULT Phase 4 timeout behavior? | Fail with clear error message | 2026-01-26 | BACKLOG.md P2: CONSULT Phase 4 |
+| OQ-001 | CONSULT Phase 4 timeout behavior? | Fail with clear error message | 2026-01-26 | ✅ Complete (2026-01-26) |
 | OQ-002 | claude/openai adapters scope? | Stubs with NotImplementedError | 2026-01-26 | ✅ Complete (2026-01-26) |
 | OQ-003 | StepExecutor priority? | Defer until after Q-020 (P0) | 2026-01-26 | BACKLOG.md P2: StepExecutor (Q-020 done) |
 

@@ -38,6 +38,7 @@ from .utilities import (
     apply_iteration_context,
     build_output_with_injection,
     build_prompt_with_injection,
+    parse_timeout_duration,
     resolve_content_reference,
 )
 
@@ -56,6 +57,7 @@ __all__ = [
     "build_prompt_with_injection",
     "build_output_with_injection",
     "resolve_content_reference",
+    "parse_timeout_duration",
     # Parser internals (for backward compatibility)
     "parse_line",
     "_parse_line",

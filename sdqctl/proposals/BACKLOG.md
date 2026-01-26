@@ -18,21 +18,20 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Compaction Simplification (Phase 5) | Low | Remove default prologue/epilogue injection. See [SDK-INFINITE-SESSIONS.md](SDK-INFINITE-SESSIONS.md#phase-5-compaction-simplification-proposed). |
+| *(No P1 items)* | | |
 
 ### P2: Medium
 
 | Item | Effort | Notes |
 |------|--------|-------|
 | Extract StepExecutor from iterate.py | Medium | Q-020 done. See [Architecture Roadmap](#architecture-roadmap). |
-| CONSULT-DIRECTIVE Phase 4 | Medium | Timeout → fail with clear error. Needs CONSULT-TIMEOUT directive. |
 | Modularize run.py (~1626 lines) | Medium | Largest command file. Continue modularization theme. |
+| Add integration tests | Medium | Beyond loop stress testing. Adapter + end-to-end scenarios. |
 
 ### P3: Low
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Add integration tests | Medium | Beyond loop stress testing |
 | Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
 | Performance benchmark suite | Medium | Track regressions |
 | Session resilience & observability | Medium | [SESSION-RESILIENCE.md](SESSION-RESILIENCE.md) - Rate limit prediction, checkpoint resume, compaction metrics |
@@ -54,6 +53,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **CONSULT-TIMEOUT (P2)** | 2026-01-26 | Phase 4: Timeout directive, expiration check on resume, clear error. 10 new tests. |
+| **Compaction Simplification (P1)** | 2026-01-26 | Phase 5: Remove default prologue/epilogue. SDK-INFINITE-SESSIONS now complete. |
 | **E501 run.py clean** | 2026-01-26 | Fixed 45 issues in run.py (now 0). Core commands E501 clean. |
 | **E501 iterate.py clean** | 2026-01-26 | Fixed 14 issues in iterate.py (now 0). run.py 51→45. |
 | **Loop detection: tool-aware** | 2026-01-26 | Skip minimal response check if tools called in turn. 2 new tests. |
@@ -270,7 +271,7 @@ def _check_minimal_response(
 | [CLI-ERGONOMICS](CLI-ERGONOMICS.md) | ✅ Complete | Help implemented |
 | [ITERATE-CONSOLIDATION](ITERATE-CONSOLIDATION.md) | ✅ Complete | All 6 phases complete. Mixed mode, separators, elision. |
 | [MODEL-REQUIREMENTS](MODEL-REQUIREMENTS.md) | ✅ Complete | All 4 phases |
-| [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | ✅ Verified | Phase 1-3 complete, tested. Phase 4 optional |
+| [CONSULT-DIRECTIVE](CONSULT-DIRECTIVE.md) | ✅ Complete | Phase 1-4 complete. CONSULT-TIMEOUT added. |
 | [ARTIFACT-TAXONOMY](ARTIFACT-TAXONOMY.md) | ✅ Complete | Taxonomy + CLI |
 | [ERROR-HANDLING](ERROR-HANDLING.md) | ✅ Complete | All phases |
 | [SDK-INFINITE-SESSIONS](SDK-INFINITE-SESSIONS.md) | ✅ Complete | Native SDK compaction |

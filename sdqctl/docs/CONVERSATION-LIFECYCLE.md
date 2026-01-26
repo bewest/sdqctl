@@ -101,8 +101,11 @@ Triggered by `COMPACT` directive, `ON-CONTEXT-LIMIT compact`, or SDK compaction 
 **Actions:**
 1. Summarize conversation history
 2. Apply `COMPACT-PRESERVE` patterns to keep specific content
-3. Inject `COMPACT-PROLOGUE` and `COMPACT-EPILOGUE` around summary
+3. Inject `COMPACT-PROLOGUE` and `COMPACT-EPILOGUE` around summary (only if explicitly configured)
 4. Replace history with compacted version
+
+> **Note**: By default, the compacted summary is injected without wrapper content.
+> Use `COMPACT-PROLOGUE` and `COMPACT-EPILOGUE` only when you need custom context framing.
 
 ---
 

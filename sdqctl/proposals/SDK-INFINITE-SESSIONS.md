@@ -1,6 +1,6 @@
 # SDK Infinite Sessions Integration
 
-> **Status**: Phase 1-4 ✅ Complete, Phase 5 🔲 Proposed  
+> **Status**: ✅ Complete (All Phases)  
 > **Date**: 2026-01-24  
 > **Updated**: 2026-01-26  
 > **Priority**: P1 (High Impact)  
@@ -431,15 +431,16 @@ All 130 conversation tests pass including 4 new tests for infinite session direc
 
 ---
 
-## Phase 5: Compaction Simplification (Proposed)
+## Phase 5: Compaction Simplification ✅ Complete
 
-> **Status**: 🔲 Proposed  
+> **Status**: ✅ Complete  
 > **Priority**: P1 (High)  
 > **Date**: 2026-01-26
+> **Completed**: 2026-01-26
 
 ### Problem
 
-Current client-side compaction injects unnecessary content beyond `/compact`:
+Client-side compaction was injecting unnecessary wrapper content beyond `/compact`:
 
 ```python
 # Current behavior in compact_with_session_reset()
@@ -574,3 +575,17 @@ def test_compact_with_prologue_injects_wrapper():
     )
     # Verify: new session received "Previous context:\n\n{summary}"
 ```
+
+### Implementation Status
+
+| Task | Effort | Status |
+|------|--------|--------|
+| Remove default prologue/epilogue | Low | ✅ Complete |
+| Conditional wrapper injection | Low | ✅ Complete |
+| Update documentation | Low | ✅ Complete |
+| Add tests for new behavior | Low | ✅ Complete (3 tests) |
+
+**Changes:**
+- `sdqctl/adapters/copilot.py`: `compact_with_session_reset()` no longer injects default wrapper content
+- `docs/CONVERSATION-LIFECYCLE.md`: Updated to reflect optional prologue/epilogue
+- `tests/test_copilot_adapter.py`: Added `test_compact_with_session_reset_no_wrapper_by_default` and `test_compact_with_session_reset_with_prologue_epilogue`

@@ -116,6 +116,9 @@ class ConversationFile:
     checkpoint_after: Optional[str] = None  # each-cycle, each-prompt, never
     checkpoint_name: Optional[str] = None
 
+    # CONSULT timeout (e.g., "1h", "30m", "7d", None=no timeout)
+    consult_timeout: Optional[str] = None
+
     # Output (supports template variables)
     output_format: str = "markdown"
     output_file: Optional[str] = None

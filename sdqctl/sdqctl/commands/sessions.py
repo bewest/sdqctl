@@ -379,6 +379,20 @@ async def _resume_session_async(
                 try:
                     checkpoint_data = json.loads(checkpoint_file.read_text())
                     if checkpoint_data.get("status") == "consulting":
+                        # Check for expiration (CONSULT-TIMEOUT)
+                        expires_at = checkpoint_data.get("expires_at")
+                        if expires_at:
+                            expiry_time = datetime.fromisoformat(expires_at)
+                            if datetime.now(timezone.utc) > expiry_time:
+                                console.print(
+                                    f"[red]✗ Consultation expired at {expires_at}[/red]"
+                                )
+                                console.print(
+                                    "[yellow]The CONSULT-TIMEOUT has elapsed. "
+                                    "Re-run the workflow to start a new session.[/yellow]"
+                                )
+                                raise click.Abort()
+
                         # Extract topic from message (format: "CONSULT: {topic}")
                         message = checkpoint_data.get("message", "")
                         if message.startswith("CONSULT: "):

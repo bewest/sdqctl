@@ -75,6 +75,7 @@ Requirements: `context:Nk`, `tier:economy|standard|premium`, `speed:fast|standar
 |-----------|---------|---------|
 | `PAUSE` | Checkpoint and exit | `PAUSE Review findings` |
 | `CONSULT` | Pause for human consultation | `CONSULT Design Decisions` |
+| `CONSULT-TIMEOUT` | Set CONSULT expiration | `CONSULT-TIMEOUT 1h` |
 | `ELIDE` | Merge adjacent elements | `ELIDE` |
 | `COMPACT` | Trigger compaction | `COMPACT` |
 | `REQUIRE` | Pre-flight checks | `REQUIRE @file.py cmd:git` |
@@ -415,6 +416,7 @@ PROMPT Implement approved changes.
 # consultation-workflow.conv
 MODEL gpt-4
 SESSION-NAME feature-design
+CONSULT-TIMEOUT 2h
 
 PROMPT Analyze this proposal and identify open questions.
   Add questions to the document's "## Open Questions" section.
@@ -428,6 +430,10 @@ The CONSULT directive pauses like PAUSE, but when the human resumes
 with `sdqctl sessions resume SESSION` (or `copilot --resume SESSION`),
 the agent proactively presents open questions and guides the human
 through answering them.
+
+Use `CONSULT-TIMEOUT` to set an expiration (e.g., `1h`, `30m`, `7d`).
+If the human doesn't resume before the timeout, the session expires
+with a clear error message.
 """,
 
     "validation": """

@@ -133,6 +133,7 @@ class DirectiveType(Enum):
     # Flow control
     PAUSE = "PAUSE"
     CONSULT = "CONSULT"  # Pause with proactive question presentation on resume
+    CONSULT_TIMEOUT = "CONSULT-TIMEOUT"  # Timeout for CONSULT: CONSULT-TIMEOUT 1h, 30m, 7d
 
     # Branching on RUN result
     ON_FAILURE = "ON-FAILURE"  # Block executed if previous RUN fails

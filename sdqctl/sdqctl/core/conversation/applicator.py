@@ -367,6 +367,10 @@ def apply_directive(conv, directive: Directive) -> None:
             consult_index = len(conv.prompts) - 1 if conv.prompts else 0
             conv.consult_points.append((consult_index, directive.value))
 
+        case DirectiveType.CONSULT_TIMEOUT:
+            # Timeout for CONSULT (e.g., "1h", "30m", "7d")
+            conv.consult_timeout = directive.value.strip()
+
         # Debug directives
         case DirectiveType.DEBUG:
             # Comma-separated debug categories

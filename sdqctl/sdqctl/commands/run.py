@@ -13,6 +13,7 @@ import shlex
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -817,10 +818,34 @@ async def _run_async(
                         topic = consult_after[prompt_idx]
                         session.state.prompt_index = prompt_count  # Next prompt to resume from
                         session.state.status = "consulting"  # Mark as awaiting consultation
-                        checkpoint_path = session.save_pause_checkpoint(f"CONSULT: {topic}")
+
+                        # Calculate expiration time if CONSULT-TIMEOUT is set
+                        expires_at = None
+                        if conv.consult_timeout:
+                            from datetime import timedelta
+
+                            from ..core.conversation.utilities import parse_timeout_duration
+                            try:
+                                timeout_secs = parse_timeout_duration(conv.consult_timeout)
+                                expires_at = (
+                                    datetime.now(timezone.utc) + timedelta(seconds=timeout_secs)
+                                ).isoformat()
+                            except ValueError as e:
+                                console.print(
+                                    f"[yellow]Warning: Invalid CONSULT-TIMEOUT: {e}[/yellow]"
+                                )
+
+                        checkpoint_path = session.save_pause_checkpoint(
+                            f"CONSULT: {topic}", expires_at=expires_at
+                        )
 
                         console.print(f"\n[yellow]⏸  CONSULT: {topic}[/yellow]")
                         console.print("[dim]Session paused for human consultation.[/dim]")
+                        if expires_at:
+                            console.print(
+                                f"[dim]Expires at: {expires_at} (CONSULT-TIMEOUT: "
+                                f"{conv.consult_timeout})[/dim]"
+                            )
                         console.print(f"[dim]Checkpoint saved: {checkpoint_path}[/dim]")
 
                         # Show resume instructions with SDK session ID (Q-018)
