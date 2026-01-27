@@ -37,15 +37,55 @@ The `--prologue` and `--epilogue` options (and their ConversationFile equivalent
 
 ## Features
 
+### Core Capabilities
 - 🔄 **Declarative workflows** - ConversationFile format (.conv) for reproducible AI interactions
 - 🔌 **Vendor agnostic** - Swap AI providers without changing workflows
-- 📊 **Context management** - Automatic tracking and compaction
+- 📊 **Context management** - Automatic tracking, compaction, and token optimization
 - ✅ **Checkpointing** - Save/resume long-running workflows
-- ⚡ **Batch execution** - Parallel workflow execution
+- ⚡ **Batch execution** - Parallel workflow execution across components
 
-> **📖 Design Philosophy**: See [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for workflow design principles, terminology definitions, and the double diamond pattern.
->
-> **🏗️ Architecture**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module structure, data flow, and extension points.
+### Commands
+
+| Command | Purpose | Documentation |
+|---------|---------|---------------|
+| `iterate` | Multi-cycle workflow execution | [COMMANDS.md](docs/COMMANDS.md#iterate) |
+| `run` | Single prompt or workflow execution | [COMMANDS.md](docs/COMMANDS.md#run) |
+| `flow` | Batch/parallel workflows | [COMMANDS.md](docs/COMMANDS.md#flow) |
+| `apply` | Apply workflow to multiple components | [COMMANDS.md](docs/COMMANDS.md#apply) |
+| `render` | Preview prompts without AI execution | [COMMANDS.md](docs/COMMANDS.md#render) |
+| `verify` | Static verification (refs, links, traceability) | [COMMANDS.md](docs/COMMANDS.md#verify) |
+| `lsp` | Language server queries (type lookup) | [COMMANDS.md](docs/COMMANDS.md#lsp) |
+| `drift` | Detect changes in external repositories | [COMMANDS.md](docs/COMMANDS.md#drift) |
+| `refcat` | Extract file content with line precision | [COMMANDS.md](docs/COMMANDS.md#refcat) |
+| `sessions` | Session management (list, resume, cleanup) | [COMMANDS.md](docs/COMMANDS.md#sessions) |
+| `status` | System and adapter status | [COMMANDS.md](docs/COMMANDS.md#status) |
+| `artifact` | Artifact ID utilities | [COMMANDS.md](docs/COMMANDS.md#artifact) |
+| `validate` | Syntax validation for .conv files | [COMMANDS.md](docs/COMMANDS.md#validate) |
+| `init` | Initialize sdqctl in a project | [COMMANDS.md](docs/COMMANDS.md#init) |
+| `help` | Built-in help system | [COMMANDS.md](docs/COMMANDS.md#help) |
+
+### Directives
+
+ConversationFiles support 40+ directives for workflow control. See [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) for complete documentation.
+
+Key directive categories:
+- **Context**: `CONTEXT`, `REFCAT`, `LSP` - inject file content and type definitions
+- **Flow Control**: `PROMPT`, `CHECKPOINT`, `COMPACT`, `VERIFY` - structure workflow execution
+- **Session**: `SESSION-NAME`, `SESSION-MODE`, `CONSULT` - manage AI sessions
+- **Output**: `OUTPUT-FILE`, `OUTPUT-FORMAT`, `ALLOW-SHELL` - control results
+
+### Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [GETTING-STARTED.md](docs/GETTING-STARTED.md) | Installation and first workflow |
+| [COMMANDS.md](docs/COMMANDS.md) | Complete CLI reference |
+| [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) | All .conv directives |
+| [PHILOSOPHY.md](docs/PHILOSOPHY.md) | Design principles, terminology |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure, extension points |
+| [CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) | Token optimization strategies |
+| [ADAPTERS.md](docs/ADAPTERS.md) | AI provider configuration |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 
 ## Installation
 
