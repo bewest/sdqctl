@@ -5,7 +5,7 @@
 #
 # Usage:
 #   sdqctl iterate examples/workflows/backlog-processor-v2.conv \
-#     --prologue "BACKLOG.md contains 3 ready items. QUIRKS.md has active bugs." \
+#     --prologue "BACKLOG.md contains some ready items. QUIRKS.md has active bugs." \
 #     --adapter copilot -n 5
 #
 # Phase Structure:
@@ -45,7 +45,7 @@ PROLOGUE - Single high-priority item is acceptable if no related items exist
 PROLOGUE - Batch trivial work (lint fixes, typos): 5+ items together or skip
 PROLOGUE
 PROLOGUE **BACKLOG DISCIPLINE**:
-PROLOGUE - Ready Queue should have exactly 3 actionable items
+PROLOGUE - Ready Queue should have some actionable items
 PROLOGUE - New ideas go to proposals/*.md, not directly to Ready Queue
 PROLOGUE - Questions needing human input go to docs/OPEN-QUESTIONS.md
 PROLOGUE
@@ -331,9 +331,15 @@ For each candidate, decide destination:
 
 **Make the actual edits needed for grooming:**
 
-1. **BACKLOG.md Ready Queue** (target: 3 items)
+1. **BACKLOG.md Ready Queue** (target: 3-10 items)
    - Add taskable items with priority and effort/complexity
-   - If >3 items, keep highest priority 3
+   - If >3 items, keep no more than 8 in the detailed ready queue. Maintain up
+     to a handful of additional categories to point to other
+     relevant topical areas across the repo with their own
+     queues or backlogs as appropriate to help assess where progress can be
+     made.
+   keep to a limited list and let extra items or more detail gather in an
+   appropriate tracker or documenation
 
 2. **docs/OPEN-QUESTIONS.md** (Pending section)
    - Add questions needing human input or additional research
@@ -350,7 +356,7 @@ For each candidate, decide destination:
 
 ```
 ### Routing Result
-**Ready Queue:** N items (target: 3)
+**Ready Queue:** N items (target: 3 - 10)
 **Open Questions:** N added
 **Proposals updated:** N
 **Quirks added:** N
