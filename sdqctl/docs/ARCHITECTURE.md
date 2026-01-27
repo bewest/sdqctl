@@ -80,6 +80,8 @@ sdqctl/
 │   ├── status.py         # Adapter status (auth, models)
 │   ├── artifact.py       # Artifact ID CLI commands (500 lines, uses core/artifact_ids.py)
 │   ├── refcat.py         # REFCAT extraction
+│   ├── lsp.py            # LSP type lookup commands
+│   ├── drift.py          # Drift detection commands
 │   ├── flow.py           # Workflow parsing info
 │   ├── help.py           # Help command (156 lines, uses core/help_*.py)
 │   ├── blocks.py         # ON-FAILURE/ON-SUCCESS block execution
@@ -91,7 +93,14 @@ sdqctl/
 │   ├── prompt_steps.py   # Prompt building and loop detection
 │   ├── run_steps.py      # RUN/RUN-ASYNC/RUN-WAIT step handlers
 │   ├── verify_steps.py   # VERIFY/VERIFY-TRACE/VERIFY-COVERAGE handlers
+│   ├── lsp_steps.py      # LSP directive step handler
 │   └── utils.py          # Shared command utilities
+│
+├── lsp/                  # Language Server Protocol integration
+│   └── __init__.py       # LSPClient, TypeDefinition, detect_language()
+│
+├── monitoring/           # Drift detection and change analysis
+│   └── __init__.py       # ChangeDetector, GitChangeDetector, DriftReport
 │
 ├── verifiers/            # Verification subsystem
 │   ├── __init__.py       # Exports VERIFIERS registry, auto-registers plugins

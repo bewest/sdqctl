@@ -177,9 +177,13 @@ This is useful for:
 | `apply` | Apply workflow to multiple components | Batch processing |
 | `render` | Preview prompts without AI calls | Debugging, validation |
 | `verify` | Static verification suite | Pre-flight checks |
+| `lsp` | Language server queries | Type definitions, code analysis |
+| `drift` | Detect external repo changes | Alignment monitoring |
 | `refcat` | Extract file content with line ranges | Precise context injection |
 | `status` | Show session/adapter status | Troubleshooting |
 | `sessions` | Manage conversation sessions | List, delete, cleanup sessions |
+
+> **Complete reference**: See [COMMANDS.md](COMMANDS.md) for all 15+ commands with full options.
 
 ### run vs iterate vs apply
 
