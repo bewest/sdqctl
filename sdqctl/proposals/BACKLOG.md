@@ -16,11 +16,11 @@
 
 ---
 
-## Ready Queue (1 Actionable Item)
+## Ready Queue (0 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Improvement predictions and 12-month roadmap | P3 | Medium | WP-005 step 5: Synthesize recommendations into STPA-ROADMAP.md. Final deliverable. |
+| *(Queue empty - select from Work Packages below)* | | | | |
 
 ---
 
@@ -112,7 +112,7 @@ Enable ecosystem teams to extend sdqctl with custom directives/commands independ
 **Dependencies**: None  
 **Estimated**: 3-4 iterations, ~500 lines
 
-### WP-005: STPA Deep Integration Research (P3 R&D)
+### WP-005: STPA Deep Integration Research (P3 R&D) ✅ COMPLETE
 
 Comprehensive research on STPA integration for Nightscout ecosystem, delivering usage guide and improvement predictions.
 
@@ -120,7 +120,7 @@ Comprehensive research on STPA integration for Nightscout ecosystem, delivering 
 - [x] Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
 - [x] Cross-project UCA pattern discovery ✅ 2026-01-27 (3 pattern categories, 11 UCAs, 12 proposed SCs)
 - [x] STPA usage guide for ecosystem team ✅ 2026-01-27 (~2000 words, 6 sections, templates, checklist)
-- [ ] Improvement predictions and 12-month roadmap
+- [x] Improvement predictions and 12-month roadmap ✅ 2026-01-27 (3 phases, 12 tasks, success metrics)
 
 **Proposal**: [STPA-DEEP-INTEGRATION.md](STPA-DEEP-INTEGRATION.md)  
 **Audit Report**: [reports/stpa-audit-2026-01-27.md](../reports/stpa-audit-2026-01-27.md)  
@@ -143,6 +143,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **STPA improvement roadmap (P3)** | 2026-01-27 | WP-005 step 5 (FINAL): Created docs/STPA-ROADMAP.md. 3 phases, 12 tasks, success metrics. **WP-005 COMPLETE**. |
 | **STPA usage guide (P3)** | 2026-01-27 | WP-005 step 4: Created docs/STPA-USAGE-GUIDE.md. ~2000 words, quick start, full workflow, templates (UCA/SC/CF), tool integration, pitfalls, checklist. |
 | **Cross-project UCA pattern discovery (P3)** | 2026-01-27 | WP-005 step 3: Created traceability/stpa/cross-project-patterns.md. 3 pattern categories (Sync, Remote, Override), 11 UCAs, 12 proposed SCs. |
 | **Plugin authoring documentation (P3)** | 2026-01-27 | WP-004 step 5: Created docs/PLUGIN-AUTHORING.md. Quick start, manifest reference, examples, troubleshooting. |
