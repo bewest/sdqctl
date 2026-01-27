@@ -56,6 +56,20 @@ Related items for improving iteration efficiency:
 - [ ] Iteration metrics tracking (Medium) - Items/cycle, lines/cycle metrics
 - [ ] backlog-processor-v3.conv (High) - Full economy optimization
 
+**Specification (2026-01-27)**:
+
+**Domain-Partitioned Queues**:
+- 5 domains: `testing`, `cli`, `sdk-integration`, `architecture`, `directives`
+- Structure: `proposals/backlogs/{domain}.md` with main BACKLOG.md cross-referencing
+- Items tagged with domain; cross-cutting items stay in main backlog
+- Partition strategy: keyword matching on item description
+
+**Iteration Metrics**:
+- Work output: items/cycle, lines/cycle, tests/cycle
+- Token efficiency: in/out ratio, estimated cost per item
+- Duration: time/cycle, time/item
+- Storage: `~/.sdqctl/sessions/{id}/metrics.json` (raw) + `reports/metrics/` (summaries)
+
 **Dependencies**: Work package markers (this item) must complete first.  
 **Estimated**: 2 iterations, ~200 lines
 
