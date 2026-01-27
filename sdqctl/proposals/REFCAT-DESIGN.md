@@ -401,26 +401,48 @@ No deprecations required.
 | Core module | ✅ Complete | `sdqctl/core/refcat.py` |
 | CLI command | ✅ Complete | `sdqctl/commands/refcat.py` |
 | REFCAT directive | ✅ Complete | `sdqctl/core/conversation.py` |
+| Glob expansion | ✅ Complete | `sdqctl/core/refcat.py` |
 | Renderer integration | ✅ Complete | `sdqctl/core/renderer.py` |
 | Validation | ✅ Complete | `sdqctl/cli.py` |
 | Unit tests | ✅ Complete | `tests/test_refcat.py` |
 
 ### 8.2 Test Coverage
 
-- **46 core tests** in `tests/test_refcat.py`
+- **53 core tests** in `tests/test_refcat.py`
   - Parsing, extraction, formatting
   - Alias resolution (including `workspace.lock.json`)
   - Error handling
-  - Glob pattern expansion
+  - Glob pattern expansion (7 tests for `expand_glob_refs`)
 
-- **10 directive tests** in `tests/test_conversation.py`
+- **12 directive tests** in `tests/test_conversation.py`
   - `TestRefcatDirectiveParsing` (6 tests)
-  - `TestRefcatValidation` (4 tests)
+  - `TestRefcatValidation` (6 tests including glob expansion)
 
 - **4 renderer tests** in `tests/test_render_command.py`
   - `TestRenderWithRefcat`
 
-### 8.3 Key Files Modified (2026-01-24)
+### 8.3 Glob Pattern Support (2026-01-27)
+
+REFCAT directives support glob patterns for matching multiple files:
+
+```dockerfile
+# Single wildcard - matches files in directory
+REFCAT @src/*.py
+
+# Recursive wildcard - matches files in all subdirectories
+REFCAT @externals/**/*Treatment*.swift
+
+# Question mark - matches single character
+REFCAT @lib/module?.py
+```
+
+Glob patterns are expanded during validation, with the expanded refs stored for rendering.
+
+**Limitations:**
+- Glob patterns cannot be combined with line ranges: `@src/*.py#L10` is not supported
+- Glob patterns cannot be combined with aliases: `loop:src/*.py` is not supported
+
+### 8.4 Key Files Modified (2026-01-24)
 
 1. `sdqctl/core/conversation.py`
    - Added `DirectiveType.REFCAT`

@@ -1175,6 +1175,44 @@ PROMPT Analyze.
         # Should have an error (either parse or file not found)
         assert len(errors) == 1
 
+    def test_validate_refcat_expands_globs(self, tmp_path):
+        """Validate REFCAT refs expands glob patterns."""
+        # Create test files
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "main.py").write_text("# main")
+        (src / "utils.py").write_text("# utils")
+        
+        content = """MODEL gpt-4
+REFCAT @src/*.py
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content, source_path=tmp_path / "test.conv")
+        
+        # Before validation, has glob pattern
+        assert conv.refcat_refs == ["@src/*.py"]
+        
+        errors, warnings = conv.validate_refcat_refs()
+        
+        # After validation, glob is expanded
+        assert len(errors) == 0
+        assert "@src/main.py" in conv.refcat_refs
+        assert "@src/utils.py" in conv.refcat_refs
+        assert len(conv.refcat_refs) == 2
+
+    def test_validate_refcat_glob_no_matches(self, tmp_path):
+        """Validate REFCAT glob with no matches produces error."""
+        content = """MODEL gpt-4
+REFCAT @nonexistent/**/*.xyz
+PROMPT Analyze.
+"""
+        conv = ConversationFile.parse(content, source_path=tmp_path / "test.conv")
+        errors, warnings = conv.validate_refcat_refs()
+        
+        # Should have error for no matching files
+        assert len(errors) == 1
+        assert "nonexistent" in errors[0][0]
+
 
 class TestHelpDirectiveParsing:
     """Tests for HELP directive parsing."""

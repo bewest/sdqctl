@@ -532,6 +532,9 @@ class ConversationFile:
         allow_missing: bool = False,
     ) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
         """Validate that all REFCAT file references exist.
+        
+        Expands glob patterns before validation, storing expanded refs
+        back to self.refcat_refs for use in rendering.
 
         Args:
             allow_missing: If True, returns warnings instead of errors
@@ -539,11 +542,17 @@ class ConversationFile:
         Returns:
             Tuple of (errors, warnings) where each is a list of (ref, error_message).
         """
-        from ..refcat import RefcatError, parse_ref, resolve_path
+        from ..refcat import RefcatError, expand_glob_refs, parse_ref, resolve_path
 
         errors = []
         warnings = []
         workflow_base = self.source_path.parent if self.source_path else Path.cwd()
+
+        # Expand glob patterns first (e.g., @src/**/*.py -> [@src/a.py, @src/b.py])
+        expanded_refs = expand_glob_refs(self.refcat_refs, workflow_base)
+        
+        # Store expanded refs back for rendering
+        self.refcat_refs = expanded_refs
 
         for ref in self.refcat_refs:
             try:

@@ -523,3 +523,110 @@ class TestGlobAndWorkflowPatterns:
         # Should keep original strings (not expand)
         assert all(isinstance(p, str) for p in expanded)
         assert len(expanded) == 2
+
+
+class TestCoreGlobExpansion:
+    """Tests for core refcat.expand_glob_refs function."""
+
+    @pytest.fixture
+    def workspace_with_files(self, tmp_path):
+        """Create a workspace with various file types."""
+        # Create src directory with Python files
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "main.py").write_text("# Main")
+        (src / "utils.py").write_text("# Utils")
+        
+        # Create nested directory
+        nested = src / "lib"
+        nested.mkdir()
+        (nested / "helper.py").write_text("# Helper")
+        
+        # Create docs
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "readme.md").write_text("# Readme")
+        
+        return tmp_path
+
+    def test_is_glob_pattern(self):
+        """Test glob pattern detection."""
+        from sdqctl.core.refcat import is_glob_pattern
+        
+        # Glob patterns
+        assert is_glob_pattern("@src/*.py") is True
+        assert is_glob_pattern("@src/**/*.py") is True
+        assert is_glob_pattern("@docs/?.md") is True
+        assert is_glob_pattern("src/*.py") is True  # Works without @
+        
+        # Not glob patterns
+        assert is_glob_pattern("@src/main.py") is False
+        assert is_glob_pattern("@src/main.py#L10-L20") is False
+        assert is_glob_pattern("@src/*#L10") is False  # Has line ref
+        assert is_glob_pattern("loop:path/*.py") is False  # Has alias
+
+    def test_expand_glob_refs_simple(self, workspace_with_files):
+        """Test expanding simple glob pattern."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@src/*.py"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        # Should have main.py and utils.py (not nested helper.py)
+        assert len(expanded) == 2
+        assert "@src/main.py" in expanded
+        assert "@src/utils.py" in expanded
+
+    def test_expand_glob_refs_recursive(self, workspace_with_files):
+        """Test expanding recursive glob pattern."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@src/**/*.py"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        # Should have main.py, utils.py, and lib/helper.py
+        assert len(expanded) == 3
+        assert "@src/main.py" in expanded
+        assert "@src/utils.py" in expanded
+        assert "@src/lib/helper.py" in expanded
+
+    def test_expand_glob_refs_preserves_non_glob(self, workspace_with_files):
+        """Test that non-glob refs are passed through unchanged."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@src/main.py", "@docs/readme.md#L1-L5"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        assert expanded == refs  # Unchanged
+
+    def test_expand_glob_refs_mixed(self, workspace_with_files):
+        """Test expanding mix of glob and non-glob refs."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@src/*.py", "@docs/readme.md"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        assert len(expanded) == 3  # 2 from src/*.py + 1 non-glob
+        assert "@docs/readme.md" in expanded
+        assert "@src/main.py" in expanded
+        assert "@src/utils.py" in expanded
+
+    def test_expand_glob_refs_no_matches_keeps_original(self, workspace_with_files):
+        """Test that no-match globs are kept to generate meaningful errors."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@nonexistent/**/*.xyz"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        # Should keep original to generate error later
+        assert expanded == ["@nonexistent/**/*.xyz"]
+
+    def test_expand_glob_refs_sorted_order(self, workspace_with_files):
+        """Test that expanded refs are in sorted order."""
+        from sdqctl.core.refcat import expand_glob_refs
+        
+        refs = ["@src/**/*.py"]
+        expanded = expand_glob_refs(refs, workspace_with_files)
+        
+        # Should be sorted
+        assert expanded == sorted(expanded)
