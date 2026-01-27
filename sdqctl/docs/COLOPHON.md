@@ -5,6 +5,36 @@
 > documents the dogfooding journey of sdqctl: building an AI orchestration tool
 > using AI orchestration.
 
+## Origin Story
+
+sdqctl began as a proposal document (SDQCTL-PROPOSAL.md) written on January 20, 2026.
+The proposal outlined the problem of manual orchestration of AI-assisted development
+workflows and proposed a solution: a vendor-agnostic CLI with declarative ConversationFiles
+and context controls.
+
+**What the proposal envisioned:**
+
+| Aspect | Proposed |
+|--------|----------|
+| Timeline | 4 weeks |
+| Commands | 4 core (`run`, `cycle`, `flow`, `apply`) |
+| Directives | 17 |
+| Adapters | 4 (copilot, claude, openai, ollama) |
+
+**What actually happened:**
+
+| Aspect | Proposed | Actual | Variance |
+|--------|----------|--------|----------|
+| Timeline | 4 weeks | 8 days | **-75%** |
+| Commands | 4 | 18 | **+350%** |
+| Directives | 17 | 74 | **+335%** |
+| Adapters | 4 | 2 (copilot, mock) | Focus over breadth |
+
+The proposal captured the *correct problem* and *correct solution shape*, but reality
+revealed far more complexity in SDK integration, context management, and workflow patterns.
+
+---
+
 ## The Dogfooding Story
 
 sdqctl was developed in approximately **one week** (January 20-27, 2026), with the
@@ -106,6 +136,64 @@ Final week brought advanced capabilities:
 **Analysis reports**:
 - [`reports/8-cycle-wp-run-analysis-2026-01-27.md`](../reports/8-cycle-wp-run-analysis-2026-01-27.md)
 - [`reports/lsp-phase1-completion-run-2026-01-27.md`](../reports/lsp-phase1-completion-run-2026-01-27.md)
+
+## Key Discoveries
+
+Several unexpected findings emerged during development that shaped the final design:
+
+### Filename Semantics Influence Agent Behavior (Q-001)
+
+The agent interprets workflow filename words as semantic signals. A file named
+`progress-tracker.conv` caused the agent to focus on tracking/reporting rather than
+implementing changes.
+
+**Solution**: `{{WORKFLOW_NAME}}` is excluded from prompts by default. Use
+`{{__WORKFLOW_NAME__}}` for explicit opt-in.
+
+### SDK Abort Events Are Never Emitted (Q-002)
+
+The SDK documents an `ABORT` event type, but it was never observed during stress testing.
+This meant we couldn't rely on SDK signals for loop detection.
+
+**Solution**: Implemented client-side `LoopDetector` with heuristics (identical responses,
+minimal length, reasoning patterns) and a stop file mechanism (`STOPAUTOMATION-{hash}.json`).
+
+### Event Handlers Persist Across Session (Q-014)
+
+SDK `.on()` handlers are never automatically removed. In accumulate mode with N prompts,
+N handlers all fire for each event—causing exponential log duplication.
+
+**Solution**: Register handlers once per session with a flag:
+```python
+if not stats.handler_registered:
+    copilot_session.on(on_event)
+    stats.handler_registered = True
+```
+
+### COMPACT Placement Is Critical (v1 vs v2 workflow)
+
+Cross-run analysis revealed dramatic differences based on COMPACT placement:
+
+| Workflow | Context Peak | Cycles Completed |
+|----------|--------------|------------------|
+| v1 (6 phases, no strategic COMPACT) | 55-58% | 5.5/10 |
+| v2 (9 phases, COMPACT after Phase 6) | **20%** | **10/10** |
+
+This discovery led to the "Extended Workflow Pattern (v2)" documented in
+[PHILOSOPHY.md](PHILOSOPHY.md).
+
+### Bidirectional Flow Emerges
+
+Long-running sessions naturally exhibit two information flows:
+
+```
+FORWARD: humans → decisions → BACKLOG.md → implementation
+BACKWARD: implementation → discoveries → OPEN-QUESTIONS.md → humans
+```
+
+This pattern led to the `CONSULT` directive for pausing with proactive question presentation.
+
+---
 
 ## Lessons Learned
 
