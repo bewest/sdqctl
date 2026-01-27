@@ -21,6 +21,7 @@ Session Modes:
                 autonomous workflows that modify files between cycles.
 """
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -35,6 +36,7 @@ from ..core.conversation import ConversationFile
 from ..core.exceptions import LoopDetected, MissingContextFiles
 from ..core.logging import WorkflowContext, get_logger, set_workflow_context
 from ..core.loop_detector import LoopDetector, generate_nonce
+from ..core.metrics import emit_metrics
 from ..core.progress import WorkflowProgress, agent_response
 from ..core.progress import progress as progress_print
 from ..core.session import Session
@@ -633,6 +635,7 @@ async def _cycle_async(
 
         try:
             session.state.status = "running"
+            session.state.started_at = datetime.now(timezone.utc)
             all_responses = []
 
             # Set workflow context for enhanced logging
@@ -883,7 +886,22 @@ async def _cycle_async(
 
             # Mark complete (session cleanup in finally block)
             session.state.status = "completed"
+            session.state.finished_at = datetime.now(timezone.utc)
             cycle_elapsed = time.time() - cycle_start
+
+            # Emit metrics to session directory
+            if hasattr(ai_adapter, 'get_session_stats'):
+                stats = ai_adapter.get_session_stats(adapter_session)
+                if stats:
+                    emit_metrics(
+                        session_id=session.id,
+                        session_dir=session.session_dir,
+                        started_at=session.state.started_at or datetime.now(timezone.utc),
+                        ended_at=session.state.finished_at,
+                        cycles_completed=conv.max_cycles,
+                        input_tokens=stats.total_input_tokens,
+                        output_tokens=stats.total_output_tokens,
+                    )
 
             # Display completion and write output
             display_completion(
