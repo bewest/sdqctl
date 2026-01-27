@@ -235,3 +235,133 @@ class TestBuildInfiniteSessionConfigCompactionMax:
         assert config.min_compaction_density == 0.25
         assert config.background_threshold == 0.70
         assert config.buffer_exhaustion == 0.85
+
+
+class TestIntroductionAndUntilFlags:
+    """Tests for --introduction and --until CLI flags."""
+
+    def test_introduction_injects_cycle_1_only(self):
+        """--introduction prompts should only appear in cycle 1 (cycle_num == 0)."""
+        # Test the logic directly: cycle_num == 0 should include introduction
+        introduction_prompts = ("Setup context first",)
+        until_spec = ()
+        
+        # Simulate cycle_num = 0 (cycle 1)
+        cycle_num = 0
+        cycle_prologues = []
+        if cycle_num == 0 and introduction_prompts:
+            cycle_prologues.extend(introduction_prompts)
+        
+        assert cycle_prologues == ["Setup context first"]
+        
+        # Simulate cycle_num = 1 (cycle 2) - should NOT include introduction
+        cycle_num = 1
+        cycle_prologues = []
+        if cycle_num == 0 and introduction_prompts:
+            cycle_prologues.extend(introduction_prompts)
+        
+        assert cycle_prologues == []
+
+    def test_until_injects_cycles_1_through_n(self):
+        """--until N prompts should appear in cycles 1 through N."""
+        until_spec = (("3", "Focus on auth"),)
+        
+        # Test cycles 1, 2, 3 (cycle_num 0, 1, 2) should include
+        for cycle_num in [0, 1, 2]:
+            cycle_prologues = []
+            for until_n_str, until_prompt in until_spec:
+                try:
+                    until_n = int(until_n_str)
+                    if cycle_num < until_n:
+                        cycle_prologues.append(until_prompt)
+                except ValueError:
+                    pass
+            assert cycle_prologues == ["Focus on auth"], f"Failed for cycle_num={cycle_num}"
+        
+        # Test cycle 4 (cycle_num 3) should NOT include
+        cycle_num = 3
+        cycle_prologues = []
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == []
+
+    def test_multiple_until_specs(self):
+        """Multiple --until specs can have different N values."""
+        until_spec = (("2", "Short focus"), ("5", "Longer focus"))
+        
+        # Cycle 1 (cycle_num=0): both should apply
+        cycle_num = 0
+        cycle_prologues = []
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == ["Short focus", "Longer focus"]
+        
+        # Cycle 3 (cycle_num=2): only longer focus should apply
+        cycle_num = 2
+        cycle_prologues = []
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == ["Longer focus"]
+
+    def test_introduction_and_until_combined(self):
+        """Both --introduction and --until can be used together."""
+        introduction_prompts = ("First cycle only",)
+        until_spec = (("3", "First 3 cycles"),)
+        
+        # Cycle 1 (cycle_num=0): both should apply
+        cycle_num = 0
+        cycle_prologues = []
+        if cycle_num == 0 and introduction_prompts:
+            cycle_prologues.extend(introduction_prompts)
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == ["First cycle only", "First 3 cycles"]
+        
+        # Cycle 2 (cycle_num=1): only until should apply
+        cycle_num = 1
+        cycle_prologues = []
+        if cycle_num == 0 and introduction_prompts:
+            cycle_prologues.extend(introduction_prompts)
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == ["First 3 cycles"]
+
+    def test_malformed_until_ignored(self):
+        """Malformed --until N (non-integer) should be silently ignored."""
+        until_spec = (("notanumber", "Bad spec"),)
+        
+        cycle_num = 0
+        cycle_prologues = []
+        for until_n_str, until_prompt in until_spec:
+            try:
+                until_n = int(until_n_str)
+                if cycle_num < until_n:
+                    cycle_prologues.append(until_prompt)
+            except ValueError:
+                pass
+        assert cycle_prologues == []

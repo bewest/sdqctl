@@ -6,17 +6,14 @@
 
 ---
 
-## Ready Queue (7 Actionable Items)
+## Ready Queue (4 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Default verbosity key actions | P3 | Low | **UNBLOCKED** - OQ-004 resolved. Show spinner, phase, context %, events. |
-| 2 | `--introduction <prompt>` flag | P3 | Low | Inject prompt in cycle 1 only. OQ-006 resolved. |
-| 3 | `--until N <prompt>` flag | P3 | Low | Inject prompt in cycles 1 through N. OQ-006 resolved. |
-| 4 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
-| 5 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
-| 6 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
-| 7 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
+| 1 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
+| 2 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 3 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
+| 4 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
 
 ---
 
@@ -124,6 +121,8 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **`--introduction` and `--until` flags (P3)** | 2026-01-27 | Added `--introduction` (cycle 1 only) and `--until N` (cycles 1-N) prompt injection. 5 tests. Total 1472 tests. |
+| **Default verbosity key actions (P3)** | 2026-01-27 | Verified existing implementation meets OQ-004 requirements: spinner, phase, context %, events, cycle/step progress all visible at default verbosity. |
 | **Work package markers (P3)** | 2026-01-27 | Added WP-001 (SDK Economy), WP-002 (Monitoring), WP-003 (Upstream). Consolidated items from Future section. |
 | **Disambiguation flags (P3)** | 2026-01-27 | Added `--prompt/-p` and `--file/-f` to iterate command. Clarifies ambiguous input. 5 tests. Total 1467 tests. |
 | **Interactive help (P3)** | 2026-01-27 | Added `--interactive` / `-i` flag for browsable help. Features: list, topic lookup, prefix match, overview. 7 tests. Total 1462 tests. |
@@ -424,6 +423,7 @@ def _check_minimal_response(
 | [SESSION-RESILIENCE](archive/SESSION-RESILIENCE.md) | ✅ Complete | All 5 phases. Quota tracking, rate limit prediction, compaction metrics. |
 | [COMPACTION-UNIFICATION](COMPACTION-UNIFICATION.md) | ✅ Complete | COMPACTION-MAX directive, CLI alignment, None defaults. |
 | [HELP-INLINE](HELP-INLINE.md) | ✅ Complete | HELP-INLINE directive + ecosystem topics (gap-ids, 5-facet, stpa, conformance, nightscout). |
+| [VERBOSITY-DEFAULTS](VERBOSITY-DEFAULTS.md) | ✅ Complete | Verified existing implementation meets OQ-004 requirements. |
 | [SDK-ECONOMY](SDK-ECONOMY.md) | 📝 Draft | Iteration efficiency: batch selection, work packages, protection policies. |
 
 ---

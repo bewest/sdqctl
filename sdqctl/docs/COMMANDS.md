@@ -128,6 +128,12 @@ sdqctl iterate "Setup context" workflow.conv "Final summary"
 # NOTE: Use -- before targets when using --- to prevent Click parsing errors
 sdqctl iterate -n 2 -- "First task" --- workflow.conv --- "Final task"
 
+# Introduction prompt (cycle 1 only)
+sdqctl iterate workflow.conv -n 5 --introduction "Start by exploring the codebase"
+
+# Until prompt (cycles 1-3 of a 10 cycle run)
+sdqctl iterate workflow.conv -n 10 --until 3 "Focus on authentication module"
+
 # From pre-rendered JSON
 sdqctl iterate --from-json rendered.json
 
@@ -143,6 +149,8 @@ sdqctl render iterate workflow.conv --json | jq '...' | sdqctl iterate --from-js
 | `--from-json` | Execute from rendered JSON |
 | `--checkpoint-dir` | Checkpoint directory |
 | `--event-log` | Export SDK events to JSONL |
+| `--introduction` | Inject prompt in cycle 1 only (repeatable) |
+| `--until N PROMPT` | Inject PROMPT in cycles 1 through N |
 | `--no-infinite-sessions` | Disable SDK native compaction |
 | `--compaction-min` | Skip compaction below this % (default: 30) |
 | `--compaction-threshold` | Background compaction threshold % (default: 80) |

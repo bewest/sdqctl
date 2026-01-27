@@ -1,13 +1,31 @@
 # Proposal: Default Verbosity Key Actions
 
-> **Status**: Draft  
+> **Status**: Complete  
 > **Priority**: P3  
-> **Blocks**: OQ-004  
-> **Created**: 2026-01-26
+> **Blocks**: OQ-004 (resolved)  
+> **Created**: 2026-01-26  
+> **Completed**: 2026-01-27
 
 ---
 
-## Problem Statement
+## Resolution
+
+Verified that existing implementation already meets all OQ-004 requirements:
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Spinner | Rich Progress SpinnerColumn |
+| Phase name | "Sending...", "Complete", "Compacting..." |
+| Context % | Included in `_format_position()` output |
+| Key events | Checkpoints, compaction, event export |
+| Workflow | Startup message shows workflow name + mode |
+| Cycle/step progress | `Cycle 1/5...`, `Prompt 1/4 (ctx: 23%)` |
+
+The `progress()` function in `core/progress.py` outputs to stdout by default (not gated by verbosity). Only `--quiet` or `--json-errors` suppresses progress output.
+
+---
+
+## Original Problem Statement
 
 At default verbosity (`-v 0`), sdqctl produces almost no output during workflow execution. Users may not realize:
 - That anything is happening

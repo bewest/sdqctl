@@ -24,9 +24,9 @@ Questions that have been answered and can be routed to work queues.
 
 | ID | Question | Answer | Answered | Routed To |
 |----|----------|--------|----------|-----------|
-| OQ-006 | What is the `--once` flag use case? | Superseded by `--introduction` (cycle 1) and `--until N` (cycles 1-N) | 2026-01-27 | Ready Queue #2, #3 |
-| OQ-005 | What should the performance benchmark suite measure? | All: code perf + workflow timing + SDK latency (comprehensive) | 2026-01-27 | Ready Queue #5 |
-| OQ-004 | What output should appear at default verbosity? | Spinner, phase name, context %, key events, workflow, cycle/step progress | 2026-01-27 | Ready Queue #1 |
+| OQ-006 | What is the `--once` flag use case? | Superseded by `--introduction` (cycle 1) and `--until N` (cycles 1-N) | 2026-01-27 | ✅ Complete (2026-01-27) |
+| OQ-005 | What should the performance benchmark suite measure? | All: code perf + workflow timing + SDK latency (comprehensive) | 2026-01-27 | Ready Queue #2 |
+| OQ-004 | What output should appear at default verbosity? | Spinner, phase name, context %, key events, workflow, cycle/step progress | 2026-01-27 | ✅ Complete (2026-01-27) |
 | OQ-001 | CONSULT Phase 4 timeout behavior? | Fail with clear error message | 2026-01-26 | ✅ Complete (2026-01-26) |
 | OQ-002 | claude/openai adapters scope? | Stubs with NotImplementedError | 2026-01-26 | ✅ Complete (2026-01-26) |
 | OQ-003 | StepExecutor priority? | Defer until after Q-020 (P0) | 2026-01-26 | ✅ Reassessed (2026-01-26): ~100 lines shared, extracted helpers, full StepExecutor deferred |

@@ -125,6 +125,11 @@ console = Console()
               help="Disable automatic stop file instructions")
 @click.option("--stop-file-nonce", default=None,
               help="Override stop file nonce (random if not set)")
+@click.option("--introduction", "introduction_prompts", multiple=True,
+              help="Inject prompt in cycle 1 only (can be repeated)")
+@click.option("--until", "until_spec", nargs=2, multiple=True,
+              metavar="N PROMPT",
+              help="Inject PROMPT in cycles 1 through N (e.g., --until 3 'Setup context')")
 @click.pass_context
 def iterate(
     ctx: click.Context,
@@ -160,6 +165,8 @@ def iterate(
     buffer_threshold: Optional[int],
     no_stop_file_prologue: bool,
     stop_file_nonce: Optional[str],
+    introduction_prompts: tuple[str, ...],
+    until_spec: tuple[tuple[str, str], ...],
 ) -> None:
     """Execute a workflow with optional multi-cycle iteration.
 
@@ -205,6 +212,14 @@ def iterate(
     \b
     # Disambiguate when file doesn't exist yet
     sdqctl iterate --file new-workflow.conv
+
+    \b
+    # Introduction prompt (cycle 1 only)
+    sdqctl iterate workflow.conv -n 5 --introduction "Start by exploring the codebase"
+
+    \b
+    # Until prompt (cycles 1-3 of a 10 cycle run)
+    sdqctl iterate workflow.conv -n 10 --until 3 "Focus on authentication module"
     """
     # Merge explicit prompts/files with positional targets
     merged_targets = merge_explicit_with_targets(
@@ -381,7 +396,9 @@ def iterate(
         no_infinite_sessions=no_infinite_sessions,
         compaction_threshold=compaction_threshold,
         compaction_max=effective_compaction_max,
-        json_errors=json_errors
+        json_errors=json_errors,
+        introduction_prompts=introduction_prompts,
+        until_spec=until_spec,
     ))
 
 
@@ -417,6 +434,8 @@ async def _cycle_async(
     compaction_threshold: Optional[int] = None,
     compaction_max: Optional[int] = None,
     json_errors: bool = False,
+    introduction_prompts: tuple[str, ...] = (),
+    until_spec: tuple[tuple[str, str], ...] = (),
 ) -> None:
     """Execute multi-cycle workflow with session management.
 
@@ -665,6 +684,20 @@ async def _cycle_async(
                     cycle_vars["CYCLE_TOTAL"] = str(conv.max_cycles)
                     cycle_vars["MAX_CYCLES"] = str(conv.max_cycles)
 
+                    # Build cycle-specific prologues from --introduction and --until
+                    cycle_prologues: list[str] = []
+                    # Introduction prompts: inject in cycle 1 only (cycle_num == 0)
+                    if cycle_num == 0 and introduction_prompts:
+                        cycle_prologues.extend(introduction_prompts)
+                    # Until prompts: inject in cycles 1 through N
+                    for until_n_str, until_prompt in until_spec:
+                        try:
+                            until_n = int(until_n_str)
+                            if cycle_num < until_n:  # cycle_num is 0-based, N is 1-based count
+                                cycle_prologues.append(until_prompt)
+                        except ValueError:
+                            pass  # Skip malformed --until specs
+
                     # Session mode: fresh = new session each cycle
                     if session_mode == "fresh" and cycle_num > 0:
                         adapter_session = await recreate_fresh_session(
@@ -704,6 +737,14 @@ async def _cycle_async(
                             session.context.get_context_content()
                             if cycle_num == 0 else ""
                         )
+
+                    # Prepend cycle-specific prologues (--introduction, --until)
+                    if cycle_prologues:
+                        cycle_prologue_text = "\n\n".join(cycle_prologues)
+                        if context_content:
+                            context_content = f"{cycle_prologue_text}\n\n{context_content}"
+                        else:
+                            context_content = cycle_prologue_text
 
                     # Use steps if available, fallback to prompts for backward compat
                     steps_to_process = conv.steps if conv.steps else [
