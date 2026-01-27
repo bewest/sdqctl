@@ -31,6 +31,7 @@ from .commands.run import run
 from .commands.sessions import sessions
 from .commands.status import status
 from .commands.verify import verify
+from .commands.workspace import workspace
 from .core.logging import setup_logging
 from .core.progress import set_quiet, set_timestamps
 
@@ -106,6 +107,7 @@ cli.add_command(refcat)
 cli.add_command(artifact)
 cli.add_command(sessions)
 cli.add_command(help_cmd)
+cli.add_command(workspace)
 
 
 # Deprecated alias for 'cycle' command
