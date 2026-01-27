@@ -6,14 +6,15 @@
 
 ---
 
-## Ready Queue (4 Actionable Items)
+## Ready Queue (5 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
-| 2 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
-| 3 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
-| 4 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
+| 1 | Agent output on stdout by default | P3 | Low | User request. Print agent responses to stdout for observability. May need `--quiet` to suppress. |
+| 2 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
+| 3 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 4 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
+| 5 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
 
 ---
 
@@ -112,7 +113,6 @@ Items not yet assigned to work packages:
 
 | Item | Source | Notes |
 |------|--------|-------|
-| Agent output on stdout by default | User request | Agent responses not visible even with `-vvv`. Should print agent output to stdout by default for observability. **Context**: Users can't see what the agent is doing/thinking without this. May need `--quiet` to suppress if too verbose. |
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
 
 ---
