@@ -1,6 +1,3 @@
-# External dependencies (submodules, cloned repos)
-externals/
-
 # =============================================================================
 # sdqctl - Software Defined Quality Control
 # =============================================================================
@@ -18,20 +15,30 @@ __pycache__/
 dist/
 build/
 
-# Virtual environment (sdqctl venv when installed locally)
-sdqctl/lib/
-sdqctl/bin/
-sdqctl/include/
-sdqctl/lib64
-sdqctl/pyvenv.cfg
+# Virtual environment
+.venv/
+venv/
+lib/
+lib64
+include/
+pyvenv.cfg
+
+# Test logs (generated during stress tests)
+loop-test-logs/
+consult-test-logs/
+
+# External dependencies (submodules, cloned repos)
+externals/
 
 # =============================================================================
 # Editor/IDE
 # =============================================================================
 *.swp
 *.swo
+*.swn
 *~
 .vscode/
 .idea/
 
+# Dev artifacts
 *.log

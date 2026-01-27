@@ -1,1485 +1,948 @@
-# copilot agent - A Proposal for Orchestrated AI-Assisted Development
+# sdqctl
 
-## Overview
-
-GitHub Copilot CLI has an incredibly rich interactive mode, but lacks a streamlined way to orchestrate the coding agent from the command line for automation, scripting, and CI/CD integration. This proposal introduces the `copilot agent` command suite that bridges the gap between interactive AI assistance and traditional CLI automation workflows.
-
-**Vision:** `copilot agent apply` should work as a cross between Dockerfile, `git rebase`/`git bisect`, and `pandoc`—enabling declarative, reproducible, and scriptable AI-assisted development workflows.
-
-## Real-World Evidence: The Problem Today
-
-### Manual Orchestration Across Multiple Focused Contexts
-
-Analysis of the [Nightscout cgm-remote-monitor](https://github.com/nightscout/cgm-remote-monitor) development workflow reveals a sophisticated pattern: **developers purposefully use multiple focused AI sessions for different components**, but must manually orchestrate transitions, checkpoints, and aggregation.
-
-**Why Multiple Contexts Are Necessary:**
-
-For a project with 6 major components requiring testing/auditing:
-- **6 focused contexts** - One deep-dive session per component (bounded scope, better accuracy)
-- **3 passes per component** - Work → Accuracy check → Tool-assisted verification
-- **18 total work sessions** - Managing cognitive load across large domains
-- **1+ summary sessions** - Aggregate findings from all 18 sessions
-
-**Total: ~19+ purposeful, bounded contexts** that need orchestration.
-
-**Git History Evidence** (from recent development sessions):
-
-```
-Session dd62849e-ed2a:
-  20:11:29 - "Transitioned from Plan to Build mode"
-             ↓ (manual intervention required)
-  20:25:36 - "Introduce warning timeouts..." (intermediate checkpoint)
-             ↓ (manual intervention required)
-  20:26:32 - "Saved progress at the end of the loop"
-
-Session a10b5171-2266:
-  20:39:16 - "Transitioned from Plan to Build mode"
-             ↓ (manual intervention required)
-  20:51:09 - "Add test instrumentation..." (intermediate checkpoint)
-             ↓ (manual intervention required)
-  20:51:41 - "Saved progress at the end of the loop"
-
-...this pattern repeats across 6+ sessions spanning multiple days
-```
-
-**The Manual Orchestration Process:**
-1. **Manually** start session 1 for Component A (audit pass)
-2. **Manually** transition through Plan → Build modes
-3. **Manually** commit checkpoint "Saved progress at end of loop"
-4. **Manually** start session 2 for Component A (accuracy pass)
-5. **Manually** transition and checkpoint again
-6. **Manually** start session 3 for Component A (verification pass)
-7. **Repeat steps 1-6 for Components B, C, D, E, F** (18 total sessions)
-8. **Manually** start session 19 to aggregate all findings
-9. **Manually** copy/paste context between sessions
-
-**Pain Points Identified:**
-- **20+ manual commits** saying "Saved progress at the end of the loop"
-- **Manual sequencing** across 18+ purposeful contexts
-- **Manual mode transitions** within each session (Plan → Build)
-- **Manual context aggregation** - no way to collect results automatically
-- **Not reproducible** - can't re-run the same 19-session workflow
-- **Not parallelizable** - must sequence sessions manually even when independent
-- **Not scriptable** - can't integrate into CI/CD or automation
-
-### How `copilot agent apply` and `copilot agent batch` Would Solve This
-
-**The key insight:** Multiple contexts are CORRECT for managing cognitive load, but orchestration should be AUTOMATED.
-
-#### Example 1: Single-Component Multi-Pass Workflow
-
-```bash
-# Automated 3-pass workflow for one component
-copilot agent apply ./workflows/audit-websocket-component.copilot
-```
-
-```dockerfile
-# workflows/audit-websocket-component.copilot
-MODEL claude-sonnet-4.5
-MODE audit
-MAX-CYCLES 2
-
-# Pass 1: Deep analysis
-PROMPT Audit the WebSocket component for security, performance, and correctness issues
-@lib/websocket/
-@tests/websocket*.test.js
-
-# Pass 2: Tool-assisted verification
-RUN npm test -- websocket
-PROMPT Analyze test results and identify gaps or failures
-```
-
-#### Example 2: Multi-Component Orchestration with Aggregation
-
-```bash
-# Orchestrate 18 focused sessions + 1 summary automatically
-copilot agent batch \
-  --parallel 3 \
-  --format jsonl \
-  workflows/audit-*.copilot \
-  --output audit-results.jsonl
-
-# Then aggregate findings
-copilot agent apply "Summarize all audit findings" \
-  --mode read-only \
-  --input audit-results.jsonl \
-  --output AUDIT-SUMMARY.md
-```
-
-```bash
-# Directory structure
-workflows/
-├── audit-websocket.copilot      # Component 1 (3 passes internally)
-├── audit-api-v3.copilot          # Component 2 (3 passes internally)
-├── audit-authentication.copilot  # Component 3 (3 passes internally)
-├── audit-data-pipeline.copilot   # Component 4 (3 passes internally)
-├── audit-notifications.copilot   # Component 5 (3 passes internally)
-└── audit-plugins.copilot         # Component 6 (3 passes internally)
-```
-
-Each `.copilot` file encodes the 3-pass pattern:
-```dockerfile
-# workflows/audit-websocket.copilot
-MODEL claude-sonnet-4.5
-MODE audit
-MAX-CYCLES 2
-
-# Pass 1: Work (audit the component)
-CWD ./lib/websocket
-ADD-DIR ./lib/websocket
-ADD-DIR ./tests
-PROMPT Audit WebSocket implementation for security and correctness
-@lib/websocket/
-@tests/
-
-# Pass 2: Accuracy (verify findings with code review)
-PROMPT Cross-reference findings with test coverage and documentation
-
-# Pass 3: Tool-assisted verification (run tests)
-RUN npm test -- websocket
-PROMPT Document test gaps and quirks in structured format (JSON)
-```
-
-#### Example 3: Parallelized Multi-Component Testing
-
-```bash
-# Run 6 component test suites in parallel (each with 3 internal passes)
-# Automatically aggregate results
-copilot agent batch \
-  --parallel 6 \
-  workflows/test-*.copilot \
-  --output test-results.jsonl
-
-# Then summarize findings from all sessions
-copilot agent apply "Summarize test findings and identify patterns" \
-  --mode read-only \
-  --input test-results.jsonl \
-  --output TEST-SUMMARY.md
-
-# Equivalent to running 18+ sessions, but automated
-```
-
-#### Example 4: Multi-Faceted Analysis (Real Pattern from Nightscout Ecosystem)
-
-**Observed pattern from git history:** When auditing each subcomponent (Dexcom G6/G7, Libre CGM, xDrip+, oref0, etc.), the developer sequentially updates **5 different facets**:
-
-```
-Commit: "Add detailed documentation for Dexcom G6 and G7 Bluetooth protocols"
-Files touched:
-  - mapping/cross-project/terminology-matrix.md    (terminology facet)
-  - traceability/requirements.md                   (requirements facet)  
-  - traceability/gaps.md                           (gaps facet)
-  - docs/.../dexcom-g6-g7-protocol-deep-dive.md   (deep dive facet)
-  
-Commit: "Update insulin curve models and associated documentation"
-Files touched:
-  - mapping/cross-project/terminology-matrix.md
-  - traceability/requirements.md
-  - traceability/gaps.md
-  - docs/.../insulin-curve-models-deep-dive.md
-```
-
-**Manual process** (what's happening today):
-- Audit Dexcom protocols → Update 5 files manually → Commit
-- Audit Libre protocols → Update same 5 files manually → Commit
-- Audit xDrip+ → Update same 5 files manually → Commit
-- Repeat for 10+ subcomponents
-- **No way to ensure consistency across facets**
-- **No automation for faceted analysis**
-
-**With ConversationFiles** (automated faceted analysis):
-
-```bash
-# Audit one subcomponent across all 5 facets
-copilot agent apply ./workflows/audit-cgm-dexcom-g6.copilot
-
-# Or audit all CGM subcomponents in parallel
-copilot agent batch \
-  --parallel 4 \
-  workflows/audit-cgm-*.copilot
-```
-
-```dockerfile
-# workflows/audit-cgm-dexcom-g6.copilot
-MODEL claude-sonnet-4.5
-MODE full
-MAX-CYCLES 2
-
-# Facet 1: Terminology mapping
-PROMPT Analyze Dexcom G6 BLE protocol and update terminology matrix
-@mapping/cross-project/terminology-matrix.md
-@docs/research/dexcom-g6-protocol.md
-
-# Facet 2: Gap identification  
-PROMPT Identify implementation gaps for Dexcom G6 across AID systems
-@traceability/gaps.md
-
-# Facet 3: Requirements extraction
-PROMPT Extract formal requirements for Dexcom G6 integration
-@traceability/requirements.md
-
-# Facet 4: Traceability verification
-RUN make traceability
-PROMPT Verify traceability matrices are updated for Dexcom G6
-@traceability/assertion-trace.json
-@traceability/coverage-analysis.json
-
-# Facet 5: Progress tracking
-PROMPT Update progress tracking for Dexcom G6 analysis completion
-@progress.md
-```
-
-**Impact:** Analyzing 10 CGM subcomponents across 5 facets = 50 manual file updates becomes:
-
-```bash
-# One command, parallel execution, automated consistency
-copilot agent batch --parallel 4 workflows/audit-cgm-*.copilot
-# audit-cgm-dexcom-g6.copilot
-# audit-cgm-dexcom-g7.copilot
-# audit-cgm-libre-2.copilot
-# audit-cgm-libre-3.copilot
-# ... etc
-```
-
-**Benefits of This Approach:**
-- ✅ **Purposeful context boundaries** - Each component gets focused session (cognitive load management)
-- ✅ **Automated orchestration** - No manual session starting/sequencing
-- ✅ **Automated checkpointing** - Tool manages transitions, not developer
-- ✅ **Automated aggregation** - Results collected automatically across sessions
-- ✅ **Parallelization** - Independent components run simultaneously
-- ✅ **Reproducible** - Same workflow runs identically every time
-- ✅ **Scriptable** - Can run in CI/CD, Makefiles, or automation
-- ✅ **Version-controlled** - All 19 workflows tracked in git
-- ✅ **Team-wide** - Anyone can run the same multi-session workflow
-
-**Impact:** What required manually orchestrating 19+ sessions over multiple days becomes:
-```bash
-make audit  # One command, 18 parallel sessions + 1 summary
-```
-
-The multiple contexts remain (that's GOOD), but the orchestration becomes automated and reproducible.
+**Software Defined Quality Control** - Vendor-agnostic CLI for orchestrating AI-assisted development workflows.
 
 ## Motivation
 
-### Current Limitations
-- No way to automate Copilot interactions in scripts or CI/CD pipelines
-- Cannot orchestrate multiple related tasks across different components
-- Difficult to version control and share conversation patterns
-- No support for iterative batch processing across codebases
+Interactive AI coding assistants like GitHub Copilot CLI excel at **focused, single-spike work**—you enter plan mode, iterate through plan/do cycles, and emerge with a working feature. But real projects require **sustained multi-cycle work**: auditing 15 components, migrating 40 files, or iterating on a complex feature over 5-10 cycles.
 
-### Desired Capabilities
-- Run Copilot conversations from the command line non-interactively
-- Define reusable conversation patterns in version-controlled files
-- Orchestrate AI-assisted tasks across multiple directories/components
-- Integrate Copilot into build systems, testing workflows, and automation scripts
-- Create reproducible development workflows that can be shared across teams
+Manual orchestration means:
 
-## Proposal
+- **20+ sessions** with repetitive setup
+- **Manual context management** (when to compact? when to start fresh?)
+- **No repeatability** (can't re-run the same workflow reliably)
+- **No mid-run steering** (can't inject new priorities without stopping)
 
-This proposal introduces three complementary features:
+**sdqctl bridges this gap** with the `iterate` command—the primary workflow for AI-assisted development:
 
-### 1. ConversationFile Format (`.copilot` files)
-A declarative file format (similar to Dockerfile) that encodes Copilot conversations using slash commands as keywords. These files enable:
-- Version-controlled conversation patterns
-- Reusable workflows across projects
-- Team-wide standardization of AI-assisted tasks
-- Composition and orchestration of complex workflows
-
-### 2. Agent Command Suite (`copilot agent`)
-A unified command structure for orchestrating AI workflows:
-- `copilot agent plan` - Strategic planning (like `/plan`)
-- `copilot agent apply` - Execute workflows declaratively (like `kubectl apply`)
-- `copilot agent checkpoint` - Manage session checkpoints
-- `copilot agent compact` - Trigger context compaction
-- `copilot agent batch` - Execute multiple workflows in parallel
-
-### 3. Context & Compaction Controls
-Fine-grained control over context windows, compaction triggers, and continuation strategies for long-running workflows.
-
-## Proposed Commands
-
-### `copilot agent apply [options] <prompt|conversationfile>`
-Apply a conversational workflow or ConversationFile non-interactively. Similar to `kubectl apply` - declarative, idempotent execution.
-
-**Options:**
-- `--max-cycles <n>` - Maximum conversation cycles to run (default: 1, use -1 for unlimited)
-- `--interactive` - Drop into interactive mode after execution
-- `--format <format>` - Input/output format: text, json, jsonl, markdown (default: text)
-- `--output <file|->` - Write output to file or stdout (default: stdout)
-- `--input <file|->` - Read additional input from file or stdin
-- `--prologue <file|->` - Prepend additional context from file or stdin to prompt
-- `--epilogue <file|->` - Append additional context from file or stdin to prompt
-- `--header <file|->` - Prepend content to output (e.g., metadata, timestamp, disclaimer)
-- `--footer <file|->` - Append content to output (e.g., citations, signature, links)
-- `--continue-on-error` - Continue execution even if errors occur
-- `--dry-run` - Show what would be done without executing
-- `--mode <mode>` - Execution mode: full, read-only, docs-only, tests-only, audit (default: full)
-- `--allow-path <pattern>` - Allow modifications only to files matching pattern (can be used multiple times)
-- `--deny-path <pattern>` - Deny access to files matching pattern (can be used multiple times)
-- `--deny-file <file>` - Deny access to specific file (can be used multiple times)
-
-**Note:** Default of `--max-cycles=1` ensures predictable, bounded execution suitable for scripting and automation. Use higher values when iterative refinement is needed.
-
-**Examples:**
 ```bash
-# Execute a simple prompt (single cycle)
-copilot agent apply "Add error handling to all API endpoints"
-
-# Execute a ConversationFile
-copilot agent apply ./workflows/audit-component.copilot
-
-# Prologue and epilogue add context to the prompt
-make verify-docs | copilot agent apply ./workflows/update-docs.copilot \
-  --prologue "Current date: $(date)" \
-  --epilogue -
-
-# Read-only audit mode - analyze code but make no changes
-copilot agent apply "Document all known bugs and quirks in the authentication module" \
-  --mode read-only \
-  --format markdown \
-  --output docs/known-issues.md
-
-# Documentation-only mode - can only modify docs
-copilot agent apply "Update documentation to reflect recent API changes" \
-  --mode docs-only \
-  --yolo
-
-# Tests-only mode - can only modify test files
-copilot agent apply "Add missing test cases for edge conditions" \
-  --mode tests-only \
-  --yolo
-
-# Audit mode - read code and generate reports, no modifications
-copilot agent apply "Audit security vulnerabilities and document findings" \
-  --mode audit \
-  --output security-audit-$(date +%Y%m%d).md
-
-# Fine-grained allow patterns - only specific directories
-copilot agent apply "Refactor utility functions" \
-  --allow-path "src/utils/**" \
-  --allow-path "tests/utils/**" \
-  --yolo
-
-# Header and footer add content to the output
-copilot agent apply "Generate API documentation" \
-  --format markdown \
-  --output api-docs.md \
-  --header <(echo "# API Documentation\n_Generated on $(date)_\n") \
-  --footer <(echo "\n---\n_This documentation was generated by GitHub Copilot CLI_")
-
-# Add metadata header to JSON output
-copilot agent apply "Audit security vulnerabilities" \
-  --format json \
-  --output security-report.json \
-  --header <(jq -n --arg date "$(date -Iseconds)" '{generatedAt: $date, version: "1.0"}')
-
-# JSON input/output for programmatic use
-echo '{"prompt": "Fix the bug", "context": ["main.js"]}' | \
-  copilot agent apply --format json --input - --output results.json
-
-# Dry run to preview what would happen
-copilot agent apply ./workflows/refactor.copilot --dry-run
-
-# Allow iterative refinement for complex tasks
-copilot agent apply "Refactor auth module" --max-cycles=5
-
-# Protect critical files during automated refactoring
-copilot agent apply "Refactor database layer" \
-  --deny-file package.json \
-  --deny-file .env \
-  --deny-path "*.key" \
-  --yolo
-
-# Drop into interactive mode after execution
-copilot agent apply ./MyConversation --interactive
+# Primary workflow: iterate with context injection
+sdqctl iterate backlog.conv -n 8 \
+  --session-mode accumulate \
+  --introduction "Focus on P0-P2 Ready Queue items" \
+  --prologue proposals/LIVE-BACKLOG.md
 ```
 
-### `copilot agent plan <conversationfile|prompt>`
-Analyze a ConversationFile or prompt and output an execution plan without making any changes. Leverages the existing `/plan` slash command functionality. Similar to `--dry-run` but focused on strategic planning rather than tactical step preview.
+**Key patterns**:
+- `--introduction` — First-cycle-only warmup (goals, focus areas)
+- `--prologue` — Re-read before every cycle (live priorities, status updates)
+- `LIVE-BACKLOG.md` — Edit during spot checks to steer longer runs
 
-**Purpose:**
-- Preview what the conversation would accomplish
-- Understand the scope before execution
-- Review proposed changes and approach
-- Generate implementation plans for complex tasks
+**Session modes** control context lifecycle:
+- `accumulate` — Context grows; compact only at limit (iterative refinement, 70% of use)
+- `compact` — Summarize after each cycle (long workflows, token economy)  
+- `fresh` — New session each cycle, reload files (autonomous editing)
 
-**Options:**
-- `--format <format>` - Output format: text, json, markdown (default: text)
-- `--output <file|->` - Write plan to file or stdout
-- `--header <file|->` - Prepend content to output
-- `--footer <file|->` - Append content to output
-- `--interactive` - Drop into interactive mode to refine the plan
+## Features
 
-**Difference from `--dry-run`:**
-- `copilot agent plan` - High-level strategic plan: "What will be accomplished?"
-- `copilot agent apply --dry-run` - Low-level tactical preview: "What specific actions will be taken?"
+### Core Capabilities
+- 🔄 **Declarative workflows** - ConversationFile format (.conv) for reproducible AI interactions
+- 🔌 **Vendor agnostic** - Swap AI providers without changing workflows
+- 📊 **Context management** - Automatic tracking, compaction, and token optimization
+- ✅ **Checkpointing** - Save/resume long-running workflows
+- ⚡ **Batch execution** - Parallel workflow execution across components
 
-**Examples:**
+### Commands
+
+**Primary command:**
+
+| Command | Purpose | Documentation |
+|---------|---------|---------------|
+| `iterate` | Multi-cycle workflow execution (primary) | [COMMANDS.md](docs/COMMANDS.md#iterate) |
+
+**Advanced commands:**
+
+| Command | Purpose | Documentation |
+|---------|---------|---------------|
+| `run` | Single execution (deprecated, alias for `iterate -n 1`) | [COMMANDS.md](docs/COMMANDS.md#run) |
+| `flow` | Batch/parallel workflows | [COMMANDS.md](docs/COMMANDS.md#flow) |
+| `apply` | Apply workflow to multiple components | [COMMANDS.md](docs/COMMANDS.md#apply) |
+| `render` | Preview prompts without AI execution | [COMMANDS.md](docs/COMMANDS.md#render) |
+| `verify` | Static verification (refs, links, traceability) | [COMMANDS.md](docs/COMMANDS.md#verify) |
+| `refcat` | Extract file content with line precision | [COMMANDS.md](docs/COMMANDS.md#refcat) |
+| `sessions` | Session management (list, resume, cleanup) | [COMMANDS.md](docs/COMMANDS.md#sessions) |
+| `status` | System and adapter status | [COMMANDS.md](docs/COMMANDS.md#status) |
+| `validate` | Syntax validation for .conv files | [COMMANDS.md](docs/COMMANDS.md#validate) |
+| `init` | Initialize sdqctl in a project | [COMMANDS.md](docs/COMMANDS.md#init) |
+| `help` | Built-in help system | [COMMANDS.md](docs/COMMANDS.md#help) |
+
+### Directives
+
+ConversationFiles support 40+ directives for workflow control. See [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) for complete documentation.
+
+Key directive categories:
+- **Context**: `CONTEXT`, `REFCAT`, `LSP` - inject file content and type definitions
+- **Flow Control**: `PROMPT`, `CHECKPOINT`, `COMPACT`, `VERIFY` - structure workflow execution
+- **Session**: `SESSION-NAME`, `SESSION-MODE`, `CONSULT` - manage AI sessions
+- **Output**: `OUTPUT-FILE`, `OUTPUT-FORMAT`, `ALLOW-SHELL` - control results
+
+### Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [GETTING-STARTED.md](docs/GETTING-STARTED.md) | Installation and first workflow |
+| [COMMANDS.md](docs/COMMANDS.md) | Complete CLI reference |
+| [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) | All .conv directives |
+| [PHILOSOPHY.md](docs/PHILOSOPHY.md) | Design principles, terminology |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure, extension points |
+| [CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) | Token optimization strategies |
+| [ADAPTERS.md](docs/ADAPTERS.md) | AI provider configuration |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [COLOPHON.md](docs/COLOPHON.md) | How sdqctl was built (dogfooding story) |
+
+## Installation
+
 ```bash
-# Preview what a conversation would accomplish
-copilot agent plan ./workflows/refactor-auth.copilot
+# Basic installation
+pip install -e .
 
-# Output as JSON for further processing
-copilot agent plan ./workflows/update-tests.copilot --format json
+# With Copilot SDK support
+pip install -e ".[copilot]"
 
-# Plan from a prompt
-copilot agent plan "Add authentication to the API"
-
-# Generate markdown plan for review
-copilot agent plan "Migrate to TypeScript" --format markdown --output migration-plan.md
-
-# Add metadata to plan output
-copilot agent plan "Modernize codebase" \
-  --format markdown \
-  --output modernization-plan.md \
-  --header <(cat << EOF
----
-title: Modernization Plan
-author: GitHub Copilot
-date: $(date +%Y-%m-%d)
-status: draft
----
-
-EOF
-) \
-  --footer <(echo -e "\n## Next Steps\n- Review this plan\n- Get team approval\n- Execute with \`copilot agent apply\`")
-
-# Refine the plan interactively before execution
-copilot agent plan ./workflows/big-refactor.copilot --interactive
+# With all AI providers
+pip install -e ".[all]"
 ```
 
-### `copilot agent batch [options] <conversationfiles...>`
-Execute multiple ConversationFiles in sequence or parallel, with support for batching and aggregation.
+## Quick Start
 
-**Options:**
-- `--parallel <n>` - Run up to n conversations in parallel
-- `--max-cycles <n>` - Maximum cycles per conversation (default: 1)
-- `--format <format>` - Output format: json, jsonl (default: jsonl)
-- `--output <file|->` - Write results to file or stdout
-- `--header <file|->` - Prepend content to output (applied once, before all results)
-- `--footer <file|->` - Append content to output (applied once, after all results)
-- `--stop-on-error` - Stop execution on first error
-
-**Note:** When running multiple conversations (especially in parallel), `--max-cycles=1` is the default to ensure predictable resource usage, cost control, and prevent runaway conversations. Individual ConversationFiles can override this with the `MAX-CYCLES` keyword.
-
-**Examples:**
 ```bash
-# Process all conversation files sequentially (1 cycle each by default)
-copilot agent batch workflows/*.copilot
+# Initialize in your project
+sdqctl init
 
-# Run in parallel with JSONL output
-copilot agent batch --parallel 4 --format jsonl plans/* | tee results.jsonl
+# Basic iteration (single cycle)
+sdqctl iterate "Audit authentication module for security issues"
 
-# Allow more cycles for complex batch operations
-copilot agent batch --max-cycles=3 --parallel 2 refactoring/*.copilot
+# Multi-cycle with context injection (primary workflow)
+sdqctl iterate backlog.conv -n 5 \
+  --introduction "Focus on high-priority items" \
+  --prologue LIVE-BACKLOG.md
 
-# Verify results programmatically
-copilot agent batch --format json plans/* --output results.json
-jq '.[] | select(.status == "failed")' results.json
-
-# Add summary header/footer to batch results
-copilot agent batch --parallel 4 --format jsonl refactor/*.copilot \
-  --output refactor-results.jsonl \
-  --header <(echo "# Refactoring Batch - Started $(date)") \
-  --footer <(echo "# Refactoring Batch - Completed $(date)")
+# Check status
+sdqctl status
 ```
 
-### `copilot agent checkpoint [save|restore|list] [name]`
-Manage session checkpoints for long-running workflows. Leverages the existing `/session checkpoints` functionality.
+### Mid-Run Steering
 
-**Purpose:**
-- Save workflow state at key milestones
-- Restore to previous checkpoint if needed
-- Enable iterative development with rollback capability
-- Create audit trail of workflow progression
+During longer runs (`-n 5-10`), edit `LIVE-BACKLOG.md` to inject new priorities:
 
-**Options:**
-- `save <name>` - Save current state as a named checkpoint
-- `restore <name>` - Restore to a previously saved checkpoint
-- `list` - List all available checkpoints
-- `--format <format>` - Output format for list: text, json (default: text)
+```markdown
+<!-- LIVE-BACKLOG.md - edit while iterate runs -->
+## Hot Items
+- [ ] **URGENT**: Fix token leak spotted in cycle 3
+- [ ] Refocus on error handling
 
-**Examples:**
-```bash
-# Save checkpoint after major milestone
-copilot agent checkpoint save "after-refactoring"
-
-# List available checkpoints
-copilot agent checkpoint list
-
-# Restore to previous state
-copilot agent checkpoint restore "before-breaking-change"
-
-# List checkpoints as JSON
-copilot agent checkpoint list --format json
+## Skip Until Next Run
+- Documentation updates
 ```
 
-### `copilot agent compact [--save-pointer]`
-Manually trigger conversation context compaction. Uses the existing `/compact` functionality.
+The `--prologue` file is re-read before each cycle, enabling real-time course correction.
 
-**Purpose:**
-- Free up context window space for long-running workflows
-- Prevent hitting context limits during complex operations
-- Optionally save continuation pointer before compaction
+## Verbosity & Output Control
 
-**Options:**
-- `--save-pointer` - Before compaction, inject a prompt summarizing next actionable areas (quine-like pointer)
-- `--output <file>` - Save compacted summary to file for reference
+sdqctl provides fine-grained control over output:
 
-**Examples:**
+### Verbosity Levels (`-v`)
+
 ```bash
-# Compact conversation history
-copilot agent compact
-
-# Compact with continuation pointer for multi-session workflows
-copilot agent compact --save-pointer
-
-# Save compaction summary for audit trail
-copilot agent compact --output compact-summary-$(date +%Y%m%d-%H%M%S).md
+sdqctl iterate workflow.conv     # Default: final result only
+sdqctl -v iterate workflow.conv  # Progress with context %
+sdqctl -vv iterate workflow.conv # Streaming agent responses
+sdqctl -vvv iterate workflow.conv # Full debug (tool calls, reasoning)
+sdqctl -q iterate workflow.conv  # Quiet mode (errors only)
 ```
+
+### Show Prompts (`-P` / `--show-prompt`)
+
+See the exact prompts being sent to the AI (on stderr):
+
+```bash
+# Show prompts in terminal
+sdqctl -P iterate workflow.conv
+
+# Capture prompts to file while running
+sdqctl -P iterate workflow.conv 2> prompts.log
+
+# Full debugging: prompts + streaming response
+sdqctl -vv -P iterate workflow.conv
+```
+
+Prompts are displayed with context:
+```
+[Cycle 2/5, Prompt 3/4] (ctx: 45%)
+────────────────────────────────────────────────
+You are analyzing a codebase for security issues.
+...
+────────────────────────────────────────────────
+```
+
+### Stream Separation
+
+Output follows Unix conventions for pipeable workflows:
+- **stdout**: Progress, agent responses (pipeable)
+- **stderr**: Prompts (with `-P`), logs, errors
+
+```bash
+# Pipe agent output, see prompts on terminal
+sdqctl -P iterate workflow.conv > results.md
+
+# Capture both separately
+sdqctl -P iterate workflow.conv > results.md 2> prompts.log
+```
+
+See [docs/IO-ARCHITECTURE.md](docs/IO-ARCHITECTURE.md) for full details.
 
 ## ConversationFile Format
 
-ConversationFiles use slash commands as declarative keywords, similar to Dockerfile syntax.
+ConversationFiles (`.conv`) are declarative workflow definitions:
 
-**Default filename:** `.copilot` or `*.copilot`
-
-**Example:** `audit-component.copilot`
 ```dockerfile
-# Set the model for this conversation
-MODEL claude-sonnet-4.5
-MODE read-only  # Cannot modify any files, only read and analyze
-
-# Change to component directory
-CWD ./lib/components/auth
-
-# Add relevant directories for access
-ADD-DIR ./tests
-ADD-DIR ./docs
-
-# Set up the conversation context
-PROMPT Let's evaluate tests and test specs for this component.
-
-# Reference specific files (@ syntax matches interactive mode)
-@tests/auth.test.js
-@README.md
-
-# Execute the main task
-PROMPT Ensure all edge cases are covered and suggest improvements.
-
-# Plan before executing
-PLAN Review test coverage and identify gaps
-
-# Final verification
-PROMPT Document all findings and recommendations without making changes.
-```
-
-**Example:** `document-bugs.copilot`
-```dockerfile
-# Bug documentation workflow - read-only mode
-MODEL claude-sonnet-4.5
-MODE read-only
+# security-audit.conv
+MODEL gpt-4
+ADAPTER copilot
+MODE audit
 MAX-CYCLES 1
 
-CWD ./src
+CONTEXT @lib/auth/*.js
+CONTEXT @tests/auth.test.js
 
-PROMPT Analyze the codebase and document all known bugs, quirks, and edge cases.
+CONTEXT-LIMIT 80%
+ON-CONTEXT-LIMIT compact
 
-PROMPT For each issue found, include:
-1. File and line number
-2. Description of the bug/quirk
-3. Impact and severity
-4. Potential workarounds
-5. Suggested fix (but do not implement)
+PROMPT Analyze authentication for security vulnerabilities.
+PROMPT Generate a report with severity ratings.
 
-PROMPT Focus on authentication, error handling, and data validation modules.
+OUTPUT-FORMAT markdown
+OUTPUT-FILE security-report.md
 ```
 
-**Example:** `update-docs.copilot`
+### Directives
+
+| Directive | Purpose |
+|-----------|---------|
+| `MODEL` | AI model to use |
+| `ADAPTER` | AI provider (copilot, claude, openai, mock) |
+| `MODE` | Execution mode (audit, read-only, full) |
+| `MAX-CYCLES` | Maximum iteration cycles |
+| `CONTEXT` | Include file/pattern |
+| `CONTEXT-LIMIT` | Context window threshold |
+| `ON-CONTEXT-LIMIT` | Action when limit reached (compact, stop) |
+| `PROLOGUE` | Prepend to first prompt of cycle (inline or @file) |
+| `EPILOGUE` | Append to last prompt of cycle (inline or @file) |
+| `HELP` | Inject help topics into prologues: `HELP directives workflow` |
+| `REQUIRE` | Pre-flight checks: `REQUIRE @file.py cmd:git` |
+| `PROMPT` | Prompt to send (runs LLM conversation cycle) |
+| `RUN` | Execute shell command |
+| `RUN-RETRY` | Retry with AI fix: `RUN-RETRY N "prompt"` |
+| `RUN-ON-ERROR` | Behavior on command failure (stop, continue) |
+| `ON-FAILURE` | Block executed if preceding RUN fails (non-zero exit) |
+| `ON-SUCCESS` | Block executed if preceding RUN succeeds (zero exit) |
+| `RUN-OUTPUT` | When to include output (always, on-error, never) |
+| `RUN-OUTPUT-LIMIT` | Max output chars (10K, 50K, 1M, none) |
+| `RUN-ENV` | Set environment variable (KEY=value) |
+| `RUN-TIMEOUT` | Command timeout (30, 30s, 2m) |
+| `RUN-CWD` | Working directory for RUN commands |
+| `ALLOW-SHELL` | Enable shell features like pipes (true/false) |
+| `PAUSE` | Checkpoint and exit for human review |
+| `CONSULT` | Pause with proactive question presentation on resume |
+| `SESSION-NAME` | Named session for easier resume: `SESSION-NAME my-feature` |
+| `CHECKPOINT-AFTER` | When to checkpoint (each-cycle, each-prompt) |
+| `COMPACT` | Trigger compaction (with optional preserve list) |
+| `COMPACT-PRESERVE` | What to preserve during compaction |
+| `COMPACT-PROLOGUE` | Content before compacted summary |
+| `COMPACT-EPILOGUE` | Content after compacted summary |
+| `INFINITE-SESSIONS` | Enable SDK native compaction (enabled/disabled) |
+| `COMPACTION-MIN` | Min context % to trigger compaction (default: 30%) |
+| `COMPACTION-THRESHOLD` | Background compaction threshold (default: 80%) |
+| `COMPACTION-MAX` | Buffer exhaustion threshold (default: 95%) |
+| `ELIDE` | Merge adjacent elements into single prompt |
+| `VERIFY` | Run static verification (refs, traceability) |
+| `VERIFY-ON-ERROR` | Behavior on verification failure (stop, continue) |
+| `VERIFY-OUTPUT` | When to include output (always, on-error, never) |
+| `VERIFY-LIMIT` | Max verification output chars |
+| `HEADER` | Prepend to output (inline or @file) |
+| `FOOTER` | Append to output (inline or @file) |
+| `OUTPUT-FORMAT` | Output format (markdown, json) |
+| `OUTPUT-FILE` | Output destination |
+| `DEBUG` | Enable debug output |
+| `DEBUG-INTENTS` | Log agent intents |
+| `EVENT-LOG` | Log all SDK events to file |
+
+### Template Variables
+
+Available in PROLOGUE, EPILOGUE, HEADER, FOOTER, PROMPT, and OUTPUT paths:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{DATE}}` | ISO date | 2026-01-21 |
+| `{{DATETIME}}` | ISO datetime | 2026-01-21T12:00:00 |
+| `{{WORKFLOW_NAME}}` | Workflow filename (output paths only) | security-audit |
+| `{{WORKFLOW_PATH}}` | Full path (output paths only) | /path/to/security-audit.conv |
+| `{{__WORKFLOW_NAME__}}` | Workflow filename (explicit opt-in) | security-audit |
+| `{{__WORKFLOW_PATH__}}` | Full path (explicit opt-in) | /path/to/security-audit.conv |
+| `{{COMPONENT_NAME}}` | Component name (without extension) | auth |
+| `{{COMPONENT_PATH}}` | Full path to component | /path/to/auth.py |
+| `{{COMPONENT_DIR}}` | Parent directory of component | /path/to |
+| `{{COMPONENT_TYPE}}` | Type from discovery | plugin, api |
+| `{{ITERATION_INDEX}}` | Current iteration (1-based) | 3 |
+| `{{ITERATION_TOTAL}}` | Total iterations | 15 |
+| `{{CYCLE_NUMBER}}` | Current cycle (cycle command) | 2 |
+| `{{CYCLE_TOTAL}}` | Total cycles (cycle command) | 5 |
+| `{{GIT_BRANCH}}` | Current git branch | main |
+| `{{GIT_COMMIT}}` | Short commit SHA | abc1234 |
+| `{{CWD}}` | Current working directory | /home/user/project |
+| `{{STOP_FILE}}` | Stop signal filename (for agent) | STOPAUTOMATION-a1b2c3.json |
+
+> **Note:** `WORKFLOW_NAME` and `WORKFLOW_PATH` are excluded from prompts by default
+> to avoid influencing agent behavior. Use `__WORKFLOW_NAME__` for explicit opt-in.
+> See [SDK-LEARNINGS.md](docs/SDK-LEARNINGS.md#1-filename-semantics-influence-agent-role-q-001) for details.
+>
+> **Stop File (Enabled by Default):** Stop file instructions are automatically injected
+> on the first prompt. The agent can create `{{STOP_FILE}}` to request human review.
+> Use `--no-stop-file-prologue` to disable, or `--stop-file-nonce=VALUE` to override
+> the random nonce. See [docs/LOOP-STRESS-TEST.md](docs/LOOP-STRESS-TEST.md#4-stop-file-detection).
+
+### Prompt/Output Injection
+
+Inject consistent content into prompts or output:
+
 ```dockerfile
-# Documentation update workflow - can only modify docs
-MODEL claude-sonnet-4.5
-MODE docs-only
+# Prepend date context to every prompt
+PROLOGUE Current date: {{DATE}}
+PROLOGUE @templates/5-facet-context.md
 
-# Can read code but only write to docs
-ADD-DIR ./src
-ADD-DIR ./docs
+# Append reminder to every prompt
+EPILOGUE Remember to update progress.md
 
-PROLOGUE Recent changes have been made to the API. The code is the source of truth.
-
-# Include files in context
-@src/api/**/*.js
-@docs/*.md
-
-PROMPT Update documentation to match current implementation.
-
-PROMPT Ensure all examples are accurate and API signatures are correct.
+# Add headers/footers to output (WORKFLOW_NAME works here)
+HEADER # Analysis Report
+HEADER Generated: {{DATETIME}}
+FOOTER ---\nGenerated by sdqctl
 ```
 
-**Example:** `test-improvements.copilot`
+CLI options:
+```bash
+sdqctl iterate workflow.conv \
+  --introduction "First-cycle warmup context" \
+  --prologue LIVE-BACKLOG.md \
+  --epilogue @templates/footer.md
+```
+
+### RUN Directive (Command Execution)
+
+Execute shell commands during workflow:
+
 ```dockerfile
-# Test-only workflow - can only modify test files
-MODEL claude-opus-4.5
-MODE tests-only
-MAX-CYCLES 3
+# Run verification tool, output goes to AI context
+RUN python tools/verify_refs.py --json
+PROMPT Analyze the verification results above
 
-ADD-DIR ./src
-ADD-DIR ./tests
+# Control error handling
+RUN-ON-ERROR continue
+RUN make test
 
-PROMPT Review code coverage and add missing tests for edge cases.
-
-PROMPT Focus on:
-- Error handling paths
-- Boundary conditions
-- Integration scenarios
-- Performance edge cases
-
-PROMPT Ensure test coverage reaches 85% or higher.
+# Only include output on failure
+RUN-OUTPUT on-error
+RUN npm run lint
 ```
 
-**Example:** `security-audit.copilot`
+#### Security: Shell Mode
+
+By default, RUN commands are executed **without a shell** for security (no shell injection):
+
 ```dockerfile
-# Security audit - no code changes, only documentation
-MODEL claude-opus-4.5
-MODE audit
+# Safe: parsed as ["echo", "hello", "world"]
+RUN echo hello world
 
-ADD-DIR ./src
-ADD-DIR ./lib
-ADD-DIR ./config
-
-PROMPT Perform a comprehensive security audit of the codebase.
-
-PROMPT Check for:
-- SQL injection vulnerabilities
-- XSS vulnerabilities
-- Authentication/authorization issues
-- Secrets in code
-- Insecure dependencies
-- CSRF vulnerabilities
-
-PROMPT Generate a detailed report with severity ratings and remediation recommendations.
+# To enable shell features (pipes, redirects, variables):
+ALLOW-SHELL true
+RUN cat data.json | jq '.items[]' > output.txt
 ```
 
-**Example:** `refactor-utilities.copilot`
+#### Environment Variables
+
+Set environment variables for RUN commands:
+
 ```dockerfile
-# Scoped refactoring - only specific directories
-MODEL claude-sonnet-4.5
-MODE full
-
-# Only allow changes to utility functions and their tests
-ALLOW-PATH "src/utils/**"
-ALLOW-PATH "tests/utils/**"
-
-# Protect everything else
-DENY-PATH "src/api/**"
-DENY-PATH "src/core/**"
-
-MAX-CYCLES 5
-
-PROMPT Refactor utility functions to:
-1. Use modern JavaScript features
-2. Improve error handling
-3. Add comprehensive JSDoc comments
-4. Ensure all functions have tests
-
-PROMPT Do not modify API or core business logic.
+RUN-ENV API_KEY=secret123
+RUN-ENV DEBUG=1
+RUN ./deploy.sh
 ```
+
+#### Output Limits
+
+Limit captured output to prevent context bloat:
+
 ```dockerfile
-# Component audit workflow
-MODEL claude-opus-4.5
-MAX-CYCLES 1
-SESSION checkpoints 10
-
-PROMPT For each component, ensure:
-1. Complete test coverage
-2. Up-to-date documentation
-3. Security best practices
-4. Performance considerations
-
-PLAN Create implementation plan for improvements
+RUN-OUTPUT-LIMIT 10K    # Max 10,000 characters
+RUN python long_test.py
 ```
 
-**Example:** `generate-docs.copilot`
+Supported formats: `10K`, `50K`, `1M`, `100000`, `none` (unlimited).
+
+#### Timeout
+
+Set command timeout (default: 60 seconds):
+
 ```dockerfile
-# Documentation generation workflow
-MODEL claude-sonnet-4.5
-CWD ./src
-
-# Build context from existing docs
-PROLOGUE Current project structure:
-CONTEXT @README.md
-CONTEXT @ARCHITECTURE.md
-
-# Main documentation task
-PROMPT Generate comprehensive API documentation for all exported functions.
-
-# Additional requirements
-EPILOGUE Ensure all examples are tested and working.
-EPILOGUE Follow our documentation style guide at @.github/DOCS_STYLE.md
+RUN-TIMEOUT 2m          # 2 minutes
+RUN npm run build
 ```
 
-**Usage with header/footer:**
-```bash
-copilot do ./conversations/generate-docs.copilot \
-  --format markdown \
-  --output docs/api.md \
-  --header <(cat << 'EOF'
----
-title: API Reference
-version: 2.0
-updated: $(date +%Y-%m-%d)
----
+#### Working Directory
 
-# API Reference
+Set working directory for RUN commands (paths relative to workflow file):
 
-This documentation is automatically generated.
-
-EOF
-) \
-  --footer <(echo -e "\n---\n\n*Last updated: $(date)*\n*Generated by: GitHub Copilot CLI*")
-```
 ```dockerfile
-# Complex refactoring that may need multiple iterations
-MODEL claude-sonnet-4.5
-MAX-CYCLES 5  # Allow up to 5 cycles for iterative refinement
-
-# Context management for long-running workflow
-MAX-CONTEXT-TOKENS 150000  # Trigger compaction before hitting limit
-COMPACT-EVERY 50000        # Or compact every 50k tokens
-BEFORE-COMPACT-PROMPT "Before compacting, list remaining TODOs and next actionable steps"
-ON-CONTEXT-LIMIT-PROMPT "Summarize: (1) What was completed, (2) What remains, (3) Where to start next session"
-
-PROMPT Refactor the authentication module to use modern async/await patterns.
-
-PROMPT Ensure all tests pass after each change.
-
-PROMPT Verify backward compatibility is maintained.
+RUN-CWD ./backend       # Relative to workflow location
+RUN npm test            # Runs in ./backend directory
 ```
 
-**Example:** `long-running-analysis.copilot`
+#### Auto-Checkpoint on Failure
+
+When a RUN command fails with `RUN-ON-ERROR stop` (default), sdqctl automatically saves a checkpoint containing all captured output. This preserves debugging context even on failure.
+
+#### RUN-RETRY (AI-Assisted Retry)
+
+Enable automatic retry with AI fix when commands fail:
+
 ```dockerfile
-# Long-running analysis with checkpoint strategy
-MODEL claude-opus-4.5
-MAX-CYCLES 10
-MODE audit
-
-# Preserve checkpoints during compaction instead of summarizing
-COMPACT-STRATEGY checkpoints
-
-# Save checkpoint after each major component
-PROMPT Analyze authentication component
-@lib/auth/
-CHECKPOINT "auth-analysis-complete"
-
-PROMPT Analyze API layer
-@lib/api/
-CHECKPOINT "api-analysis-complete"
-
-PROMPT Analyze data layer
-@lib/data/
-CHECKPOINT "data-analysis-complete"
-
-# Quine-like pointer for continuation in next session
-ON-CONTEXT-LIMIT-PROMPT "Document completed components and list remaining components to analyze in next session. Include: (1) Files reviewed, (2) Key findings, (3) Next component to start with, (4) Context needed from this session."
+RUN npm test
+RUN-RETRY 3 "Fix the failing tests based on error output"
 ```
 
-**Example:** `multi-session-refactoring.copilot`
+**Behavior**:
+1. Run the command
+2. If it fails, send error output + retry prompt to AI
+3. AI analyzes errors and makes fixes
+4. Run the command again
+5. Repeat up to N times
+6. If still failing after all retries, use `RUN-ON-ERROR` behavior
+
+**Use cases**:
+- Test-fix-retry loops
+- Lint-fix cycles
+- Build error recovery
+
 ```dockerfile
-# Designed for multi-session execution with continuation
-MODEL claude-sonnet-4.5
-MAX-CYCLES 8
-MODE full
+# Retry with custom prompt
+RUN pytest tests/
+RUN-RETRY 2 "Analyze the test failures and fix the code"
 
-# Context controls for continuation
-MAX-CONTEXT-TOKENS 120000
-BEFORE-COMPACT-PROMPT "Create a summary of: (1) Refactorings completed, (2) Tests passing/failing, (3) Next functions to refactor"
-
-PROLOGUE This is a multi-session refactoring. Check for previous session summary in REFACTORING-PROGRESS.md
-
-# Check if continuation file exists
-@REFACTORING-PROGRESS.md
-
-PROMPT Refactor utility functions to modern JavaScript patterns. Update REFACTORING-PROGRESS.md after each function is refactored.
-
-# Before context limit, save pointer for next session
-ON-CONTEXT-LIMIT-PROMPT "Update REFACTORING-PROGRESS.md with: (1) Functions completed this session, (2) Current test status, (3) Next function to refactor, (4) Any blockers or issues found."
+# Works with other RUN options
+RUN-TIMEOUT 5m
+RUN npm run build
+RUN-RETRY 3 "Fix build errors"
 ```
 
-### ConversationFile Keywords
+**Note**: RUN-RETRY modifies the immediately preceding RUN directive. Each retry sends the error to the AI for analysis, consuming additional tokens.
 
-Based on existing slash commands, ConversationFiles support:
+### ELIDE Directive (Merge Adjacent Elements)
 
-**Core Configuration:**
-- `MODEL <model-name>` - Set AI model (maps to `/model`)
-- `MAX-CYCLES <n>` - Override default max cycles for this conversation (default: 1)
-- `MODE <mode>` - Set execution mode: full, read-only, docs-only, tests-only, audit
+The `ELIDE` directive merges the element above with the element below into a single prompt, eliminating the agent turn between them. This is useful for:
 
-**Context & Compaction Controls:**
-- `MAX-CONTEXT-TOKENS <n>` - Auto-compact when approaching this limit (default: based on model)
-- `COMPACT-EVERY <n>` - Auto-compact every N tokens
-- `COMPACT-STRATEGY <strategy>` - How to compact: summary, checkpoints, preserve-plan (default: summary)
-- `BEFORE-COMPACT-PROMPT <text>` - Prompt to inject before auto-compaction
-- `ON-CONTEXT-LIMIT-PROMPT <text>` - Final prompt when max context reached (quine-like pointer)
+- **Combining test output with fix instructions** - Agent sees test failures and instructions in one turn
+- **Reducing token waste** - No meaningless intermediate "I see the output" responses
+- **Faster workflows** - Skip unnecessary agent reasoning cycles
 
-**Directory & File Access:**
-- `CWD <directory>` - Change working directory (maps to `/cd`)
-- `ADD-DIR <directory>` - Add allowed directory (maps to `/add-dir`)
-- `ALLOW-PATH <pattern>` - Allow modifications only to files matching pattern
-- `DENY-FILE <file>` - Deny access to specific file (maps to `/deny-file`)
-- `DENY-PATH <pattern>` - Deny access to files matching glob pattern (maps to `/deny-path`)
+```dockerfile
+# Without ELIDE: 3 agent turns (wasteful)
+PROMPT Analyze test results.
+RUN pytest -v
+PROMPT Fix any failing tests.
 
-**File Inclusion:**
-- `@<file-pattern>` - Include files in context (matches interactive `@` syntax)
+# With ELIDE: 1 agent turn (efficient)
+PROMPT Analyze test results.
+RUN pytest -v
+ELIDE
+PROMPT Fix any failing tests.
 
-**Workflow Control:**
-- `PROLOGUE <text|file>` - Add content before main prompts
-- `EPILOGUE <text|file>` - Add content after main prompts
-- `PROMPT <text>` - Add a prompt/message
-- `PLAN <description>` - Create implementation plan (maps to `/plan`)
-- `RUN <command>` - Execute shell command (uses bash tool)
-- `COMPACT` - Manually trigger compaction (maps to `/compact`)
-- `CHECKPOINT <name>` - Save named checkpoint (maps to `/session checkpoints`)
+# The agent receives a single merged prompt:
+#   Analyze test results.
+#   [test output from RUN]
+#   Fix any failing tests.
+```
 
-**Advanced:**
-- `DELEGATE <prompt>` - Delegate to remote PR (maps to `/delegate`)
-- `AGENT <agent-name>` - Select custom agent (maps to `/agent`)
-- `SKILLS <subcommand> [args]` - Manage skills (maps to `/skills`)
-- `MCP <subcommand> [args]` - Configure MCP servers (maps to `/mcp`)
+Chained ELIDEs merge multiple elements:
 
-**Notes:** 
-- `HEADER` and `FOOTER` are output-only and controlled via CLI flags, not ConversationFile keywords
-- Comments start with `#` (Dockerfile-style)
-- Keywords are case-insensitive but UPPERCASE is conventional
+```dockerfile
+PROMPT Review the build output.
+ELIDE
+RUN npm run build
+ELIDE
+RUN npm test
+ELIDE
+PROMPT Fix any errors in the build or tests.
+# All merged into a single prompt with both outputs
+```
 
-## Use Cases & Workflows
+### Human-in-the-Loop with PAUSE
 
-### 1. Component Auditing
+The `PAUSE` directive creates a checkpoint and exits, allowing human review before continuing:
+
+```dockerfile
+# Phase 1: AI analysis
+PROMPT Analyze codebase for security issues.
+PROMPT Generate findings report.
+
+# Human reviews findings
+PAUSE "Review findings before generating remediation plan"
+
+# Phase 2: Runs after human resumes
+PROMPT Generate remediation plan based on findings.
+```
+
+Resume with:
 ```bash
-# Audit all components systematically (read-only mode)
-for component in ./lib/components/*; do
-  copilot agent apply ./workflows/audit-component.copilot \
-    --cwd "$component" \
-    --mode read-only \
-    --format json \
-    >> audit-results.json
-done
+sdqctl resume ~/.sdqctl/sessions/<session-id>/pause.json
+
+# List available checkpoints
+sdqctl resume --list
+
+# Preview what would be resumed (dry run)
+sdqctl resume pause.json --dry-run
+
+# JSON output for scripting
+sdqctl resume --list --json
+sdqctl resume pause.json --dry-run --json
 ```
 
-### 2. Documentation Synchronization
-```bash
-# Ensure documentation matches implementation (docs-only mode)
-for component in ./lib/components/*; do
-  component_name=$(basename "$component")
-  copilot agent apply "Ensure there is accurate documentation for $component_name in @docs/" \
-    --cwd "$component" \
-    --mode docs-only \
-    --yolo
-done
-```
+## Commands
 
-### 3. Bug Documentation Workflow
-```bash
-# Document bugs and quirks without fixing them (read-only mode)
-copilot agent apply ./workflows/document-bugs.copilot \
-  --format markdown \
-  --output docs/known-issues-$(date +%Y%m%d).md \
-  --header <(cat << EOF
-# Known Issues and Quirks
-Generated: $(date)
-Branch: $(git branch --show-current)
+### `sdqctl iterate` (Primary Command)
 
-This document catalogs known bugs and quirks in the codebase.
-**Note:** This is a documentation-only audit; no code changes were made.
-
----
-
-EOF
-)
-```
-
-### 3. Test Coverage Enforcement
-```bash
-# Verify and improve test coverage (tests-only mode)
-copilot agent batch --parallel 4 --format jsonl test-plans/*.copilot | \
-  jq -r 'select(.coverage < 80) | .component' | \
-  while read component; do
-    echo "Low coverage in $component, generating tests..."
-    copilot agent apply "Improve test coverage to 80%" \
-      --cwd "$component" \
-      --mode tests-only \
-      --yolo
-  done
-```
-
-### 4. Pipeline with Plan/Execute Workflow
-```bash
-# First, generate plans for all components
-for component in ./lib/components/*; do
-  copilot agent plan "Audit security and performance" \
-    --cwd "$component" \
-    --format json \
-    --output "plans/$(basename $component).json"
-done
-
-# Review plans, then execute approved ones
-for plan in plans/*.json; do
-  component=$(basename "$plan" .json)
-  # Execute the conversation based on the plan
-  copilot agent apply --format json --input "$plan" \
-    --cwd "./lib/components/$component" \
-    --output "results/$component.json"
-done
-```
-
-### 5. CI/CD Integration
-```bash
-# In .github/workflows/ai-code-review.yml
-- name: AI Code Review
-  run: |
-    copilot agent apply ./workflows/pr-review.copilot \
-      --mode read-only \
-      --format json \
-      --output review-results.json \
-      --share-gist
-    
-    # Parse results and fail if issues found
-    jq -e '.status == "success"' review-results.json
-```
-
-### 6. Iterative Refactoring
-```bash
-# Refactor with verification at each step, protecting critical files
-copilot agent batch workflows/refactor-*.copilot \
-  --deny-file Dockerfile \
-  --deny-file docker-compose.yml \
-  --deny-path ".github/workflows/*" \
-  --format jsonl \
-  --output refactor-results.jsonl \
-  --stop-on-error
-
-# Check all succeeded before running tests
-if jq -e 'all(.status == "success")' refactor-results.jsonl; then
-  npm test && \
-    copilot agent apply "Verify all refactoring goals achieved" \
-      --epilogue <(git diff) \
-      --format markdown \
-      --output refactor-summary.md
-fi
-```
-
-### 7. Documentation Generation Pipeline
-```bash
-# Generate and verify documentation with proper formatting
-make verify-docs | \
-  copilot agent apply "Review build output and update docs accordingly" \
-    --prologue "Build started: $(date)" \
-    --epilogue - \
-    --deny-path "config/production/*" \
-    --deny-file .env.production \
-    --format markdown \
-    --output ./docs/ai-review-$(date +%Y%m%d).md \
-    --header <(cat << EOF
-# AI Documentation Review
-Generated: $(date)
-Project: $(git remote get-url origin)
-Branch: $(git branch --show-current)
-
----
-
-EOF
-) \
-    --footer <(cat << EOF
-
----
-
-## Review Checklist
-- [ ] All links are valid
-- [ ] Code examples are tested
-- [ ] Formatting is consistent
-
-*Automated review by GitHub Copilot CLI*
-EOF
-)
-```
-
-### 9. Safe Automated Code Updates
-```bash
-# Update dependencies and code, but protect critical infrastructure
-copilot do "Update all imports to use ES modules" \
-  --deny-file package.json \
-  --deny-file package-lock.json \
-  --deny-file yarn.lock \
-  --deny-file pnpm-lock.yaml \
-  --deny-path ".github/*" \
-  --deny-path "infrastructure/*" \
-  --format json \
-  --output migration-results.json \
-  --yolo
-
-# Analyze results
-jq '.filesChanged, .summary' migration-results.json
-```
-
-### 10. Tool Chaining with JSON
-```bash
-# Chain multiple Copilot operations using JSON
-copilot plan "Modernize codebase" --format json | \
-  jq '.tasks[] | select(.priority == "high")' | \
-  copilot do --format json --input - --output - | \
-  jq '{completed: .filesChanged, remaining: .tasks | length}' | \
-  tee progress.json
-```
-
-### 11. Automated Report Generation
-```bash
-# Generate weekly code quality report
-copilot loop --parallel 3 --format json reports/*.copilot \
-  --output weekly-report.json \
-  --header <(cat << EOF
-{
-  "reportType": "weekly-quality",
-  "generatedAt": "$(date -Iseconds)",
-  "period": "$(date -d '7 days ago' +%Y-%m-%d) to $(date +%Y-%m-%d)",
-  "results": [
-EOF
-) \
-  --footer <(cat << EOF
-  ],
-  "summary": {
-    "totalChecks": $(ls reports/*.copilot | wc -l),
-    "generatedBy": "copilot-cli"
-  }
-}
-EOF
-)
-
-# Convert to human-readable format
-jq -r '.summary' weekly-report.json
-```
-
-## Benefits
-
-### For Individual Developers
-- **Reproducibility:** Save and reuse successful conversation patterns
-- **Efficiency:** Automate repetitive AI-assisted tasks
-- **Integration:** Combine Copilot with existing CLI workflows
-- **Iteration:** Batch process multiple similar tasks
-- **Safety:** Protect critical files during automated operations
-
-### For Teams
-- **Standardization:** Share conversation patterns across the team
-- **Onboarding:** Provide new team members with proven workflows
-- **Best Practices:** Encode organizational standards in ConversationFiles
-- **Collaboration:** Version control AI-assisted development patterns
-- **Guardrails:** Establish file protection policies in shared ConversationFiles
-
-### For Organizations
-- **CI/CD Integration:** Automate code quality checks and improvements
-- **Consistency:** Ensure uniform application of coding standards
-- **Scalability:** Process large codebases systematically
-- **Auditability:** Track and review AI-assisted changes
-
-## Implementation Considerations
-
-### Backward Compatibility
-- All existing `copilot` commands continue to work unchanged
-- `--prompt` and `--interactive` flags remain the primary single-shot interfaces
-- ConversationFiles are opt-in; traditional usage unaffected
-- File denial follows same precedence model as existing `--deny-tool` and `--deny-url`
-
-### Execution Model
-- **Default cycles:** `--max-cycles=1` for predictable, atomic operations
-  - Prevents runaway conversations in batch/parallel scenarios
-  - Controls API usage and costs
-  - Makes execution time predictable for CI/CD
-  - Can be overridden per-command or per-ConversationFile
-- **Streaming:** Supports both streaming and non-streaming modes
-- **Permissions:** Respects all existing permission flags (`--allow-all`, `--yolo`, etc.)
-- **Interactive transition:** Can drop into interactive mode with `--interactive` flag
-
-**When to increase max-cycles:**
-- Complex refactoring requiring iterative refinement (`--max-cycles=5`)
-- Debug-fix-verify loops (`--max-cycles=3`)
-- Exploratory analysis with follow-up questions (`--max-cycles=-1` for unlimited)
-- Single-task `copilot do` invocations where iteration is expected
-
-### Output Formats
-- **text:** Human-readable output (default for `copilot do`)
-- **json:** Structured output for programmatic consumption (single object)
-- **jsonl:** Line-delimited JSON for streaming/batch processing (default for `copilot loop`)
-- **markdown:** Formatted for documentation/sharing
-
-**JSON Output Schema Example:**
-```json
-{
-  "status": "success|failed|partial",
-  "conversationId": "abc123",
-  "cycles": 3,
-  "filesChanged": ["src/auth.js", "tests/auth.test.js"],
-  "summary": "Added error handling to authentication endpoints",
-  "plan": {
-    "tasks": [...],
-    "estimatedComplexity": "medium"
-  },
-  "errors": [],
-  "warnings": ["Coverage below 80% in auth.js"]
-}
-```
-
-**JSONL Output Example (from `copilot loop`):**
-```jsonl
-{"file": "conv1.copilot", "status": "success", "filesChanged": 2, "duration": 12.3}
-{"file": "conv2.copilot", "status": "failed", "error": "Permission denied", "duration": 3.1}
-{"file": "conv3.copilot", "status": "success", "filesChanged": 5, "duration": 18.7}
-```
-
-### Error Handling
-- Exit codes indicate success/failure for scripting
-- `--continue-on-error` for batch processing
-- `--dry-run` for safe preview
-- Detailed error messages with context
-- File access denials reported clearly with specific path/pattern that blocked access
-
-## Related Work & Inspiration
-
-- **Dockerfile:** Declarative, layered build instructions
-- **git bisect/rebase:** Iterative, automated processing
-- **pandoc:** Format conversion with extensible options
-- **GitHub Actions:** YAML-based workflow automation
-- **Make/Task runners:** Dependency-based execution
-
-## Future Enhancements
-
-- **Variables & Templating:** Parameterize ConversationFiles with `${VAR}` syntax
-- **Conditionals:** Branch based on results (`IF`, `ELSE`, `ENDIF` keywords)
-- **Composition:** Include/extend other ConversationFiles (`INCLUDE`, `EXTEND`)
-- **Caching:** Reuse results from previous executions (content-addressed cache)
-- **Parallel Execution:** Built-in parallelization primitives in ConversationFiles
-- **Hooks:** Pre/post execution hooks for integration (`PRE-HOOK`, `POST-HOOK`)
-- **File Allow Lists:** Complement deny patterns with explicit allow lists
-- **Path Wildcarding:** Advanced glob patterns for fine-grained control
-- **Interactive Deny:** Prompt for confirmation when accessing sensitive files
-- **JSON Schema Validation:** Validate JSON input/output against schemas
-- **Format Conversion:** `copilot convert` to transform between formats (like pandoc)
-- **Watch Mode:** `copilot watch` to re-run conversations on file changes
-- **Result Diffing:** Compare results across conversation runs
-
-## Next Steps
-
-1. **Community Feedback:** Gather input on proposed syntax and use cases
-2. **Prototype:** Implement basic `copilot do` with ConversationFile support
-3. **Documentation:** Create comprehensive guides and examples
-4. **Integration:** Add CI/CD examples and templates
-5. **Iteration:** Refine based on real-world usage
-
-## Appendix
-
-### Current `copilot --help` Output
-
-For reference, the existing CLI interface:
-
-```
-Usage: copilot [options] [command]
-
-GitHub Copilot CLI - An AI-powered coding assistant
-
-Options:
-  --add-dir <directory>               Add a directory to the allowed list for
-                                      file access (can be used multiple times)
-  --add-github-mcp-tool <tool>        Add a tool to enable for the GitHub MCP
-                                      server instead of the default CLI subset
-                                      (can be used multiple times). Use "*" for
-                                      all tools.
-  --add-github-mcp-toolset <toolset>  Add a toolset to enable for the GitHub MCP
-                                      server instead of the default CLI subset
-                                      (can be used multiple times). Use "all"
-                                      for all toolsets.
-  --additional-mcp-config <json>      Additional MCP servers configuration as
-                                      JSON string or file path (prefix with @)
-                                      (can be used multiple times; augments
-                                      config from ~/.copilot/mcp-config.json for
-                                      this session)
-  --agent <agent>                     Specify a custom agent to use
-  --allow-all                         Enable all permissions (equivalent to
-                                      --allow-all-tools --allow-all-paths
-                                      --allow-all-urls)
-  --allow-all-paths                   Disable file path verification and allow
-                                      access to any path
-  --allow-all-tools                   Allow all tools to run automatically
-                                      without confirmation; required for
-                                      non-interactive mode (env:
-                                      COPILOT_ALLOW_ALL)
-  --allow-all-urls                    Allow access to all URLs without
-                                      confirmation
-  --allow-tool [tools...]             Tools the CLI has permission to use; will
-                                      not prompt for permission
-  --allow-url [urls...]               Allow access to specific URLs or domains
-  --available-tools [tools...]        Only these tools will be available to the
-                                      model
-  --banner                            Show the startup banner
-  --config-dir <directory>            Set the configuration directory (default:
-                                      ~/.copilot)
-  --continue                          Resume the most recent session
-  --deny-tool [tools...]              Tools the CLI does not have permission to
-                                      use; will not prompt for permission
-  --deny-url [urls...]                Deny access to specific URLs or domains,
-                                      takes precedence over --allow-url
-  --disable-builtin-mcps              Disable all built-in MCP servers
-                                      (currently: github-mcp-server)
-  --disable-mcp-server <server-name>  Disable a specific MCP server (can be used
-                                      multiple times)
-  --disable-parallel-tools-execution  Disable parallel execution of tools (LLM
-                                      can still make parallel tool calls, but
-                                      they will be executed sequentially)
-  --disallow-temp-dir                 Prevent automatic access to the system
-                                      temporary directory
-  --enable-all-github-mcp-tools       Enable all GitHub MCP server tools instead
-                                      of the default CLI subset. Overrides
-                                      --add-github-mcp-toolset and
-                                      --add-github-mcp-tool options.
-  --excluded-tools [tools...]         These tools will not be available to the
-                                      model
-  -h, --help                          display help for command
-  -i, --interactive <prompt>          Start interactive mode and automatically
-                                      execute this prompt
-  --log-dir <directory>               Set log file directory (default:
-                                      ~/.copilot/logs/)
-  --log-level <level>                 Set the log level (choices: "none",
-                                      "error", "warning", "info", "debug",
-                                      "all", "default")
-  --model <model>                     Set the AI model to use (choices:
-                                      "claude-sonnet-4.5", "claude-haiku-4.5",
-                                      "claude-opus-4.5", "claude-sonnet-4",
-                                      "gpt-5.2-codex", "gpt-5.1-codex-max",
-                                      "gpt-5.1-codex", "gpt-5.2", "gpt-5.1",
-                                      "gpt-5", "gpt-5.1-codex-mini",
-                                      "gpt-5-mini", "gpt-4.1",
-                                      "gemini-3-pro-preview")
-  --no-auto-update                    Disable downloading CLI update
-                                      automatically
-  --no-color                          Disable all color output
-  --no-custom-instructions            Disable loading of custom instructions
-                                      from AGENTS.md and related files
-  -p, --prompt <text>                 Execute a prompt in non-interactive mode
-                                      (exits after completion)
-  --plain-diff                        Disable rich diff rendering (syntax
-                                      highlighting via diff tool specified by
-                                      git config)
-  --resume [sessionId]                Resume from a previous session (optionally
-                                      specify session ID)
-  -s, --silent                        Output only the agent response (no stats),
-                                      useful for scripting with -p
-  --screen-reader                     Enable screen reader optimizations
-  --share [path]                      Share session to markdown file after
-                                      completion in non-interactive mode
-                                      (default: ./copilot-session-<id>.md)
-  --share-gist                        Share session to a secret GitHub gist
-                                      after completion in non-interactive mode
-  --stream <mode>                     Enable or disable streaming mode (choices:
-                                      "on", "off")
-  -v, --version                       show version information
-  --yolo                              Enable all permissions (equivalent to
-                                      --allow-all-tools --allow-all-paths
-                                      --allow-all-urls)
-
-Commands:
-  help [topic]                        Display help information
-
-Help Topics:
-  config       Configuration Settings
-  commands     Interactive Mode Commands
-  environment  Environment Variables
-  logging      Logging
-  permissions  Permissions
-
-Examples:
-  # Start interactive mode
-  $ copilot
-
-  # Start interactive mode and automatically execute a prompt
-  $ copilot -i "Fix the bug in main.js"
-
-  # Execute a prompt in non-interactive mode (exits after completion)
-  $ copilot -p "Fix the bug in main.js" --allow-all-tools
-
-  # Enable all permissions with a single flag
-  $ copilot -p "Fix the bug in main.js" --allow-all
-  $ copilot -p "Fix the bug in main.js" --yolo
-
-  # Start with a specific model
-  $ copilot --model gpt-5
-
-  # Resume the most recent session
-  $ copilot --continue
-
-  # Resume a previous session using session picker
-  $ copilot --resume
-
-  # Resume with auto-approval
-  $ copilot --allow-all-tools --resume
-
-  # Allow access to additional directory
-  $ copilot --add-dir /home/user/projects
-
-  # Allow multiple directories
-  $ copilot --add-dir ~/workspace --add-dir /tmp
-
-  # Disable path verification (allow access to any path)
-  $ copilot --allow-all-paths
-
-  # Allow all git commands except git push
-  $ copilot --allow-tool 'shell(git:*)' --deny-tool 'shell(git push)'
-
-  # Allow all file editing
-  $ copilot --allow-tool 'write'
-
-  # Allow all but one specific tool from MCP server with name "MyMCP"
-  $ copilot --deny-tool 'MyMCP(denied_tool)' --allow-tool 'MyMCP'
-
-  # Allow GitHub API access (defaults to HTTPS)
-  $ copilot --allow-url github.com
-
-  # Deny access to specific domain over HTTPS
-  $ copilot --deny-url https://malicious-site.com
-  $ copilot --deny-url malicious-site.com
-
-  # Allow all URLs without confirmation
-  $ copilot --allow-all-urls
-
-```
-
-## Execution Modes
-
-The `--mode` flag enables lifecycle-specific workflows that align with different team roles and development phases:
-
-### Mode: `full` (default)
-- **Permissions:** Full read/write access (subject to allow/deny patterns)
-- **Use cases:** General development, refactoring, feature implementation
-- **Best for:** Individual developers working on features
-
-### Mode: `read-only`
-- **Permissions:** Can read all files, cannot modify anything
-- **Tool restrictions:** `edit`, `create`, and file modification tools disabled
-- **Use cases:** 
-  - Code audits and security reviews
-  - Bug and quirk documentation
-  - Architecture analysis
-  - Knowledge extraction
-- **Best for:** Analysis phases, compliance reviews, onboarding documentation
-
-### Mode: `docs-only`
-- **Permissions:** Can only modify files in `docs/`, `*.md`, `README.*`
-- **Read access:** Full codebase (to understand implementation)
-- **Use cases:**
-  - Documentation synchronization
-  - API documentation generation
-  - User guide updates
-  - Keeping docs in sync with code
-- **Best for:** Documentation specialists, technical writers
-
-### Mode: `tests-only`
-- **Permissions:** Can only modify files matching test patterns (`**/*.test.*`, `**/*.spec.*`, `tests/**`, `__tests__/**`)
-- **Read access:** Full codebase (to understand what to test)
-- **Use cases:**
-  - Test coverage improvement
-  - Test-driven development workflows
-  - Adding edge case tests
-  - Integration test creation
-- **Best for:** QA engineers, test-driven development
-
-### Mode: `audit`
-- **Permissions:** Read-only with structured output requirements
-- **Output:** Must produce structured reports (JSON/Markdown)
-- **Use cases:**
-  - Security audits
-  - Performance analysis
-  - Compliance checks
-  - Code quality assessments
-- **Best for:** Automated CI/CD checks, compliance teams
-
-### Permission Precedence
-
-When multiple permission mechanisms are combined:
-
-1. **Mode** sets the base permissions
-2. **--deny-path** and **--deny-file** further restrict access
-3. **--allow-path** creates exceptions (only in `full` mode)
-
-**Examples:**
-```bash
-# Read-only mode: deny patterns have no effect (already can't write)
-copilot do --mode read-only --deny-file package.json  # deny is redundant
-
-# Docs-only mode: can be further restricted
-copilot do --mode docs-only --deny-path "docs/internal/*"  # OK
-
-# Full mode: allow patterns create safe zones
-copilot do --mode full --allow-path "src/utils/**" --yolo  # Only utils can change
-```
-
-## Team Workflow Patterns
-
-### Separation of Concerns
-
-Different team members can work on different aspects simultaneously:
+The iterate command is the primary way to use sdqctl. It runs multi-cycle workflows with context injection and mid-run steering:
 
 ```bash
-# Developer: Feature implementation
-copilot do "Add OAuth2 support" --mode full --allow-path "src/auth/**"
+# Basic usage
+sdqctl iterate workflow.conv -n 5
 
-# QA Engineer: Test coverage
-copilot do "Add OAuth2 tests" --mode tests-only
+# Full workflow with context injection (recommended pattern)
+sdqctl iterate backlog.conv -n 8 \
+  --session-mode accumulate \
+  --introduction "Focus on P0-P2 items from the Ready Queue" \
+  --prologue LIVE-BACKLOG.md
 
-# Tech Writer: Documentation
-copilot do "Document OAuth2 setup" --mode docs-only
-
-# Security: Audit (no changes)
-copilot do "Audit OAuth2 security" --mode audit --output security-report.md
+# Preview without AI calls
+sdqctl iterate workflow.conv -n 3 --render-only
 ```
 
-### Phase-Based Workflows
+**Key options:**
 
-Move through development phases with appropriate constraints:
+| Option | Purpose |
+|--------|---------|
+| `-n, --max-cycles` | Number of cycles to run |
+| `--session-mode` | Context management: accumulate, compact, fresh |
+| `--introduction` | First-cycle-only context (warmup, goals) |
+| `--prologue` | Re-read before every cycle (live priorities) |
+| `--epilogue` | Appended after each cycle |
+| `--dry-run` | Validate without execution |
+| `--render-only` | Preview prompts, no AI calls |
+
+#### Session Modes
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `accumulate` | Context grows, compact only at limit | Iterative refinement (70% of use) |
+| `compact` | Summarize after each cycle | Long-running workflows |
+| `fresh` | New session each cycle, reload files | Autonomous file editing |
 
 ```bash
-# Phase 1: Analysis (read-only)
-copilot do "Analyze authentication system" \
-  --mode read-only \
-  --output analysis.md
+# Accumulate mode (default): context builds across cycles
+sdqctl iterate workflow.conv -n 5 --session-mode accumulate
 
-# Phase 2: Documentation (docs-only)
-copilot do "Document current auth behavior" \
-  --mode docs-only
-
-# Phase 3: Implementation (scoped full access)
-copilot do "Modernize auth system" \
-  --mode full \
-  --allow-path "src/auth/**" \
-  --allow-path "tests/auth/**"
-
-# Phase 4: Verification (tests-only)
-copilot do "Add comprehensive auth tests" \
-  --mode tests-only
-
-# Phase 5: Final audit (read-only)
-copilot do "Verify auth implementation" \
-  --mode audit \
-  --output final-audit.json
+# Fresh mode: each cycle sees file changes from previous cycles
+sdqctl iterate workflow.conv -n 5 --session-mode fresh
 ```
 
-### Compliance and Governance
+#### Pipeline Input (`--from-json`)
 
-Enforce organizational policies through modes:
+Execute workflow from pre-rendered JSON, enabling external transformation:
 
 ```bash
-# Junior developers: Can only work on tests and docs
-copilot do --mode tests-only ...
-copilot do --mode docs-only ...
-
-# Code reviews: Read-only with structured output
-copilot do --mode audit --output review.json ...
-
-# Production analysis: Absolutely no modifications
-copilot do --mode read-only --format json ...
+# Round-trip: render, transform, execute
+sdqctl render iterate workflow.conv --json \
+  | jq '.cycles[0].prompts[0].resolved += " (modified)"' \
+  | sdqctl iterate --from-json -
 ```
 
+### `sdqctl run` (Deprecated)
+
+> **Note:** `sdqctl run` is deprecated. It forwards to `sdqctl iterate -n 1`.
+
+```bash
+# These are equivalent:
+sdqctl run workflow.conv
+sdqctl iterate workflow.conv -n 1
+```
+
+### Advanced Commands
+
+The following commands are available for specialized use cases.
+
+#### `sdqctl render`
+
+Render workflow prompts without executing (no AI calls). Now with subcommands:
+
+```bash
+# Render for run command (single cycle)
+sdqctl render run workflow.conv
+sdqctl render run workflow.conv --plan    # Show @file refs only
+sdqctl render run workflow.conv --json    # JSON output
+
+# Render for cycle command (multi-cycle)
+sdqctl render iterate workflow.conv --max-cycles 5
+sdqctl render iterate workflow.conv -n 3 -s fresh -o rendered/
+
+# Render for apply command
+sdqctl render apply workflow.conv --components "lib/*.js"
+
+# Legacy (backwards compat)
+sdqctl render file workflow.conv
+
+# Common options
+sdqctl render run workflow.conv -o rendered.md      # Output to file
+sdqctl render run workflow.conv --cycle 2           # Specific cycle
+sdqctl render run workflow.conv --prompt 1          # Specific prompt
+sdqctl render run workflow.conv --prologue "Date: 2026-01-22"
+```
+
+**Modes:**
+- `--plan` - Show `@file` references without expanding content (faster, overview)
+- `--full` - Fully expand all content (default)
+
+The render command produces fully-resolved prompts with all context files, 
+template variables (`{{DATE}}`, `{{CYCLE_NUMBER}}`, etc.), prologues, and 
+epilogues expanded. Useful for:
+- Debugging template issues before running expensive AI calls
+- Using sdqctl as a prompt templating engine
+- CI/CD validation of workflow content
+
+> **Note:** `--render-only` flag on `run` and `iterate` commands is deprecated.
+> Use `sdqctl render run` or `sdqctl render iterate` instead.
+
+#### `sdqctl flow`
+
+Batch/parallel execution:
+
+```bash
+sdqctl flow workflows/*.conv --parallel 4
+sdqctl flow workflows/*.conv --continue-on-error
+```
+
+#### `sdqctl apply`
+
+Apply a workflow to multiple components with progress tracking:
+
+```bash
+# Apply workflow to all plugins
+sdqctl apply workflow.conv --components "lib/plugins/*.js"
+
+# With progress file
+sdqctl apply workflow.conv --components "src/**/*.ts" --progress progress.md
+
+# Parallel execution
+sdqctl apply workflow.conv --components "lib/*.js" --parallel 4 --output-dir reports/
+```
+
+#### Progress File Format
+
+The `--progress` option writes a markdown file tracking iteration status:
+
+```markdown
+## Iteration Progress
+
+Started: 2026-01-21T09:30:00
+
+| Component | Status | Output | Duration |
+|-----------|--------|--------|----------|
+| module1.js | ✅ Done | reports/module1.md | 12.3s |
+| module2.js | 🔄 Running | - | - |
+| module3.js | ⏳ Pending | - | - |
+| module4.js | ❌ Failed | - | 5.2s |
+
+**Summary:** 1/4 complete, 1 running, 1 pending, 1 failed
+```
+
+Status indicators:
+- ✅ Done - Component processed successfully
+- 🔄 Running - Currently being processed
+- ⏳ Pending - Waiting to be processed
+- ❌ Failed - Processing failed
+
+#### `sdqctl verify`
+
+Static verification suite for workflows and references. These commands run **without AI calls** and are safe for CI/CD pipelines.
+
+> **📖 See Also**: [docs/VALIDATION-WORKFLOW.md](docs/VALIDATION-WORKFLOW.md) for comprehensive guidance on the validation pipeline (`validate` → `verify` → `render` → `run`).
+
+```bash
+# Verify @-references resolve to files
+sdqctl verify refs
+
+# Verify markdown links
+sdqctl verify links
+
+# Verify STPA traceability (UCA→SC→REQ→SPEC→TEST)
+sdqctl verify traceability
+
+# Verify terminology consistency (deprecated terms, capitalization)
+sdqctl verify terminology
+
+# Verify assertions have messages and trace IDs
+sdqctl verify assertions
+
+# Run all verifications
+sdqctl verify all
+
+# JSON output for scripting
+sdqctl verify refs --json
+
+# Verify specific directory
+sdqctl verify refs -p examples/workflows/
+```
+
+#### VERIFY Directive (In-Workflow Verification)
+
+Run verifications during workflow execution:
+
+```dockerfile
+# Verify all @-references before proceeding
+VERIFY refs
+
+# Verify markdown links
+VERIFY links
+
+# Verify STPA traceability chain
+VERIFY traceability
+
+# Verify terminology consistency
+VERIFY terminology
+
+# Verify assertions are documented
+VERIFY assertions
+
+# Control error handling
+VERIFY-ON-ERROR continue
+VERIFY refs
+
+# Only include output on failure
+VERIFY-OUTPUT on-error
+VERIFY refs
+
+# Combine with ELIDE to fix issues
+VERIFY traceability
+ELIDE
+PROMPT Fix any traceability gaps found above.
+```
+
+#### `sdqctl refcat`
+
+Extract file content with line-level precision for context injection:
+
+```bash
+# Extract specific lines
+sdqctl refcat @path/file.py#L10-L50
+
+# Single line
+sdqctl refcat @path/file.py#L42
+
+# Line to end of file
+sdqctl refcat @path/file.py#L100-
+
+# Pattern search (first match)
+sdqctl refcat @path/file.py#/def my_func/
+
+# Multiple refs
+sdqctl refcat @file1.py#L10 @file2.py#L20-L30
+
+# JSON output for scripting
+sdqctl refcat @file.py#L10-L50 --json
+
+# Validate refs without output
+sdqctl refcat @file.py#L10-L50 --validate-only
+
+# Without line numbers
+sdqctl refcat @file.py#L10-L50 --no-line-numbers
+```
+
+Output format includes file origin and line numbers:
+
+```markdown
+## From: sdqctl/core/context.py:182-194 (relative to /home/user/project)
+```python
+182 |     def get_context_content(self) -> str:
+183 |         """Get formatted context content..."""
+...
+```
+```
+
+For cross-repository workflows, use aliases:
+
+```bash
+# With alias (defined in ~/.sdqctl/aliases.yaml)
+sdqctl refcat loop:LoopKit/Sources/Algorithm.swift#L100-L200
+```
+
+**Cross-Repo Usage Patterns:**
+
+```bash
+# Compare implementations across projects
+sdqctl refcat loop:Algorithm.swift#L50-100 aaps:DetermineBasalAdapter.kt#L30-80
+
+# In .conv files - reference external code for analysis
+REFCAT loop:LoopKit/Sources/Loop/Models/BolusEntry.swift#L1-50
+REFCAT aaps:app/src/main/java/info/nightscout/androidaps/plugins/aps/loop/LoopPlugin.kt#L100-150
+PROMPT Compare these bolus handling implementations.
+
+# Using workspace.lock.json for project aliases
+# Create workspace.lock.json in project root:
+# {
+#   "aliases": {
+#     "loop": "/path/to/LoopKit",
+#     "aaps": "/path/to/AndroidAPS"
+#   }
+# }
+```
+
+See `proposals/REFCAT-DESIGN.md` for full specification.
+
+#### `sdqctl status`
+
+Show session and system status:
+
+```bash
+sdqctl status
+sdqctl status --adapters
+sdqctl status --sessions
+sdqctl status --models
+sdqctl status --auth
+```
+
+#### `sdqctl sessions`
+
+Manage conversation sessions:
+
+```bash
+# List all sessions
+sdqctl sessions list
+sdqctl sessions list --format json
+sdqctl sessions list --filter "audit-*"
+
+# Delete a session
+sdqctl sessions delete SESSION_ID
+sdqctl sessions delete SESSION_ID --force
+
+# Clean up old sessions
+sdqctl sessions cleanup --older-than 7d --dry-run
+sdqctl sessions cleanup --older-than 30d
+```
+
+#### `sdqctl help`
+
+Comprehensive help system:
+
+```bash
+sdqctl help                  # Overview
+sdqctl help iterate          # Command help
+sdqctl help directives       # Topic help
+sdqctl help --list           # List all commands and topics
+```
+
+Available topics: `directives`, `adapters`, `workflow`, `variables`, `context`, `examples`
+
+## Adapters
+
+| Adapter | Package | Description |
+|---------|---------|-------------|
+| `mock` | Built-in | Testing adapter |
+| `copilot` | `github-copilot-sdk` | GitHub Copilot CLI |
+| `claude` | `anthropic` | Anthropic Claude |
+| `openai` | `openai` | OpenAI GPT |
+
+> **📖 Configuration**: See [docs/ADAPTERS.md](docs/ADAPTERS.md) for authentication, environment variables, and provider-specific options.
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run tests with markers
+pytest -m integration       # Integration tests only (15 tests)
+pytest -m "not slow"        # Skip slow tests (~1s faster)
+pytest -m "not integration" # Unit tests only
+
+# Lint
+ruff check sdqctl/
+```
+
+## Roadmap
+
+### Recently Completed
+
+- ✅ **ON-FAILURE/ON-SUCCESS Blocks** - Conditional execution after RUN commands
+- ✅ **All Quirks Resolved** - Q-013 tool name fix completes quirk backlog
+- ✅ **REFCAT Command** - Extract file content with line ranges (`@file.py#L10-L50`) for precise context injection
+- ✅ **VERIFY Directive** - Static verification during workflows ([docs](#verify-directive-in-workflow-verification))
+- ✅ **STPA Workflow Templates** - Safety analysis workflows (`examples/workflows/stpa/`)
+- ✅ **RUN-RETRY Directive** - AI-assisted retry on command failure ([docs](#run-retry-ai-assisted-retry))
+- ✅ **INCLUDE Directive** - Compose workflows from reusable fragments
+- ✅ **REQUIRE Directive** - Pre-flight checks for files and commands
+
+### Waiting on SDK
+
+- 🔜 **Infinite Sessions** - Native SDK compaction (requires SDK v2 protocol)
+- 🔜 **Session Persistence** - Resume/list/delete sessions (requires SDK v2 protocol)
+- 🔜 **SDK ABORT Event Handling** - Code ready to handle abort signals, but SDK does not currently emit them ([details](./COPILOT-SDK-INTEGRATION.md#gap-sdk-abort-event-not-observed))
+
+### Planned Features
+
+#### P2: VERIFY-IMPLEMENTED Directive
+
+Pattern search in code to verify safety constraints are implemented:
+
+```dockerfile
+# Check that safety constraint is implemented in code
+VERIFY-IMPLEMENTED SC-BOLUS-003a
+```
+
+See [proposals/STPA-INTEGRATION.md](./proposals/STPA-INTEGRATION.md) for design details.
+
+#### P2: Tight Validation Tool Integration
+
+Integrate sdqctl with verification tools (like `verify_refs.py`) as first-class gates:
+
+```dockerfile
+# Proposed: require tool success before continuing
+REQUIRE-TOOL verify_refs --check refs.yaml
+GATE @reports/verification.json exists
+
+# Dynamic context from tool output
+CONTEXT-FROM-TOOL verify_refs --output-format json
+```
+
+#### P3: Permission Handler
+
+Implement SDK permission handler for safe unattended automation:
+
+```dockerfile
+ALLOW-SHELL echo,ls,cat,grep
+DENY-SHELL rm,sudo,chmod
+PERMISSION-MODE strict
+```
+
+#### P3: Hook/Skill Integration
+
+Explore integration with Copilot hooks and skills for:
+- Pre/post prompt hooks for validation
+- Domain-specific skills injection
+- Custom tool registration
+
+See [COPILOT-SDK-INTEGRATION.md](./COPILOT-SDK-INTEGRATION.md) for full SDK integration plans.
+
+## License
+
+MIT
