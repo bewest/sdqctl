@@ -532,7 +532,7 @@ class ConversationFile:
         allow_missing: bool = False,
     ) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
         """Validate that all REFCAT file references exist.
-        
+
         Expands glob patterns before validation, storing expanded refs
         back to self.refcat_refs for use in rendering.
 
@@ -550,7 +550,7 @@ class ConversationFile:
 
         # Expand glob patterns first (e.g., @src/**/*.py -> [@src/a.py, @src/b.py])
         expanded_refs = expand_glob_refs(self.refcat_refs, workflow_base)
-        
+
         # Store expanded refs back for rendering
         self.refcat_refs = expanded_refs
 

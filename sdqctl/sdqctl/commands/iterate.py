@@ -166,7 +166,7 @@ def iterate(
     TARGETS can be a mix of .conv file paths and inline prompt strings.
     Use --- between items to force separate turns (default: adjacent items elide).
     Maximum one .conv file allowed in mixed mode.
-    
+
     Use --prompt/-p and --file/-f to disambiguate when auto-detection fails.
 
     NOTE: When using --- separators, place -- before targets to prevent Click
@@ -210,7 +210,7 @@ def iterate(
     merged_targets = merge_explicit_with_targets(
         targets, explicit_prompts, explicit_files
     )
-    
+
     # Handle deprecated CLI options with warnings
     effective_compaction_min = compaction_min
     if min_compaction_density is not None:

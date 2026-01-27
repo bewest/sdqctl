@@ -18,7 +18,7 @@ def calculate_coverage(
     artifacts_by_type: dict[str, list[str]],
 ) -> dict[str, float]:
     """Calculate traceability coverage metrics.
-    
+
     Returns a dict with:
     - total_* counts for each artifact type
     - *_to_* percentages for trace chain links

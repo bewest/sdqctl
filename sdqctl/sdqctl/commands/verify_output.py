@@ -25,7 +25,7 @@ def output_result(
     name: str,
 ) -> None:
     """Output verification result in requested format.
-    
+
     Note: Raises SystemExit with appropriate code.
     """
     if json_output:
@@ -50,13 +50,13 @@ def output_result(
 
 def apply_strict_mode(result: VerificationResult) -> VerificationResult:
     """Promote warnings to errors in strict mode.
-    
+
     Returns a new VerificationResult with warnings converted to errors
     and passed=False if there were any warnings.
     """
     if not result.warnings:
         return result
-    
+
     return VerificationResult(
         passed=False,
         errors=result.errors + result.warnings,

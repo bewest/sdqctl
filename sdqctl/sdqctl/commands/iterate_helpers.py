@@ -53,31 +53,31 @@ def merge_explicit_with_targets(
     explicit_files: tuple[str, ...],
 ) -> tuple[str, ...]:
     """Merge explicit --prompt and --file options with positional targets.
-    
+
     Explicit prompts are marked to prevent file detection.
     Explicit files are marked to ensure file treatment.
-    
+
     Args:
         targets: Positional target arguments
         explicit_prompts: Values from --prompt/-p options
         explicit_files: Values from --file/-f options
-    
+
     Returns:
         Merged tuple with markers for disambiguation
     """
     merged: list[str] = []
-    
+
     # Add explicit prompts with marker
     for prompt in explicit_prompts:
         merged.append(f"{EXPLICIT_PROMPT_MARKER}{prompt}")
-    
+
     # Add explicit files with marker
     for file_path in explicit_files:
         merged.append(f"{EXPLICIT_FILE_MARKER}{file_path}")
-    
+
     # Add positional targets as-is
     merged.extend(targets)
-    
+
     return tuple(merged)
 
 

@@ -199,61 +199,61 @@ def parse_ref(ref: str) -> RefSpec:
 
 def is_glob_pattern(ref: str) -> bool:
     """Check if a ref contains glob wildcards.
-    
+
     Args:
         ref: Reference string like "@path/**/*.py"
-        
+
     Returns:
         True if ref contains glob wildcards (* or ?)
     """
     # Strip @ prefix
     clean = ref[1:] if ref.startswith("@") else ref
-    
+
     # Check for wildcards, but not in line ranges or aliases
     has_glob = "*" in clean or "?" in clean
     has_line_ref = "#" in clean
     has_alias = ":" in clean and not clean.startswith("/")
-    
+
     return has_glob and not has_line_ref and not has_alias
 
 
 def expand_glob_refs(refs: list[str], cwd: Path) -> list[str]:
     """Expand glob patterns in refs to individual file refs.
-    
+
     Takes refs like "@src/**/*.py" and expands them to individual file refs.
     Non-glob refs are passed through unchanged.
-    
+
     Args:
         refs: List of reference strings
         cwd: Base directory for glob expansion
-        
+
     Returns:
         List of expanded refs (glob patterns replaced with matched files)
-        
+
     Example:
         >>> expand_glob_refs(["@src/**/*.py"], Path("/project"))
         ["@src/main.py", "@src/utils/helper.py"]
     """
     import glob as glob_module
-    
+
     expanded: list[str] = []
-    
+
     for ref in refs:
         if not is_glob_pattern(ref):
             # Not a glob, keep as-is
             expanded.append(ref)
             continue
-            
+
         # Strip @ prefix for globbing
         clean_ref = ref[1:] if ref.startswith("@") else ref
         pattern_path = cwd / clean_ref
-        
+
         # Use recursive glob for ** patterns
         if "**" in str(pattern_path):
             matches = glob_module.glob(str(pattern_path), recursive=True)
         else:
             matches = glob_module.glob(str(pattern_path))
-        
+
         # Add each match as a ref
         for match in sorted(matches):  # Sort for deterministic order
             match_path = Path(match)
@@ -265,11 +265,11 @@ def expand_glob_refs(refs: list[str], cwd: Path) -> list[str]:
                 except ValueError:
                     # Not relative to cwd, use absolute
                     expanded.append(f"@{match_path}")
-        
+
         # If no matches, keep original to generate a meaningful error later
         if not any(Path(m).is_file() for m in matches):
             expanded.append(ref)
-    
+
     return expanded
 
 
