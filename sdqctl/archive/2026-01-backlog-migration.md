@@ -277,3 +277,59 @@ Items archived from BACKLOG.md "Recently Completed" section.
 - [BACKLOG.md](../proposals/BACKLOG.md) - Current active items
 - [DECISIONS.md](DECISIONS.md) - Design decisions
 - [SESSIONS/2026-01-25.md](SESSIONS/2026-01-25.md) - Session logs
+
+---
+
+## Architecture Roadmap Details (Archived 2026-01-27)
+
+### Execution Engine Extraction - Reassessed
+
+**Original Problem**: `run.py` and `iterate.py` duplicate step execution logic
+
+**Analysis (2026-01-26)**:
+- run.py: 14 step type handlers
+- iterate.py: 5 step type handlers
+- Overlap: 5 types but NOT 1:1 duplicates (context-aware)
+- **Finding**: ~100 lines of truly shared code, not ~500
+
+**Solution**: Extract `resolve_run_directory()` helper, defer full StepExecutor
+
+### ConversationFile Split (P0)
+
+```
+core/conversation/
+  __init__.py      # Re-exports (69 lines)
+  types.py         # DirectiveType enum (246 lines)
+  parser.py        # parse_line() (37 lines)
+  applicator.py    # apply_directive() (419 lines)
+  templates.py     # Template substitution (106 lines)
+  utilities.py     # Content resolution (204 lines)
+  file.py          # ConversationFile class (858 lines)
+```
+
+### Copilot Adapter Modularization
+
+```
+adapters/
+  copilot.py       # CopilotAdapter (670 lines)
+  events.py        # CopilotEventHandler (585 lines)
+  stats.py         # SessionStats (191 lines)
+```
+
+### CLI Modularization
+
+```
+commands/
+  init.py     # init command (276 lines)
+  resume.py   # resume command (292 lines)
+```
+
+### Loop Detection Refinement
+
+Skip minimal response check if tools were called:
+```python
+def _check_minimal_response(self, response, cycle_number, tools_called=0):
+    if tools_called > 0:  # Agent was productive
+        return False
+    return len(response.strip()) < self.min_response_length
+```

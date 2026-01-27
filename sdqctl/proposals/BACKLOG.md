@@ -13,7 +13,7 @@
 | SDK | [backlogs/sdk-integration.md](backlogs/sdk-integration.md) | Copilot SDK, adapters, sessions |
 | Architecture | [backlogs/architecture.md](backlogs/architecture.md) | Module structure, refactoring |
 | Directives | [backlogs/directives.md](backlogs/directives.md) | Directive system, plugins |
-| Live updated backlog requests from human mid run | [backlogs/directives.md](LIVE-BACKLOG.md) | Directive system, plugins |
+| Live updated backlog requests from human mid run | [LIVE-BACKLOG.md](LIVE-BACKLOG.md) | Live backlog requests |
 
 ---
 
@@ -23,13 +23,13 @@
 **WP-006 LSP Integration**: ✅ Complete (8/8 items)  
 **WP-002 Continuous Monitoring**: ✅ Complete (6/6 items)
 
-### WP-003: Backlog Hygiene (Priority 1 - Human Requested)
+### WP-003: Backlog Hygiene ✅ Complete (3/3)
 
 | # | Item | Priority | Effort | Status |
 |---|------|----------|--------|--------|
 | 1 | Trim RECENTLY COMPLETED section (max 20 lines) | P2 | Low | ✅ Done |
 | 2 | Documentation audit - find outdated docs | P2 | Medium | ✅ Done |
-| 3 | Backlog organization - archive old material | P2 | Medium | Ready |
+| 3 | Backlog organization - archive old material | P2 | Medium | ✅ Done |
 
 **Source**: LIVE-BACKLOG.md (human mid-run request)
 
@@ -135,55 +135,16 @@
 
 Pre-grouped items that can complete together in 1-2 iterations. Prioritized within Ready Queue.
 
-### WP-001: SDK Economy Optimization (P3) ✅ COMPLETE
+### Completed Work Packages
 
-Related items for improving iteration efficiency:
-- [x] Domain-partitioned queues (Medium) - Separate backlogs per domain ✅ 2026-01-27
-- [x] Iteration metrics tracking (Medium) - Items/cycle, lines/cycle metrics ✅ 2026-01-27
-- [ ] backlog-processor-v3.conv (High) - Full economy optimization (future)
+| WP | Name | Status | Key Deliverables |
+|----|------|--------|------------------|
+| WP-001 | SDK Economy Optimization | ✅ Complete | Domain backlogs, metrics schema, core/metrics.py |
+| WP-002 | Continuous Monitoring | ✅ Complete | monitoring module, drift CLI, 19 tests |
+| WP-005 | STPA Deep Integration | ✅ Complete | Audit, patterns, usage guide, roadmap |
+| WP-006 | LSP Integration | ✅ Complete | lsp module, type lookup, LSP directive |
 
-**Specification (2026-01-27)**:
-
-**Domain-Partitioned Queues**:
-- 5 domains: `testing`, `cli`, `sdk-integration`, `architecture`, `directives`
-- Structure: `proposals/backlogs/{domain}.md` with main BACKLOG.md cross-referencing
-- Items tagged with domain; cross-cutting items stay in main backlog
-- Partition strategy: keyword matching on item description
-
-**Iteration Metrics**:
-- Work output: items/cycle, lines/cycle, tests/cycle
-- Token efficiency: in/out ratio, estimated cost per item
-- Duration: time/cycle, time/item
-- Storage: `~/.sdqctl/sessions/{id}/metrics.json` (raw) + `reports/metrics/` (summaries)
-
-**Dependencies**: Work package markers (this item) must complete first.  
-**Estimated**: 2 iterations, ~200 lines
-
-### WP-002: Continuous Monitoring (P3 R&D)
-
-Continuous monitoring capabilities to detect drift, breaking changes, and alignment opportunities across external repositories.
-
-**Phase 1: Foundation** (Low-effort items)
-- [ ] Create `sdqctl/monitoring/__init__.py` module structure
-- [ ] Define `ChangeDetector` interface for git-based diff analysis
-- [ ] Add `drift` subcommand to CLI with placeholder
-- [ ] Implement git log parsing for commit range analysis
-- [ ] Add `--since` date filter for drift detection
-
-**Phase 2: Drift Detection** (Low-effort items)
-- [ ] Implement `sdqctl drift --report` for one-shot analysis
-- [ ] Add change classification (Critical/High/Medium/Low impact)
-- [ ] Create drift report markdown output format
-- [ ] Add `--paths` filter for targeted drift detection
-
-**Phase 3: Watch Mode** (Medium-effort items)
-- [ ] Implement `sdqctl watch` background polling loop
-- [ ] Add `--webhook` notification support
-- [ ] Add `--auto-analyze` workflow trigger integration
-
-**Proposal**: [CONTINUOUS-MONITORING.md](CONTINUOUS-MONITORING.md)  
-**Dependencies**: None (R&D track)  
-**Estimated**: 2 iterations, ~400 lines
+*Details → [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)*
 
 ### WP-003: Upstream Contribution (P3 R&D)
 
@@ -191,76 +152,22 @@ Related items for contributing fixes upstream:
 - [ ] `sdqctl delegate <GAP-ID>` - Draft upstream fixes
 - [ ] `sdqctl upstream status` - Track contribution status
 
-**Dependencies**: WP-002 (needs drift detection)  
+**Dependencies**: WP-002 (needs drift detection) ✅  
 **Estimated**: 2 iterations, ~300 lines
 
-### WP-004: Plugin System (P3 R&D)
+### WP-004: Plugin System (P3 R&D) - Partial
 
-Enable ecosystem teams to extend sdqctl with custom directives/commands independently of sdqctl release cycle.
+Enable ecosystem teams to extend sdqctl with custom directives/commands.
 
-- [x] Define `.sdqctl/directives.yaml` manifest schema ✅ 2026-01-27
-- [x] Implement directive discovery from manifest ✅ 2026-01-27
-- [x] Hello world plugin in externals/rag-nightscout-ecosystem-alignment ✅ 2026-01-27
+- [x] Define `.sdqctl/directives.yaml` manifest schema ✅
+- [x] Implement directive discovery from manifest ✅
+- [x] Hello world plugin ✅
 - [ ] Security/sandboxing implementation
-- [x] Plugin authoring documentation ✅ 2026-01-27
-- [x] `sdqctl verify plugin` command for running plugins ✅ 2026-01-27
+- [x] Plugin authoring documentation ✅
+- [x] `sdqctl verify plugin` command ✅
 
 **Proposal**: [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md)  
-**Dependencies**: None  
-**Estimated**: 3-4 iterations, ~500 lines
-
-### WP-005: STPA Deep Integration Research (P3 R&D) ✅ COMPLETE
-
-Comprehensive research on STPA integration for Nightscout ecosystem, delivering usage guide and improvement predictions.
-
-- [x] Current state analysis and gap mapping ✅ 2026-01-27 (6 UCAs, 2 SCs, 122 GAPs found)
-- [x] Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
-- [x] Cross-project UCA pattern discovery ✅ 2026-01-27 (3 pattern categories, 11 UCAs, 12 proposed SCs)
-- [x] STPA usage guide for ecosystem team ✅ 2026-01-27 (~2000 words, 6 sections, templates, checklist)
-- [x] Improvement predictions and 12-month roadmap ✅ 2026-01-27 (3 phases, 12 tasks, success metrics)
-
-**Proposal**: [STPA-DEEP-INTEGRATION.md](STPA-DEEP-INTEGRATION.md)  
-**Audit Report**: [reports/stpa-audit-2026-01-27.md](../reports/stpa-audit-2026-01-27.md)  
-**Dependencies**: Existing STPA-INTEGRATION.md  
-**Estimated**: 4 iterations, deliverable: ~2000 word report + templates
-
----
-
-### WP-006: LSP Integration (P3 R&D)
-
-Language Server Protocol integration for semantic code context - type extraction, cross-project comparison, and intelligent code analysis.
-
-**Phase 1: Foundation** (Low-effort items)
-- [x] Create `sdqctl/lsp/__init__.py` module structure ✅ 2026-01-27
-- [x] Define `LSPClient` base interface with connect/disconnect ✅ 2026-01-27
-- [x] Add `lsp` subcommand to CLI with placeholder ✅ 2026-01-27
-- [ ] Implement TypeScript server detection (tsserver in PATH or node_modules)
-- [x] Add `sdqctl lsp status` to show available servers ✅ 2026-01-27
-
-**Phase 2: TypeScript Type Extraction** (Low-effort items)
-- [ ] Implement `sdqctl lsp type <name>` for TypeScript
-- [ ] Add JSON output mode (`--json`) for type definitions
-- [ ] Add `LSP type` directive for .conv workflows
-- [ ] Create example workflow using LSP type queries
-
-**Phase 3: Multi-Language** (Medium-effort items)
-- [ ] Add Swift support (sourcekit-lsp detection)
-- [ ] Add Kotlin support (kotlin-language-server)
-- [ ] Language server lifecycle management (hybrid: on-demand + join existing)
-
-**Phase 4: Cross-Project** (Medium-effort items)
-- [ ] Implement `sdqctl lsp compare-types` across repos
-- [ ] Add `LSP compare` directive
-- [ ] Integration with ecosystem analysis workflows
-
-**Open Questions (Answered)**:
-- OQ-LSP-001: Lifecycle → Hybrid (on-demand with idle timeout + join existing)
-- OQ-LSP-004: Error handling → Fail fast default, `--lsp-fallback` CLI switch
-
-**Proposal**: [LSP-INTEGRATION.md](LSP-INTEGRATION.md)  
-**Supersedes**: "LSP support for refcat" backlog item  
-**Dependencies**: None (complements REFCAT, doesn't replace)  
-**Estimated**: 4-5 iterations, ~800 lines
+**Remaining**: Security/sandboxing (1 item)
 
 ---
 
@@ -271,6 +178,9 @@ Items not yet assigned to work packages:
 | Item | Source | Notes |
 |------|--------|-------|
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
+| WP-006 Phase 3: Multi-language LSP | [LSP-INTEGRATION.md](LSP-INTEGRATION.md) | Swift, Kotlin support |
+| WP-006 Phase 4: Cross-project compare | [LSP-INTEGRATION.md](LSP-INTEGRATION.md) | `lsp compare-types` |
+| WP-004: Plugin security | [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md) | Sandboxing implementation |
 
 ---
 
@@ -295,221 +205,35 @@ Design principles distilled from recent development iterations:
 > **Source**: Code review session 2026-01-25  
 > **Objective**: Improve maintainability without disrupting features
 
-### Execution Engine Extraction (P2) - ⚠️ REASSESSED
+### Completed Refactors
 
-**Original Problem**: `run.py` and `iterate.py` duplicate step execution logic (~500 lines overlap)
+| Item | Result | Date |
+|------|--------|------|
+| ConversationFile Split (P0) | 1,819 → 7 modules, largest 858 lines | 2026-01-26 |
+| Architecture Documentation (P1) | docs/ARCHITECTURE.md | 2026-01-26 |
+| CLI Modularization (P2) | 966 → 413 lines (-57%) | 2026-01-26 |
+| Copilot Adapter (P3) | 1,143 → 670 lines (-41%) | 2026-01-26 |
+| QUIRKS Grooming (P3) | 960 → 135 lines (-86%) | 2026-01-25 |
+| Loop Detection (P2) | Tool-aware minimal response check | 2026-01-26 |
+| SharedExecutionContext (P2) | core/session.py ExecutionContext | 2026-01-26 |
+| Execution Engine Reassessed | ~100 lines shared, helpers extracted | 2026-01-26 |
 
-**Analysis (2026-01-26):**
-- run.py: 14 step type handlers (full single-run executor)
-- iterate.py: 5 step type handlers (cycle wrapper with session context)
-- Overlap: 5 types (`checkpoint`, `compact`, `prompt`, `verify_trace`, `verify_coverage`)
-- **Finding**: Handlers share patterns but are NOT 1:1 duplicates. Each is context-aware:
-  - run.py checkpoint: writes output, git commits
-  - iterate.py checkpoint: simple session checkpoint
-  - run.py prompt: single execution
-  - iterate.py prompt: cycle context injection, stop file, continuation prompts
+*Details → [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)*
 
-**Revised Assessment**: ~100 lines of truly shared code (patterns), not ~500.
+### Remaining
 
-**Revised Solution**: Extract shared helpers, not full StepExecutor
-
-```python
-# commands/utils.py additions
-def resolve_run_directory(run_cwd, cwd, source_path) -> Path
-```
-
-| Task | Effort | Status |
-|------|--------|--------|
-| Extract run directory resolution | Low | ✅ Done (2026-01-26) |
-| Extract output formatting helpers | Low | 🔲 Deferred (already in truncate_output) |
-| Document why full StepExecutor deferred | Low | ✅ Done (this note) |
-
-**Completed (2026-01-26):** `resolve_run_directory()` extracted, 3 duplicated blocks replaced, 6 tests added.
-
-**Deferred**: Full StepExecutor refactor to Future (High effort, high risk for modest gain)
-
-### Shared ExecutionContext (P2) - ✅ COMPLETE
-
-**Problem**: Adapter initialization repeated in run.py, cycle.py, apply.py
-
-**Solution**: Created `ExecutionContext` dataclass in `core/session.py`
-
-```python
-@dataclass
-class ExecutionContext:
-    adapter: AdapterBase
-    adapter_config: AdapterConfig
-    adapter_session: AdapterSession
-    session: Session
-    conv: ConversationFile
-    verbosity: int
-    console: Console
-    show_prompt: bool
-    json_errors: bool
-```
-
-**Completed**: 2026-01-26
-
-| Task | Effort | Status |
-|------|--------|--------|
-| Define ExecutionContext in core/session.py | Low | ✅ Complete |
-| Add create_execution_context() factory | Low | ✅ Complete |
-| Add tests | Low | ✅ Complete (4 tests) |
-| Refactor run.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
-| Refactor iterate.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
-| Refactor apply.py to use ExecutionContext | Low | 🔲 Deferred to StepExecutor |
-
-### ConversationFile Split (P0) - ✅ COMPLETE
-
-**Problem**: `conversation.py` was 1,819 lines with mixed responsibilities
-
-**Completed**: 2026-01-26
-
-**Final structure**:
-```
-core/conversation/
-  __init__.py      # Re-exports for backward compatibility (69 lines)
-  types.py         # DirectiveType enum + dataclasses (246 lines)
-  parser.py        # parse_line() function (37 lines)
-  applicator.py    # apply_directive() functions (419 lines)
-  templates.py     # Template variable substitution (106 lines)
-  utilities.py     # Content resolution, injection builders (204 lines)
-  file.py          # ConversationFile class (858 lines)
-```
-
-**Result**: 1,819 lines → 7 modules, largest file 858 lines. All 1042 tests pass.
-
-### Architecture Documentation (P1) - ✅ COMPLETE
-
-**Completed**: 2026-01-26
-
-**Deliverable**: `docs/ARCHITECTURE.md` covering:
-- Module structure with package layout diagram
-- Key abstractions: ConversationFile, Session, ExecutionContext, AdapterBase, VerifierBase
-- Data flow diagram: conversation → renderer → adapter → SDK
-- Extension points: adapters, verifiers, directives, commands
-- Configuration hierarchy: defaults → config file → env → workflow → CLI
-- Error handling and exit codes
-- Testing strategy
-
-| Task | Effort | Status |
-|------|--------|--------|
-| Document module structure | Low | ✅ Complete |
-| Create data flow diagram | Low | ✅ Complete |
-| Document extension points | Low | ✅ Complete |
-| Add key abstractions section | Low | ✅ Complete |
-
-### Copilot Adapter Modularization (P3) - ✅ COMPLETE
-
-**Problem**: `copilot.py` was 1,143 lines with inline event handling
-
-**Completed**: 2026-01-26
-
-**Final structure**:
-```
-adapters/
-  copilot.py       # CopilotAdapter main class (670 lines)
-  events.py        # EventCollector + CopilotEventHandler + helpers (585 lines)
-  stats.py         # SessionStats, TurnStats, CompactionEvent (191 lines)
-```
-
-**Result**: 1,143 → 670 lines (41% reduction). Event handling extracted to `CopilotEventHandler` class.
-
-### CLI Modularization (P2) - ✅ COMPLETE
-
-**Problem**: `cli.py` was 966 lines with embedded `init` and `resume` commands
-
-**Completed**: 2026-01-26
-
-**Final structure**:
-```
-commands/
-  init.py     # init command + _create_copilot_files (276 lines)
-  resume.py   # resume command + _resume_async (292 lines)
-```
-
-**Result**: cli.py 966 → 413 lines (57% reduction).
-
-| Task | Effort | Status |
-|------|--------|--------|
-| Extract init command to commands/init.py | Low | ✅ Complete |
-| Extract resume command to commands/resume.py | Low | ✅ Complete |
-| Update cli.py imports | Low | ✅ Complete |
-| Fix test imports | Low | ✅ Complete (4 imports in test_resume.py) |
-
-### Integration Test Expansion (P3)
-
-| Test Area | Current | Target |
-|-----------|---------|--------|
-| Loop stress testing | ✅ 1 file | Keep |
-| Adapter integration | ❌ None | 1 file per adapter |
-| End-to-end workflows | ❌ None | 3-5 scenarios |
-| CLI integration | ❌ None | Core commands |
+| Item | Status | Notes |
+|------|--------|-------|
+| Integration Test Expansion (P3) | Open | Need adapter, e2e, CLI tests |
+| Full StepExecutor | Deferred | High effort, modest gain |
 
 ### Metrics
 
-| Metric | Current | Target | Notes |
-|--------|---------|--------|-------|
-| Max file size | 413 lines | <500 lines | cli.py (down from 966) |
-| Lint issues (E501/F841) | 0 | 0 | ✅ Clean |
-| Integration test files | 1 | 5+ | |
-| Code duplication (run/cycle) | ~100 lines | <100 lines | ✅ Helpers extracted |
-
-### QUIRKS Grooming (P3) - ✅ COMPLETE
-
-**Completed:** 2026-01-25
-
-**Result**:
-- `docs/QUIRKS.md`: 960 → 135 lines (86% reduction)
-- `archive/quirks/2026-01-resolved-quirks.md`: Full context preserved
-- `docs/SDK-LEARNINGS.md`: Extracted actionable patterns
-
-| File | Purpose |
-|------|---------|
-| `docs/QUIRKS.md` | Active quirks only (Q-017, Q-019A) + quick reference |
-| `archive/quirks/` | Archived resolved quirks with full details |
-| `docs/SDK-LEARNINGS.md` | Extracted patterns/learnings from resolved quirks |
-
-### Loop Detection Refinement (P2) - ✅ COMPLETE
-
-**Problem:** Minimal response detection (100 chars) triggers false positives on short but valid responses like Phase 6 commit acknowledgments.
-
-**Evidence:** Run #4 stopped at Cycle 5, Phase 6 with 98-char response after successful commit.
-
-**Root Cause:** `_check_minimal_response()` checks only response length, ignoring tool activity.
-
-**Solution Implemented:** Skip minimal response check if tools were called in the turn.
-
-```python
-# In loop_detector.py:
-def check(
-    self,
-    reasoning: Optional[str],
-    response: str,
-    cycle_number: int = 0,
-    tools_called: int = 0  # NEW: tool count for this turn
-) -> Optional[LoopDetected]:
-
-# In _check_minimal_response():
-def _check_minimal_response(
-    self, response: str, cycle_number: int, tools_called: int = 0
-) -> bool:
-    if cycle_number == 0:
-        return False
-    if tools_called > 0:  # Agent was productive
-        return False
-    return len(response.strip()) < self.min_response_length
-```
-
-**Completed:** 2026-01-26
-
-| Task | Effort | Status |
-|------|--------|--------|
-| Add `tools_called` param to `check()` | Low | ✅ Complete |
-| Modify `_check_minimal_response()` | Low | ✅ Complete |
-| Update call site in iterate.py | Low | ✅ Complete |
-| Add test for tool-aware detection | Low | ✅ Complete (2 tests) |
-| Update docstrings | Low | ✅ Complete |
+| Metric | Current | Target |
+|--------|---------|--------|
+| Max file size | 858 lines | <1000 |
+| Lint issues | 0 | 0 ✅ |
+| Integration test files | 1 | 5+ |
 
 ---
 
