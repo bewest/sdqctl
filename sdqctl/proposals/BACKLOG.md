@@ -20,7 +20,7 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | STPA usage guide for ecosystem team | P3 | Medium | WP-005 step 4: End-to-end workflow guide with templates. Builds on cross-project patterns. |
+| 1 | Improvement predictions and 12-month roadmap | P3 | Medium | WP-005 step 5: Synthesize recommendations into STPA-ROADMAP.md. Final deliverable. |
 
 ---
 
@@ -119,7 +119,7 @@ Comprehensive research on STPA integration for Nightscout ecosystem, delivering 
 - [x] Current state analysis and gap mapping ✅ 2026-01-27 (6 UCAs, 2 SCs, 122 GAPs found)
 - [x] Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
 - [x] Cross-project UCA pattern discovery ✅ 2026-01-27 (3 pattern categories, 11 UCAs, 12 proposed SCs)
-- [ ] STPA usage guide for ecosystem team
+- [x] STPA usage guide for ecosystem team ✅ 2026-01-27 (~2000 words, 6 sections, templates, checklist)
 - [ ] Improvement predictions and 12-month roadmap
 
 **Proposal**: [STPA-DEEP-INTEGRATION.md](STPA-DEEP-INTEGRATION.md)  
@@ -143,6 +143,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **STPA usage guide (P3)** | 2026-01-27 | WP-005 step 4: Created docs/STPA-USAGE-GUIDE.md. ~2000 words, quick start, full workflow, templates (UCA/SC/CF), tool integration, pitfalls, checklist. |
 | **Cross-project UCA pattern discovery (P3)** | 2026-01-27 | WP-005 step 3: Created traceability/stpa/cross-project-patterns.md. 3 pattern categories (Sync, Remote, Override), 11 UCAs, 12 proposed SCs. |
 | **Plugin authoring documentation (P3)** | 2026-01-27 | WP-004 step 5: Created docs/PLUGIN-AUTHORING.md. Quick start, manifest reference, examples, troubleshooting. |
 | **Performance benchmark suite (P3)** | 2026-01-27 | Created benchmarks/: bench_parsing.py, bench_rendering.py, bench_workflow.py, bench_sdk.py, run.py. Covers code perf, workflow timing, SDK latency. |

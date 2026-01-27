@@ -116,14 +116,14 @@ What severity classification standard best fits global regulatory requirements?
 
 **Output**: [Cross-Project Patterns](../../externals/rag-nightscout-ecosystem-alignment/traceability/stpa/cross-project-patterns.md) (D3 complete)
 
-### Phase 3: Guide Development (1 iteration)
+### Phase 3: Guide Development (1 iteration) ✅ COMPLETE
 
-- [ ] Write STPA usage guide (D1)
-- [ ] Create templates for UCA, SC, CF entries
-- [ ] Test guide with one Tier 1 project (e.g., Loop bolus handling)
-- [ ] Refine based on test results
+- [x] Write STPA usage guide (D1) ✅ 2026-01-27
+- [x] Create templates for UCA, SC, CF entries ✅ 2026-01-27
+- [ ] Test guide with one Tier 1 project (e.g., Loop bolus handling) - Deferred to ecosystem team
+- [ ] Refine based on test results - Deferred to ecosystem team
 
-**Output**: STPA Usage Guide (D1 complete)
+**Output**: [STPA Usage Guide](../../externals/rag-nightscout-ecosystem-alignment/docs/STPA-USAGE-GUIDE.md) (D1 complete)
 
 ### Phase 4: Predictions & Roadmap (1 iteration)
 
