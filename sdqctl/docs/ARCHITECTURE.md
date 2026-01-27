@@ -453,3 +453,4 @@ pytest tests/test_conversation.py  # Specific module
 - [EXTENDING-VERIFIERS.md](EXTENDING-VERIFIERS.md) - Verifier extension guide
 - [PLUGIN-AUTHORING.md](PLUGIN-AUTHORING.md) - External plugin development
 - [CODE-QUALITY.md](CODE-QUALITY.md) - Code standards
+- [COLOPHON.md](COLOPHON.md) - How sdqctl was built (dogfooding story)

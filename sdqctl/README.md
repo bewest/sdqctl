@@ -86,6 +86,7 @@ Key directive categories:
 | [CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) | Token optimization strategies |
 | [ADAPTERS.md](docs/ADAPTERS.md) | AI provider configuration |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [COLOPHON.md](docs/COLOPHON.md) | How sdqctl was built (dogfooding story) |
 
 ## Installation
 

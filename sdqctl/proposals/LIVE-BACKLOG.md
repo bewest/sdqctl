@@ -1,4 +1,9 @@
+*No pending items.*
 
-Please add this as high priority to the backlog:
+---
 
-* ✅ DONE: Update docs according to recent audits to ensure accuracy, cohesiveness, and comprehension.
+## Processed
+
+| Item | Priority | Status | Date |
+|------|----------|--------|------|
+| Create docs/COLOPHON.md describing dogfooding process | P1 | ✅ Complete | 2026-01-27 |
