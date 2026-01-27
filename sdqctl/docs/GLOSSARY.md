@@ -193,6 +193,18 @@ This prevents context window exhaustion by routing items appropriately rather th
 
 Synonym for scope partitioning, emphasizing the division of work by kind rather than just priority. Helps agents evaluate and select batches of related work that can complete together efficiently.
 
+### Work Package
+
+A pre-grouped set of related backlog items that can complete together in 1-2 iterations. Work packages:
+- Share files or modules (reduces re-reading)
+- Have explicit dependencies
+- Include time/effort estimates
+- Are tracked with `WP-###` identifiers
+
+Example: `WP-001: SDK Economy Optimization` groups domain queues, metrics tracking, and workflow optimization.
+
+See: [BACKLOG.md Work Packages section](../proposals/BACKLOG.md#work-packages)
+
 ---
 
 ## Disambiguation
