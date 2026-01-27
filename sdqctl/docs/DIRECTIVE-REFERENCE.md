@@ -38,7 +38,7 @@ Complete reference for sdqctl ConversationFile directives.
 | `CONTEXT-LIMIT` | Context window threshold | `CONTEXT-LIMIT 80%` |
 | `ON-CONTEXT-LIMIT` | Action when limit reached | `ON-CONTEXT-LIMIT compact` |
 | `VALIDATION-MODE` | Validation strictness | `VALIDATION-MODE lenient` |
-| `REFCAT` | Code excerpt injection | `REFCAT @file.py#L10-L50` |
+| `REFCAT` | Code excerpt injection | `REFCAT @file.py#L10-L50` or `REFCAT @src/**/*.py` |
 
 ### File Control Directives
 
