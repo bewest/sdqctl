@@ -16,14 +16,13 @@
 
 ---
 
-## Ready Queue (4 Actionable Items)
+## Ready Queue (3 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Audit existing STPA artifacts | P3 | Low | WP-005 step 1: Count UCAs, SCs, coverage in ecosystem workspace. All OQs resolved. |
-| 2 | Define custom severity scale with ISO 14971 mapping | P3 | Low | WP-005 step 2: Simple 3-5 level scale with standard mapping. |
-| 3 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
-| 4 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 1 | Define custom severity scale with ISO 14971 mapping | P3 | Low | WP-005 step 2: Simple 3-5 level scale with standard mapping. |
+| 2 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
+| 3 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
 
 ---
 
@@ -119,12 +118,13 @@ Enable ecosystem teams to extend sdqctl with custom directives/commands independ
 
 Comprehensive research on STPA integration for Nightscout ecosystem, delivering usage guide and improvement predictions.
 
-- [ ] Current state analysis and gap mapping
+- [x] Current state analysis and gap mapping ✅ 2026-01-27 (6 UCAs, 2 SCs, 122 GAPs found)
 - [ ] Cross-project UCA pattern discovery
 - [ ] STPA usage guide for ecosystem team
 - [ ] Improvement predictions and 12-month roadmap
 
 **Proposal**: [STPA-DEEP-INTEGRATION.md](STPA-DEEP-INTEGRATION.md)  
+**Audit Report**: [reports/stpa-audit-2026-01-27.md](../reports/stpa-audit-2026-01-27.md)  
 **Dependencies**: Existing STPA-INTEGRATION.md  
 **Estimated**: 4 iterations, deliverable: ~2000 word report + templates
 
@@ -144,6 +144,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Audit STPA artifacts (P3)** | 2026-01-27 | WP-005 step 1: Created reports/stpa-audit-2026-01-27.md. Found 6 UCAs, 2 SCs, 122 GAPs. SC coverage 17%, HAZ missing. |
 | **Define directives.yaml schema (P3)** | 2026-01-27 | WP-004 step 1: Created docs/directives-schema.json. Defines version, directives map, handlers, args, timeout, requires. |
 | **Add metrics collection (P3)** | 2026-01-27 | WP-001 step 4: Created core/metrics.py, emit_metrics() to session dir. ~80 lines. Tracks tokens, cycles, duration. |
 | **Migrate testing items (P3)** | 2026-01-27 | WP-001 step 3: Moved 17 test-related items to proposals/backlogs/testing.md. |
