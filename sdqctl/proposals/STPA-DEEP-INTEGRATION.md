@@ -190,17 +190,17 @@ Existing STPA workflows:
 
 ## Open Questions
 
-| ID | Question | Options | Status |
-|----|----------|---------|--------|
-| OQ-STPA-001 | Who maintains STPA artifacts? | Central team / Per-project / Hybrid | Open |
-| OQ-STPA-002 | Severity classification standard | ISO 14971 / IEC 62304 / Custom | Open |
-| OQ-STPA-003 | AI/human review handoff | Mandatory gates / Continuous review | Open |
-| OQ-STPA-004 | STPA artifact lifecycle | Matches code / Separate cadence | Open |
+| ID | Question | Options | Decision (2026-01-27) |
+|----|----------|---------|----------------------|
+| OQ-STPA-001 | Who maintains STPA artifacts? | Central team / Per-project / Hybrid | **Incubation**: Nightscout ecosystem alignment team incubates until sub-projects adopt |
+| OQ-STPA-002 | Severity classification standard | ISO 14971 / IEC 62304 / Custom | **Custom with ISO 14971 mapping**: Start simple, provide mapping to standard |
+| OQ-STPA-003 | AI/human review handoff | Mandatory gates / Continuous review | **Continuous review**: AI suggests, human approves incrementally |
+| OQ-STPA-004 | STPA artifact lifecycle | Matches code / Separate cadence | **Research deliverable**: Include recommendations with impact analysis on management/bloat vs value |
 
 ### Notes from Recent Discussions
 
-- **OQ-STPA-001**: Recent meeting indicates ecosystem team uncertain about artifact ownership. Need to demonstrate substantial value before committing to maintenance model.
-- **OQ-STPA-004**: Artifact lifecycle may not match code maintenance lifecycle they prefer. Need flexible approach.
+- **OQ-STPA-001**: Ecosystem team will incubate artifacts centrally, with a path for sub-projects to adopt ownership when ready.
+- **OQ-STPA-004**: Lifecycle recommendations will be part of D2 (Improvement Predictions Report) with trade-off analysis.
 
 ---
 

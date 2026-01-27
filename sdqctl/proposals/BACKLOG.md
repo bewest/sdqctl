@@ -6,7 +6,7 @@
 
 ---
 
-## Ready Queue (8 Actionable Items)
+## Ready Queue (10 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
@@ -16,8 +16,10 @@
 | 4 | Migrate testing items to `backlogs/testing.md` | P3 | Low | WP-001 step 3: Move ~17 test-related completed items. |
 | 5 | Add metrics collection to iterate.py | P3 | Low | WP-001 step 4: ~20 lines, emit to session dir. |
 | 6 | Define `.sdqctl/directives.yaml` schema | P3 | Low | WP-004 step 1: JSON schema for plugin manifest. All OQs resolved. |
-| 7 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
-| 8 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 7 | Audit existing STPA artifacts | P3 | Low | WP-005 step 1: Count UCAs, SCs, coverage in ecosystem workspace. All OQs resolved. |
+| 8 | Define custom severity scale with ISO 14971 mapping | P3 | Low | WP-005 step 2: Simple 3-5 level scale with standard mapping. |
+| 9 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
+| 10 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
 
 ---
 
