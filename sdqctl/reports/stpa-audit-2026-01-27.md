@@ -123,6 +123,11 @@ All UCAs found in `docs/sdqctl-proposals/STPA-TRACEABILITY-FRAMEWORK.md`:
 
 ## Next Steps (WP-005)
 
-- [ ] Step 2: Define custom severity scale with ISO 14971 mapping
-- [ ] Step 3: Cross-project UCA pattern discovery
+- [x] Step 2: Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
+- [x] Step 3: Cross-project UCA pattern discovery ✅ 2026-01-27
 - [ ] Step 4: STPA usage guide for ecosystem team
+
+## Related Documents
+
+- [Severity Scale](../docs/stpa-severity-scale.md) - S1-S4 scale with ISO 14971 mapping
+- [Cross-Project Patterns](../../externals/rag-nightscout-ecosystem-alignment/traceability/stpa/cross-project-patterns.md) - 3 pattern categories, 11 UCAs, 12 proposed SCs

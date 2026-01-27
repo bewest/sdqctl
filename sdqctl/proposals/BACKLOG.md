@@ -20,7 +20,7 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Cross-project UCA pattern discovery | P3 | Medium | WP-005 step 3: Analyze UCAs across Loop/AAPS/Trio for common patterns. Builds on audit report. |
+| 1 | STPA usage guide for ecosystem team | P3 | Medium | WP-005 step 4: End-to-end workflow guide with templates. Builds on cross-project patterns. |
 
 ---
 
@@ -118,7 +118,7 @@ Comprehensive research on STPA integration for Nightscout ecosystem, delivering 
 
 - [x] Current state analysis and gap mapping ✅ 2026-01-27 (6 UCAs, 2 SCs, 122 GAPs found)
 - [x] Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
-- [ ] Cross-project UCA pattern discovery
+- [x] Cross-project UCA pattern discovery ✅ 2026-01-27 (3 pattern categories, 11 UCAs, 12 proposed SCs)
 - [ ] STPA usage guide for ecosystem team
 - [ ] Improvement predictions and 12-month roadmap
 
@@ -143,6 +143,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Cross-project UCA pattern discovery (P3)** | 2026-01-27 | WP-005 step 3: Created traceability/stpa/cross-project-patterns.md. 3 pattern categories (Sync, Remote, Override), 11 UCAs, 12 proposed SCs. |
 | **Plugin authoring documentation (P3)** | 2026-01-27 | WP-004 step 5: Created docs/PLUGIN-AUTHORING.md. Quick start, manifest reference, examples, troubleshooting. |
 | **Performance benchmark suite (P3)** | 2026-01-27 | Created benchmarks/: bench_parsing.py, bench_rendering.py, bench_workflow.py, bench_sdk.py, run.py. Covers code perf, workflow timing, SDK latency. |
 | **Directive discovery from manifest (P3)** | 2026-01-27 | WP-004 step 2: Created sdqctl/plugins.py. Loads .sdqctl/directives.yaml, registers PluginVerifier handlers. 21 tests. Total 1497 tests. |
