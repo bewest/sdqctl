@@ -17,17 +17,19 @@
 
 ---
 
-## Ready Queue (3 Actionable Items)
+## Ready Queue (1 Actionable Item)
 
 **Groomed from WP-003 and WP-004** - 2026-01-27  
-**Priority**: WP-003 Upstream Contribution now unblocked (WP-002 complete)
+**Note**: WP-003 blocked pending human review of OQ-UP-001..004
 
-### WP-003: Upstream Contribution (Priority 1)
+### WP-003: Upstream Contribution (Priority 1) - BLOCKED
 
 | # | Item | Priority | Effort | Status |
 |---|------|----------|--------|--------|
-| 1 | Implement `sdqctl delegate <GAP-ID>` command | P3 | Low | |
-| 2 | Implement `sdqctl upstream status` command | P3 | Low | |
+| 1 | Implement `sdqctl delegate <GAP-ID>` command | P3 | Low | ⏸️ Blocked: OQ-UP-001..004 |
+| 2 | Implement `sdqctl upstream status` command | P3 | Low | ⏸️ Blocked: OQ-UP-001..004 |
+
+**Blocker**: 4 open questions in UPSTREAM-CONTRIBUTIONS.md routed to OPEN-QUESTIONS.md
 
 ### WP-004: Plugin Security (Priority 2)
 

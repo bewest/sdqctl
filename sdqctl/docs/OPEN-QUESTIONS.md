@@ -14,7 +14,11 @@ Questions awaiting human decision or clarification.
 
 | ID | Question | Source | Priority | Asked | Context |
 |----|----------|--------|----------|-------|---------|
-| *(No pending questions)* | | | | | |
+| OQ-UP-001 | Branching strategies for upstream repos? | UPSTREAM-CONTRIBUTIONS.md | P3 | 2026-01-27 | Different repos use main/master/develop. How should delegate handle? |
+| OQ-UP-002 | Auto-create issues before PRs? | UPSTREAM-CONTRIBUTIONS.md | P3 | 2026-01-27 | Some repos require issue first. Default behavior? |
+| OQ-UP-003 | CLA requirement handling? | UPSTREAM-CONTRIBUTIONS.md | P3 | 2026-01-27 | How to detect/handle CLA requirements? |
+| OQ-UP-004 | Project-specific CI integration? | UPSTREAM-CONTRIBUTIONS.md | P3 | 2026-01-27 | Integration with varied CI systems across repos |
+| OQ-UP-005 | Additional consolidation work needed? | LIVE-BACKLOG.md | P3 | 2026-01-27 | Human asked if more consolidation proposals should be created |
 
 ---
 
