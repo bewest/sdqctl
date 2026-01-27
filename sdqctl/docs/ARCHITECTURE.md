@@ -94,7 +94,7 @@ sdqctl/
 │   └── utils.py          # Shared command utilities
 │
 ├── verifiers/            # Verification subsystem
-│   ├── __init__.py       # Exports run_verification()
+│   ├── __init__.py       # Exports VERIFIERS registry, auto-registers plugins
 │   ├── base.py           # VerifierBase, VerificationResult
 │   ├── refs.py           # Reference verifier (@file checks)
 │   ├── links.py          # Link verifier (URL checks)
@@ -102,6 +102,9 @@ sdqctl/
 │   ├── traceability.py   # Traceability matrix (571 lines)
 │   ├── traceability_coverage.py  # Coverage calculation helpers (135 lines)
 │   └── assertions.py     # Inline assertion checks
+│
+├── plugins.py            # Plugin discovery and registration
+│                         # Loads .sdqctl/directives.yaml manifests
 │
 └── utils/                # Shared utilities
     ├── __init__.py
@@ -303,6 +306,23 @@ VERIFIERS = {
     "security": SecurityVerifier,  # New
 }
 ```
+
+### 2b. Adding Plugin Verifiers (External)
+
+Create `.sdqctl/directives.yaml` in your workspace:
+
+```yaml
+version: 1
+directives:
+  VERIFY:
+    my-check:
+      handler: python tools/verify_mycheck.py
+      description: "My custom verification"
+      timeout: 60
+```
+
+Plugin verifiers are auto-discovered and registered at import time.
+See `proposals/PLUGIN-SYSTEM.md` for the full specification.
 
 ### 3. Adding Directives
 

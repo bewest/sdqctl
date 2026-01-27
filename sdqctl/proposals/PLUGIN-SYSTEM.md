@@ -1,6 +1,6 @@
 # Proposal: Plugin System for Ecosystem Extensions
 
-> **Status**: Draft  
+> **Status**: In Progress (Phase 2 complete)  
 > **Date**: 2026-01-27  
 > **Author**: sdqctl development  
 > **Scope**: Allow external workspaces to extend sdqctl with custom directives/commands
@@ -111,27 +111,28 @@ Combine manifest-based discovery with Python SDK for complex cases:
 
 ## Implementation Phases
 
-### Phase 1: Design & Prototype (1 iteration)
+### Phase 1: Design & Prototype (1 iteration) ✅ COMPLETE
 
-- [ ] Define `.sdqctl/directives.yaml` schema
+- [x] Define `.sdqctl/directives.yaml` schema ✅ 2026-01-27
 - [ ] Define capability/security model (what can plugins access?)
 - [ ] Create minimal SDK interface (`sdqctl.sdk`)
 - [ ] Document design decisions
 
 **Deliverables:**
-- `docs/PLUGIN-DESIGN.md` - Design document
-- `sdqctl/sdk/__init__.py` - SDK stubs
+- `docs/directives-schema.json` - JSON Schema for manifest ✅
+- `sdqctl/sdk/__init__.py` - SDK stubs (deferred to Phase 3)
 
-### Phase 2: Hello World Plugin (1 iteration)
+### Phase 2: Hello World Plugin (1 iteration) ✅ COMPLETE
 
-- [ ] Implement directive discovery from manifest
+- [x] Implement directive discovery from manifest ✅ 2026-01-27
 - [ ] Create example plugin in `externals/rag-nightscout-ecosystem-alignment`
 - [ ] Test: `VERIFY ecosystem-gaps` directive works in .conv files
 - [ ] Test: `sdqctl verify ecosystem-gaps` CLI works
 
 **Deliverables:**
-- Working plugin in ecosystem workspace
-- `docs/PLUGIN-AUTHORING.md` - Plugin author guide
+- `sdqctl/plugins.py` - Plugin discovery and registration ✅
+- `tests/test_plugins.py` - 21 tests ✅
+- `docs/PLUGIN-AUTHORING.md` - Plugin author guide (TODO)
 
 ### Phase 3: Security & Polish (1 iteration)
 
