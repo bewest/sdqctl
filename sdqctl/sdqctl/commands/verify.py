@@ -530,3 +530,75 @@ def verify_assertions(
                     console.print(f"  [yellow]WARN[/yellow] {loc}: {warn.message}")
 
     raise SystemExit(0 if result.passed else 1)
+
+
+@verify.command("plugin")
+@click.argument("name", required=False, default=None)
+@click.option("--json", "json_output", is_flag=True, help="JSON output")
+@click.option("--verbose", "-v", is_flag=True, help="Show details")
+@click.option("--path", "-p", type=click.Path(exists=True), default=".",
+              help="Directory to verify")
+@click.option("--list", "list_plugins", is_flag=True, help="List available plugins")
+def verify_plugin(
+    name: Optional[str],
+    json_output: bool,
+    verbose: bool,
+    path: str,
+    list_plugins: bool,
+):
+    """Run a plugin verifier.
+
+    Plugin verifiers are defined in .sdqctl/directives.yaml manifests.
+    Use --list to see available plugins.
+
+    \b
+    Examples:
+      sdqctl verify plugin --list                # List available plugins
+      sdqctl verify plugin hello-world           # Run hello-world plugin
+      sdqctl verify plugin ecosystem-gaps -v     # Run with verbose output
+    """
+    from ..plugins import load_plugin_verifiers
+
+    plugins = load_plugin_verifiers(Path(path))
+
+    if list_plugins or name is None:
+        if not plugins:
+            console.print("[yellow]No plugin verifiers found[/yellow]")
+            console.print("Create .sdqctl/directives.yaml to define plugins")
+            console.print("See: sdqctl help plugin-authoring")
+        else:
+            console.print("[bold]Available Plugin Verifiers[/bold]")
+            for pname, pv in sorted(plugins.items()):
+                console.print(f"  {pname}: {pv.description}")
+        raise SystemExit(0)
+
+    if name not in plugins:
+        console.print(f"[red]Unknown plugin verifier:[/red] {name}")
+        if plugins:
+            console.print(f"Available: {', '.join(sorted(plugins.keys()))}")
+        else:
+            console.print("No plugins found. Create .sdqctl/directives.yaml")
+        raise SystemExit(1)
+
+    plugin = plugins[name]
+    result = plugin.verify(Path(path))
+
+    if json_output:
+        console.print_json(json.dumps(result.to_json()))
+    else:
+        status = "[green]✓ PASSED[/green]" if result.passed else "[red]✗ FAILED[/red]"
+        console.print(f"{status}: {result.summary}")
+
+        if verbose and result.details:
+            if result.details.get("stdout"):
+                console.print()
+                console.print("[bold]Output:[/bold]")
+                console.print(result.details["stdout"])
+
+        if not result.passed:
+            for err in result.errors:
+                console.print(f"  [red]ERROR[/red] {err.message}")
+                if err.fix_hint and verbose:
+                    console.print(f"        [dim]{err.fix_hint}[/dim]")
+
+    raise SystemExit(0 if result.passed else 1)

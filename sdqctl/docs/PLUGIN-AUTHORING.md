@@ -50,7 +50,9 @@ PROMPT Analyze the verification results.
 Or via CLI:
 
 ```bash
-sdqctl verify my-check
+sdqctl verify plugin my-check
+sdqctl verify plugin my-check -v  # verbose output
+sdqctl verify plugin --list       # list available plugins
 ```
 
 ---
@@ -219,25 +221,25 @@ directives:
 python tools/verify_mycheck.py
 
 # Test via sdqctl
-sdqctl verify my-check
-sdqctl verify my-check --verbose
+sdqctl verify plugin my-check
+sdqctl verify plugin my-check --verbose
 ```
 
 ### Verify Registration
 
 ```bash
-# Check if plugin is discovered
-python -c "from sdqctl.verifiers import VERIFIERS; print(list(VERIFIERS.keys()))"
+# List discovered plugins
+sdqctl verify plugin --list
 ```
 
 ### Debug Mode
 
 ```bash
 # Run with verbose output
-sdqctl verify my-check -v
+sdqctl verify plugin my-check -v
 
 # Check for errors
-sdqctl verify my-check 2>&1 | head -20
+sdqctl verify plugin my-check 2>&1 | head -20
 ```
 
 ---

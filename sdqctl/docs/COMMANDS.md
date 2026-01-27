@@ -300,6 +300,7 @@ sdqctl verify SUBCOMMAND [OPTIONS]
 | `assertions` | Assertion documentation |
 | `trace` | Single trace link |
 | `coverage` | Traceability coverage |
+| `plugin` | Run plugin verifiers |
 | `all` | Run all verifications |
 
 **Examples:**
@@ -315,6 +316,12 @@ sdqctl verify refs -p examples/workflows/
 
 # Suggest fixes for broken refs
 sdqctl verify refs --suggest-fixes
+
+# List available plugins
+sdqctl verify plugin --list
+
+# Run a plugin verifier
+sdqctl verify plugin hello-world
 ```
 
 ---

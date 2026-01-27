@@ -16,11 +16,45 @@
 
 ---
 
-## Ready Queue (1 Actionable Item)
+## Ready Queue (14 Actionable Items)
 
-| # | Item | Priority | Effort | Notes |
+**Groomed from WP-006 and WP-002** - 2026-01-27  
+**Priority**: Complete WP-006 (LSP) before WP-002 (Monitoring)
+
+### WP-006: LSP Integration (Priority 1)
+
+| # | Item | Priority | Effort | Phase |
 |---|------|----------|--------|-------|
-| 1 | Hello world plugin | P3 | Low | WP-004 step 3: Create demo plugin in ecosystem repo. Demonstrates plugin system end-to-end. |
+| 1 | Create `sdqctl/lsp/__init__.py` module structure | P3 | Low | Phase 1 |
+| 2 | Define `LSPClient` base interface | P3 | Low | Phase 1 |
+| 3 | Add `lsp` subcommand to CLI with placeholder | P3 | Low | Phase 1 |
+| 4 | Implement TypeScript server detection | P3 | Low | Phase 1 |
+| 5 | Add `sdqctl lsp status` command | P3 | Low | Phase 1 |
+| 6 | Implement `sdqctl lsp type <name>` for TypeScript | P3 | Low | Phase 2 |
+| 7 | Add JSON output mode for LSP type definitions | P3 | Low | Phase 2 |
+| 8 | Add `LSP type` directive for .conv workflows | P3 | Low | Phase 2 |
+
+### WP-002: Continuous Monitoring (Priority 2 - after WP-006 Phase 2)
+
+| # | Item | Priority | Effort | Phase |
+|---|------|----------|--------|-------|
+| 9 | Create `sdqctl/monitoring/__init__.py` module structure | P3 | Low | Phase 1 |
+| 10 | Define `ChangeDetector` interface for git diff analysis | P3 | Low | Phase 1 |
+| 11 | Add `drift` subcommand to CLI with placeholder | P3 | Low | Phase 1 |
+| 12 | Implement git log parsing for commit range analysis | P3 | Low | Phase 1 |
+| 13 | Add `--since` date filter for drift detection | P3 | Low | Phase 1 |
+| 14 | Implement `sdqctl drift --report` markdown output | P3 | Low | Phase 2 |
+
+---
+
+## Recently Groomed (2026-01-27)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| docs/ITERATION-PATTERNS.md | ✅ Created | Self-grooming patterns, cycle selection, anti-patterns |
+| OQ-LSP-001, OQ-LSP-004 answers | ✅ Recorded | LSP-INTEGRATION.md and OPEN-QUESTIONS.md updated |
+| WP-006 breakdown | ✅ Groomed | 9 Low items across Phase 1-2 |
+| WP-002 breakdown | ✅ Groomed | 6 Low items across Phase 1-2 |
 
 ---
 
@@ -82,10 +116,27 @@ Related items for improving iteration efficiency:
 
 ### WP-002: Continuous Monitoring (P3 R&D)
 
-Related items for external repo monitoring:
-- [ ] `sdqctl watch` - Monitor external repos for changes
-- [ ] `sdqctl drift` - One-shot drift detection
+Continuous monitoring capabilities to detect drift, breaking changes, and alignment opportunities across external repositories.
 
+**Phase 1: Foundation** (Low-effort items)
+- [ ] Create `sdqctl/monitoring/__init__.py` module structure
+- [ ] Define `ChangeDetector` interface for git-based diff analysis
+- [ ] Add `drift` subcommand to CLI with placeholder
+- [ ] Implement git log parsing for commit range analysis
+- [ ] Add `--since` date filter for drift detection
+
+**Phase 2: Drift Detection** (Low-effort items)
+- [ ] Implement `sdqctl drift --report` for one-shot analysis
+- [ ] Add change classification (Critical/High/Medium/Low impact)
+- [ ] Create drift report markdown output format
+- [ ] Add `--paths` filter for targeted drift detection
+
+**Phase 3: Watch Mode** (Medium-effort items)
+- [ ] Implement `sdqctl watch` background polling loop
+- [ ] Add `--webhook` notification support
+- [ ] Add `--auto-analyze` workflow trigger integration
+
+**Proposal**: [CONTINUOUS-MONITORING.md](CONTINUOUS-MONITORING.md)  
 **Dependencies**: None (R&D track)  
 **Estimated**: 2 iterations, ~400 lines
 
@@ -104,9 +155,10 @@ Enable ecosystem teams to extend sdqctl with custom directives/commands independ
 
 - [x] Define `.sdqctl/directives.yaml` manifest schema ✅ 2026-01-27
 - [x] Implement directive discovery from manifest ✅ 2026-01-27
-- [ ] Hello world plugin in externals/rag-nightscout-ecosystem-alignment
+- [x] Hello world plugin in externals/rag-nightscout-ecosystem-alignment ✅ 2026-01-27
 - [ ] Security/sandboxing implementation
 - [x] Plugin authoring documentation ✅ 2026-01-27
+- [x] `sdqctl verify plugin` command for running plugins ✅ 2026-01-27
 
 **Proposal**: [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md)  
 **Dependencies**: None  
@@ -133,12 +185,32 @@ Comprehensive research on STPA integration for Nightscout ecosystem, delivering 
 
 Language Server Protocol integration for semantic code context - type extraction, cross-project comparison, and intelligent code analysis.
 
-- [ ] Define LSP client interface in `sdqctl/lsp/`
+**Phase 1: Foundation** (Low-effort items)
+- [ ] Create `sdqctl/lsp/__init__.py` module structure
+- [ ] Define `LSPClient` base interface with connect/disconnect
+- [ ] Add `lsp` subcommand to CLI with placeholder
+- [ ] Implement TypeScript server detection (tsserver in PATH or node_modules)
+- [ ] Add `sdqctl lsp status` to show available servers
+
+**Phase 2: TypeScript Type Extraction** (Low-effort items)
 - [ ] Implement `sdqctl lsp type <name>` for TypeScript
+- [ ] Add JSON output mode (`--json`) for type definitions
 - [ ] Add `LSP type` directive for .conv workflows
-- [ ] Multi-language support (Swift, Kotlin, Python)
-- [ ] Cross-project type comparison (`lsp compare-types`)
+- [ ] Create example workflow using LSP type queries
+
+**Phase 3: Multi-Language** (Medium-effort items)
+- [ ] Add Swift support (sourcekit-lsp detection)
+- [ ] Add Kotlin support (kotlin-language-server)
+- [ ] Language server lifecycle management (hybrid: on-demand + join existing)
+
+**Phase 4: Cross-Project** (Medium-effort items)
+- [ ] Implement `sdqctl lsp compare-types` across repos
+- [ ] Add `LSP compare` directive
 - [ ] Integration with ecosystem analysis workflows
+
+**Open Questions (Answered)**:
+- OQ-LSP-001: Lifecycle → Hybrid (on-demand with idle timeout + join existing)
+- OQ-LSP-004: Error handling → Fail fast default, `--lsp-fallback` CLI switch
 
 **Proposal**: [LSP-INTEGRATION.md](LSP-INTEGRATION.md)  
 **Supersedes**: "LSP support for refcat" backlog item  
@@ -177,6 +249,7 @@ Design principles distilled from recent development iterations:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Hello world plugin (P3)** | 2026-01-27 | WP-004 step 3: Created demo plugin in ecosystem repo. Added `sdqctl verify plugin` command. 5 plugins registered, 1497 tests pass. |
 | **STPA improvement roadmap (P3)** | 2026-01-27 | WP-005 step 5 (FINAL): Created docs/STPA-ROADMAP.md. 3 phases, 12 tasks, success metrics. **WP-005 COMPLETE**. |
 | **STPA usage guide (P3)** | 2026-01-27 | WP-005 step 4: Created docs/STPA-USAGE-GUIDE.md. ~2000 words, quick start, full workflow, templates (UCA/SC/CF), tool integration, pitfalls, checklist. |
 | **Cross-project UCA pattern discovery (P3)** | 2026-01-27 | WP-005 step 3: Created traceability/stpa/cross-project-patterns.md. 3 pattern categories (Sync, Remote, Override), 11 UCAs, 12 proposed SCs. |

@@ -1,6 +1,6 @@
 # Proposal: Plugin System for Ecosystem Extensions
 
-> **Status**: In Progress (Phase 2 complete)  
+> **Status**: In Progress (Phase 3 pending - security/sandboxing)  
 > **Date**: 2026-01-27  
 > **Author**: sdqctl development  
 > **Scope**: Allow external workspaces to extend sdqctl with custom directives/commands
@@ -125,19 +125,21 @@ Combine manifest-based discovery with Python SDK for complex cases:
 ### Phase 2: Hello World Plugin (1 iteration) ✅ COMPLETE
 
 - [x] Implement directive discovery from manifest ✅ 2026-01-27
-- [ ] Create example plugin in `externals/rag-nightscout-ecosystem-alignment`
-- [ ] Test: `VERIFY ecosystem-gaps` directive works in .conv files
-- [ ] Test: `sdqctl verify ecosystem-gaps` CLI works
+- [x] Create example plugin in `externals/rag-nightscout-ecosystem-alignment` ✅ 2026-01-27
+- [x] `sdqctl verify plugin` command for running plugins ✅ 2026-01-27
+- [ ] Test: `VERIFY ecosystem-gaps` directive works in .conv files (deferred)
 
 **Deliverables:**
 - `sdqctl/plugins.py` - Plugin discovery and registration ✅
 - `tests/test_plugins.py` - 21 tests ✅
 - `docs/PLUGIN-AUTHORING.md` - Plugin author guide ✅ 2026-01-27
+- `externals/rag-nightscout-ecosystem-alignment/.sdqctl/directives.yaml` - Demo manifest ✅
+- `externals/rag-nightscout-ecosystem-alignment/tools/verify_hello.py` - Demo plugin ✅
 
 ### Phase 3: Security & Polish (1 iteration)
 
 - [ ] Implement sandboxing or capability allowlist
-- [ ] Add `sdqctl plugin list` - Show discovered plugins
+- [x] Add `sdqctl verify plugin --list` - Show discovered plugins ✅ 2026-01-27
 - [ ] Add `sdqctl plugin validate <path>` - Validate plugin structure
 - [ ] Error handling and diagnostics for plugin failures
 
