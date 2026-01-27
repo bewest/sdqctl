@@ -16,11 +16,12 @@
 
 ---
 
-## Ready Queue (9 Actionable Items)
+## Ready Queue (7 Actionable Items)
 
 **Groomed from WP-006 and WP-002** - 2026-01-27  
 **Priority**: Complete WP-006 Phase 2 (LSP) before WP-002 (Monitoring)  
-**WP-006 Phase 1**: ✅ Complete (5/5 items)
+**WP-006 Phase 1**: ✅ Complete (5/5 items)  
+**WP-006 Phase 2**: In Progress (2/3 items done)
 
 ### WP-006: LSP Integration (Priority 1)
 
@@ -31,8 +32,8 @@
 | 3 | Add `lsp` subcommand to CLI with placeholder | P3 | Low | Phase 1 | ✅ Done |
 | 4 | Implement TypeScript server detection | P3 | Low | Phase 1 | ✅ Done |
 | 5 | Add `sdqctl lsp status` command | P3 | Low | Phase 1 | ✅ Done |
-| 6 | Implement `sdqctl lsp type <name>` for TypeScript | P3 | Low | Phase 2 | |
-| 7 | Add JSON output mode for LSP type definitions | P3 | Low | Phase 2 | |
+| 6 | Implement `sdqctl lsp type <name>` for TypeScript | P3 | Low | Phase 2 | ✅ Done |
+| 7 | Add JSON output mode for LSP type definitions | P3 | Low | Phase 2 | ✅ Done |
 | 8 | Add `LSP type` directive for .conv workflows | P3 | Low | Phase 2 | |
 
 ### WP-002: Continuous Monitoring (Priority 2 - after WP-006 Phase 2)
@@ -48,13 +49,22 @@
 
 ---
 
+## Recently Completed (2026-01-27)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| WP-006 #6: `lsp type` command | ✅ Complete | Pattern-based TypeScript type lookup |
+| WP-006 #7: JSON output mode | ✅ Complete | `--json` flag for structured output |
+| LSP test coverage | ✅ Added | 10 new tests (36 total) |
+| docs/COMMANDS.md | ✅ Updated | LSP section with type lookup examples |
+
 ## Recently Groomed (2026-01-27)
 
 | Item | Status | Notes |
 |------|--------|-------|
 | docs/ITERATION-PATTERNS.md | ✅ Created | Self-grooming patterns, cycle selection, anti-patterns |
 | OQ-LSP-001, OQ-LSP-004 answers | ✅ Recorded | LSP-INTEGRATION.md and OPEN-QUESTIONS.md updated |
-| WP-006 breakdown | ✅ Groomed | 9 Low items across Phase 1-2 |
+| WP-006 breakdown | ✅ Groomed | 8 items: 5 Phase 1 done, 2 Phase 2 done, 1 remaining |
 | WP-002 breakdown | ✅ Groomed | 6 Low items across Phase 1-2 |
 
 ---

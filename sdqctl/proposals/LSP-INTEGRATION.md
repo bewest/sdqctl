@@ -1,10 +1,31 @@
 # Proposal: LSP Integration for Semantic Code Context
 
-> **Status**: In Progress (Phase 1 complete)  
+> **Status**: In Progress (Phase 2: 2/3 items complete)  
 > **Date**: 2026-01-27  
 > **Author**: sdqctl development  
 > **Scope**: Language Server Protocol integration for type-aware code analysis  
 > **Supersedes**: "LSP support for refcat" backlog item
+
+---
+
+## Implementation Progress
+
+### Phase 1: Foundation ✅ Complete
+- [x] `sdqctl/lsp/__init__.py` module structure
+- [x] `LSPClient` base interface with TypeDefinition, SymbolInfo, LSPError
+- [x] `lsp` subcommand with status, detect, type, symbol placeholders
+- [x] TypeScript server detection (local node_modules + global PATH)
+- [x] `sdqctl lsp status` command
+
+### Phase 2: TypeScript Type Extraction 🔄 In Progress
+- [x] `sdqctl lsp type <name>` - pattern-based type lookup
+- [x] JSON output mode (`--json`) for type definitions
+- [ ] `LSP type` directive for .conv workflows
+
+### Phase 3: Future
+- [ ] Symbol lookup implementation
+- [ ] Additional language support (Swift, Kotlin, Python)
+- [ ] Cross-project type comparison
 
 ---
 

@@ -121,16 +121,66 @@ def lsp_type(name: str, path: str, language: str | None, json_output: bool):
     Examples:
       sdqctl lsp type Treatment                    # Current directory
       sdqctl lsp type Treatment -p ./externals/Loop
-      sdqctl lsp type Bolus -l swift --json
+      sdqctl lsp type Bolus -l typescript --json
     """
-    console.print("[yellow]Type lookup not yet implemented[/yellow]")
-    console.print("Coming in WP-006 Phase 2")
-    console.print()
-    console.print(f"Would look up: [cyan]{name}[/cyan]")
-    console.print(f"In project: {Path(path).resolve()}")
+    import json as json_lib
+
+    from sdqctl.lsp import Language, LSPError, get_client, detect_language
+
+    project_path = Path(path).resolve()
+
+    # Detect or use specified language
     if language:
-        console.print(f"Language: {language}")
-    raise SystemExit(1)
+        try:
+            lang = Language(language.lower())
+        except ValueError:
+            console.print(f"[red]Unknown language: {language}[/red]")
+            console.print(f"Supported: {', '.join(l.value for l in Language)}")
+            raise SystemExit(1)
+    else:
+        lang = detect_language(project_path)
+        if not lang:
+            console.print("[yellow]Could not detect project language[/yellow]")
+            console.print("Use --language to specify: typescript, swift, kotlin, python")
+            raise SystemExit(1)
+
+    # Get client and look up type
+    client = get_client(lang, project_path)
+    if not client:
+        console.print(f"[red]No {lang.value} language server available[/red]")
+        raise SystemExit(1)
+
+    result = client.get_type(name)
+
+    if isinstance(result, LSPError):
+        if json_output:
+            console.print_json(json_lib.dumps({
+                "error": True,
+                "code": result.code,
+                "message": result.message,
+            }))
+        else:
+            console.print(f"[red]Error: {result.message}[/red]")
+            if result.code:
+                console.print(f"[dim]Code: {result.code}[/dim]")
+        raise SystemExit(1)
+
+    # Success - output type definition
+    if json_output:
+        data = {
+            "name": result.name,
+            "kind": result.kind,
+            "language": result.language.value,
+            "file": str(result.file_path),
+            "line": result.line,
+            "signature": result.signature,
+            "doc_comment": result.doc_comment,
+            "fields": result.fields,
+            "methods": result.methods,
+        }
+        console.print_json(json_lib.dumps(data))
+    else:
+        console.print(result.to_markdown())
 
 
 @lsp.command("symbol")

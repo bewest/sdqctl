@@ -319,14 +319,172 @@ class TypeScriptClient:
         """Shutdown the client."""
         self._initialized = False
 
+    def _find_type_definition(self, name: str) -> TypeDefinition | LSPError:
+        """Find type definition using pattern matching.
+
+        Searches TypeScript files for interface, type, class, and enum declarations.
+        """
+        import re
+        import subprocess
+
+        # Patterns for TypeScript type declarations
+        patterns = [
+            (r'^(?:export\s+)?interface\s+' + re.escape(name) + r'\b', 'interface'),
+            (r'^(?:export\s+)?type\s+' + re.escape(name) + r'\s*=', 'type'),
+            (r'^(?:export\s+)?class\s+' + re.escape(name) + r'\b', 'class'),
+            (r'^(?:export\s+)?enum\s+' + re.escape(name) + r'\b', 'enum'),
+        ]
+
+        # Search TypeScript files
+        ts_files = list(self._project_root.rglob("*.ts"))
+        ts_files.extend(self._project_root.rglob("*.tsx"))
+
+        # Skip node_modules and dist
+        ts_files = [
+            f for f in ts_files
+            if "node_modules" not in str(f) and "dist" not in str(f)
+        ]
+
+        for ts_file in ts_files:
+            try:
+                content = ts_file.read_text(encoding="utf-8")
+                lines = content.split("\n")
+
+                for line_num, line in enumerate(lines, start=1):
+                    for pattern, kind in patterns:
+                        if re.match(pattern, line.strip()):
+                            # Extract the full signature (multiline support)
+                            signature = self._extract_signature(lines, line_num - 1)
+                            doc_comment = self._extract_doc_comment(lines, line_num - 1)
+
+                            return TypeDefinition(
+                                name=name,
+                                language=Language.TYPESCRIPT,
+                                kind=kind,
+                                file_path=ts_file.relative_to(self._project_root),
+                                line=line_num,
+                                signature=signature,
+                                doc_comment=doc_comment,
+                                fields=self._extract_fields(signature, kind),
+                                methods=self._extract_methods(signature, kind),
+                            )
+            except (OSError, UnicodeDecodeError):
+                continue
+
+        return LSPError(
+            message=f"Type '{name}' not found in {len(ts_files)} TypeScript files",
+            code="NOT_FOUND",
+        )
+
+    def _extract_signature(self, lines: list[str], start_idx: int, max_lines: int = 50) -> str:
+        """Extract full type signature including body."""
+        result = []
+        brace_count = 0
+        started = False
+        first_line = lines[start_idx].strip()
+
+        # For type aliases (no braces), just return the single line
+        if first_line.startswith("export type") or first_line.startswith("type "):
+            return lines[start_idx]
+
+        for i in range(start_idx, min(start_idx + max_lines, len(lines))):
+            line = lines[i]
+            result.append(line)
+
+            brace_count += line.count("{") - line.count("}")
+
+            if "{" in line:
+                started = True
+
+            if started and brace_count <= 0:
+                break
+
+        return "\n".join(result)
+
+    def _extract_doc_comment(self, lines: list[str], start_idx: int) -> str | None:
+        """Extract JSDoc comment above the definition."""
+        if start_idx == 0:
+            return None
+
+        # Look for /** ... */ above
+        doc_lines = []
+        for i in range(start_idx - 1, max(start_idx - 20, -1), -1):
+            line = lines[i].strip()
+            if line.endswith("*/"):
+                doc_lines.insert(0, line)
+            elif line.startswith("*") or line.startswith("/**"):
+                doc_lines.insert(0, line)
+                if line.startswith("/**"):
+                    return "\n".join(doc_lines)
+            elif doc_lines:
+                break
+            elif line and not line.startswith("//"):
+                break
+
+        return None
+
+    def _extract_fields(self, signature: str, kind: str) -> list[dict[str, Any]]:
+        """Extract field definitions from signature."""
+        import re
+
+        fields = []
+        if kind not in ("interface", "type", "class"):
+            return fields
+
+        # Simple field pattern: name: type or name?: type
+        field_pattern = r'^\s*(?:readonly\s+)?(\w+)(\?)?:\s*([^;]+);?'
+
+        for line in signature.split("\n"):
+            match = re.match(field_pattern, line.strip())
+            if match:
+                fields.append({
+                    "name": match.group(1),
+                    "optional": match.group(2) == "?",
+                    "type": match.group(3).strip().rstrip(";"),
+                })
+
+        return fields
+
+    def _extract_methods(self, signature: str, kind: str) -> list[dict[str, Any]]:
+        """Extract method definitions from signature."""
+        import re
+
+        methods = []
+        if kind not in ("interface", "class"):
+            return methods
+
+        # Method pattern: name(params): returnType or name(params) =>
+        method_pattern = r'^\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*(?::\s*([^{;]+))?'
+
+        for line in signature.split("\n"):
+            match = re.match(method_pattern, line.strip())
+            if match and match.group(1) not in ("if", "for", "while", "switch"):
+                methods.append({
+                    "name": match.group(1),
+                    "return_type": (match.group(2) or "void").strip(),
+                })
+
+        return methods
+
     def get_type(self, name: str) -> TypeDefinition | LSPError:
         """Get type definition by name.
 
-        Note: Full implementation coming in Phase 2.
+        Uses grep-based search to find type definitions in TypeScript files.
+        Searches for: interface, type, class, enum declarations.
+
+        Args:
+            name: Type name to look up (case-sensitive)
+
+        Returns:
+            TypeDefinition if found, LSPError otherwise
         """
         if not self._initialized:
             return LSPError(message="Client not initialized", code="NOT_INITIALIZED")
-        return LSPError(message="Type lookup coming in Phase 2", code="NOT_IMPLEMENTED")
+
+        if not self._project_root:
+            return LSPError(message="No project root set", code="NO_PROJECT")
+
+        return self._find_type_definition(name)
 
     def get_symbol(self, name: str) -> SymbolInfo | LSPError:
         """Get symbol information by name.

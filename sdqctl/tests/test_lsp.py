@@ -257,21 +257,170 @@ class TestTypeScriptClient:
         assert client.initialize(tmp_path) is False
         assert client._initialized is False
 
-    def test_get_type_returns_not_implemented(self, tmp_path):
-        """get_type returns LSPError for Phase 2."""
-        from sdqctl.lsp import TypeScriptClient
+    def test_get_type_finds_interface(self, tmp_path):
+        """get_type finds an interface definition."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
 
         # Create fake local tsserver
         bin_dir = tmp_path / "node_modules" / ".bin"
         bin_dir.mkdir(parents=True)
         (bin_dir / "tsserver").write_text("#!/bin/sh")
 
+        # Create TypeScript file with interface
+        (tmp_path / "types.ts").write_text("""
+export interface Treatment {
+  id: string;
+  units: number;
+}
+""")
+
         client = TypeScriptClient()
         client.initialize(tmp_path)
         result = client.get_type("Treatment")
 
+        assert isinstance(result, TypeDefinition)
+        assert result.name == "Treatment"
+        assert result.kind == "interface"
+        assert result.language.value == "typescript"
+        assert "id: string" in result.signature
+
+    def test_get_type_finds_type_alias(self, tmp_path):
+        """get_type finds a type alias."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("""
+export type Status = "pending" | "done";
+""")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("Status")
+
+        assert isinstance(result, TypeDefinition)
+        assert result.name == "Status"
+        assert result.kind == "type"
+
+    def test_get_type_finds_class(self, tmp_path):
+        """get_type finds a class definition."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("""
+export class Processor {
+  run(): void {}
+}
+""")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("Processor")
+
+        assert isinstance(result, TypeDefinition)
+        assert result.name == "Processor"
+        assert result.kind == "class"
+
+    def test_get_type_finds_enum(self, tmp_path):
+        """get_type finds an enum definition."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("""
+export enum Mode {
+  AUTO = "auto",
+  MANUAL = "manual",
+}
+""")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("Mode")
+
+        assert isinstance(result, TypeDefinition)
+        assert result.name == "Mode"
+        assert result.kind == "enum"
+
+    def test_get_type_not_found(self, tmp_path):
+        """get_type returns LSPError when type not found."""
+        from sdqctl.lsp import TypeScriptClient
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("export interface Other {}")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("NotFound")
+
         assert isinstance(result, LSPError)
-        assert result.code == "NOT_IMPLEMENTED"
+        assert result.code == "NOT_FOUND"
+
+    def test_get_type_extracts_doc_comment(self, tmp_path):
+        """get_type extracts JSDoc comment."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("""
+/**
+ * Treatment represents an insulin action.
+ */
+export interface Treatment {
+  id: string;
+}
+""")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("Treatment")
+
+        assert isinstance(result, TypeDefinition)
+        assert result.doc_comment is not None
+        assert "insulin action" in result.doc_comment
+
+    def test_get_type_extracts_fields(self, tmp_path):
+        """get_type extracts field definitions."""
+        from sdqctl.lsp import TypeScriptClient, TypeDefinition
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("""
+export interface Treatment {
+  id: string;
+  units: number;
+  notes?: string;
+}
+""")
+
+        client = TypeScriptClient()
+        client.initialize(tmp_path)
+        result = client.get_type("Treatment")
+
+        assert isinstance(result, TypeDefinition)
+        assert len(result.fields) == 3
+        field_names = [f["name"] for f in result.fields]
+        assert "id" in field_names
+        assert "units" in field_names
+        assert "notes" in field_names
+
+        # Check optional field
+        notes_field = next(f for f in result.fields if f["name"] == "notes")
+        assert notes_field["optional"] is True
 
     def test_version_from_package_json(self, tmp_path):
         """version reads from typescript package.json."""

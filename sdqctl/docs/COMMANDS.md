@@ -14,7 +14,7 @@ Complete reference for all sdqctl CLI commands.
 | `flow` | Batch/parallel execution | `sdqctl flow workflows/*.conv --parallel 4` |
 | `render` | Preview prompts (no AI) | `sdqctl render run workflow.conv` |
 | `verify` | Static verification | `sdqctl verify refs` |
-| `lsp` | Language server queries | `sdqctl lsp status` |
+| `lsp` | Language server queries | `sdqctl lsp type Treatment` |
 | `refcat` | Extract file content | `sdqctl refcat @file.py#L10-L50` |
 | `sessions` | Session management | `sdqctl sessions list` |
 | `resume` | Resume paused workflow | `sdqctl resume checkpoint.json` |
@@ -340,16 +340,16 @@ sdqctl lsp SUBCOMMAND [OPTIONS]
 |------------|---------|
 | `status` | Show available language servers |
 | `detect` | Detect project language |
-| `type` | Get type definition (Phase 2) |
-| `symbol` | Get symbol info (Phase 2) |
+| `type` | Get type definition by name |
+| `symbol` | Get symbol info (coming soon) |
 
 **Supported Languages:**
-| Language | Server |
-|----------|--------|
-| TypeScript | typescript-language-server |
-| Swift | sourcekit-lsp |
-| Kotlin | kotlin-language-server |
-| Python | pylsp / pyright |
+| Language | Server | Type Lookup |
+|----------|--------|-------------|
+| TypeScript | typescript-language-server | ✅ Implemented |
+| Swift | sourcekit-lsp | Planned |
+| Kotlin | kotlin-language-server | Planned |
+| Python | pylsp / pyright | Planned |
 
 **Examples:**
 ```bash
@@ -360,9 +360,17 @@ sdqctl lsp status --json
 # Detect project language
 sdqctl lsp detect ./externals/Loop
 
-# Get type definition (Phase 2)
+# Get type definition
 sdqctl lsp type Treatment -p ./src
+sdqctl lsp type Treatment -p ./src --json   # JSON output
+sdqctl lsp type Bolus -l typescript         # Explicit language
 ```
+
+**Type Lookup Output:**
+- Finds interfaces, type aliases, classes, and enums
+- Extracts full signature with fields and methods
+- Includes JSDoc comments when present
+- Supports `--json` for structured output
 
 ---
 
