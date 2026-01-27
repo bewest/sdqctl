@@ -16,11 +16,11 @@
 
 ---
 
-## Ready Queue (1 Actionable Item)
+## Ready Queue (0 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Plugin authoring documentation | P3 | Low | WP-004 step 5: Create docs/PLUGIN-AUTHORING.md for ecosystem teams. |
+| *(No items in ready queue)* | | | | |
 
 ---
 
@@ -106,7 +106,7 @@ Enable ecosystem teams to extend sdqctl with custom directives/commands independ
 - [x] Implement directive discovery from manifest ✅ 2026-01-27
 - [ ] Hello world plugin in externals/rag-nightscout-ecosystem-alignment
 - [ ] Security/sandboxing implementation
-- [ ] Plugin authoring documentation
+- [x] Plugin authoring documentation ✅ 2026-01-27
 
 **Proposal**: [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md)  
 **Dependencies**: None  
@@ -143,6 +143,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Plugin authoring documentation (P3)** | 2026-01-27 | WP-004 step 5: Created docs/PLUGIN-AUTHORING.md. Quick start, manifest reference, examples, troubleshooting. |
 | **Performance benchmark suite (P3)** | 2026-01-27 | Created benchmarks/: bench_parsing.py, bench_rendering.py, bench_workflow.py, bench_sdk.py, run.py. Covers code perf, workflow timing, SDK latency. |
 | **Directive discovery from manifest (P3)** | 2026-01-27 | WP-004 step 2: Created sdqctl/plugins.py. Loads .sdqctl/directives.yaml, registers PluginVerifier handlers. 21 tests. Total 1497 tests. |
 | **Define severity scale (P3)** | 2026-01-27 | WP-005 step 2: Created docs/stpa-severity-scale.md. 4-level scale (S1-S4) with ISO 14971 mapping. 6 UCAs classified. |

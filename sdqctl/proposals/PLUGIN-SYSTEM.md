@@ -132,7 +132,7 @@ Combine manifest-based discovery with Python SDK for complex cases:
 **Deliverables:**
 - `sdqctl/plugins.py` - Plugin discovery and registration ✅
 - `tests/test_plugins.py` - 21 tests ✅
-- `docs/PLUGIN-AUTHORING.md` - Plugin author guide (TODO)
+- `docs/PLUGIN-AUTHORING.md` - Plugin author guide ✅ 2026-01-27
 
 ### Phase 3: Security & Polish (1 iteration)
 
