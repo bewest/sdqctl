@@ -20,9 +20,8 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Define custom severity scale with ISO 14971 mapping | P3 | Low | WP-005 step 2: Simple 3-5 level scale with standard mapping. |
-| 2 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
-| 3 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 1 | Implement directive discovery from manifest | P3 | Medium | WP-004 step 2: Load directives.yaml, register handlers. |
+| 2 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
 
 ---
 
@@ -119,6 +118,7 @@ Enable ecosystem teams to extend sdqctl with custom directives/commands independ
 Comprehensive research on STPA integration for Nightscout ecosystem, delivering usage guide and improvement predictions.
 
 - [x] Current state analysis and gap mapping ✅ 2026-01-27 (6 UCAs, 2 SCs, 122 GAPs found)
+- [x] Define custom severity scale with ISO 14971 mapping ✅ 2026-01-27
 - [ ] Cross-project UCA pattern discovery
 - [ ] STPA usage guide for ecosystem team
 - [ ] Improvement predictions and 12-month roadmap
@@ -144,6 +144,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Define severity scale (P3)** | 2026-01-27 | WP-005 step 2: Created docs/stpa-severity-scale.md. 4-level scale (S1-S4) with ISO 14971 mapping. 6 UCAs classified. |
 | **Audit STPA artifacts (P3)** | 2026-01-27 | WP-005 step 1: Created reports/stpa-audit-2026-01-27.md. Found 6 UCAs, 2 SCs, 122 GAPs. SC coverage 17%, HAZ missing. |
 | **Define directives.yaml schema (P3)** | 2026-01-27 | WP-004 step 1: Created docs/directives-schema.json. Defines version, directives map, handlers, args, timeout, requires. |
 | **Add metrics collection (P3)** | 2026-01-27 | WP-001 step 4: Created core/metrics.py, emit_metrics() to session dir. ~80 lines. Tracks tokens, cycles, duration. |
