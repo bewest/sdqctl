@@ -127,10 +127,10 @@ pytest -m "not slow"     # Skip slow tests
 | Gap | Impact | Recommendation |
 |-----|--------|----------------|
 | ~~No error path tests~~ | ~~Unknown failure behavior~~ | ✅ Added test_conversation_errors.py (29 tests) |
-| Missing parametrization | Incomplete variant coverage | Use `@pytest.mark.parametrize` |
+| ~~Missing parametrization~~ | ~~Incomplete variant coverage~~ | ✅ Added parametrized tests (22 cases in conversation, 10 in adapter) |
 | ~~No test markers~~ | ~~Can't run selective tests~~ | ✅ Markers added (unit/integration/slow) |
 | ~~Fixtures not scoped~~ | ~~Slow test runs~~ | ✅ Session-scoped fixtures added (conftest.py) |
-| Limited integration tests | Only loop stress testing | Add adapter, CLI integration tests |
+| ~~Limited integration tests~~ | ~~Only loop stress testing~~ | ✅ Extended adapter integration tests (22 tests) |
 
 ---
 

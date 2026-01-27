@@ -276,26 +276,96 @@ PROMPT Second.
 class TestConsultTimeoutErrors:
     """Test CONSULT-TIMEOUT directive error handling."""
 
-    def test_consult_timeout_valid_formats(self):
+    @pytest.mark.parametrize("timeout_value", [
+        "7d",    # Days
+        "24h",   # Hours
+        "30m",   # Minutes (if supported)
+        "1w",    # Week (if supported)
+    ])
+    def test_consult_timeout_valid_formats(self, timeout_value):
         """CONSULT-TIMEOUT with valid formats parses correctly."""
-        # Valid: 7d (days)
-        content = """MODEL gpt-4
+        content = f"""MODEL gpt-4
 ADAPTER mock
-CONSULT-TIMEOUT 7d
+CONSULT-TIMEOUT {timeout_value}
 PROMPT Test.
 """
         conv = ConversationFile.parse(content)
         assert conv.consult_timeout is not None
 
-    def test_consult_timeout_hours(self):
-        """CONSULT-TIMEOUT with hours format parses correctly."""
-        content = """MODEL gpt-4
+
+class TestDirectiveVariants:
+    """Parametrized tests for directive parsing variants."""
+
+    @pytest.mark.parametrize("model_name", [
+        "gpt-4",
+        "gpt-3.5-turbo",
+        "claude-3-opus",
+        "gemini-pro",
+        "custom-model-v1",
+    ])
+    def test_model_directive_variants(self, model_name):
+        """MODEL directive accepts various model names."""
+        content = f"""MODEL {model_name}
 ADAPTER mock
-CONSULT-TIMEOUT 24h
 PROMPT Test.
 """
         conv = ConversationFile.parse(content)
-        assert conv.consult_timeout is not None
+        assert conv.model == model_name
+
+    @pytest.mark.parametrize("adapter_name", [
+        "mock",
+        "copilot",
+    ])
+    def test_adapter_directive_variants(self, adapter_name):
+        """ADAPTER directive accepts registered adapters."""
+        content = f"""MODEL gpt-4
+ADAPTER {adapter_name}
+PROMPT Test.
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.adapter == adapter_name
+
+    @pytest.mark.parametrize("mode_value", [
+        "audit",
+        "full",
+        "apply",
+    ])
+    def test_mode_directive_variants(self, mode_value):
+        """MODE directive accepts valid modes."""
+        content = f"""MODEL gpt-4
+ADAPTER mock
+MODE {mode_value}
+PROMPT Test.
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.mode == mode_value
+
+    @pytest.mark.parametrize("limit_value,expected", [
+        ("80%", 0.8),
+        ("50%", 0.5),
+        ("100%", 1.0),
+        ("25%", 0.25),
+    ])
+    def test_context_limit_variants(self, limit_value, expected):
+        """CONTEXT-LIMIT directive parses percentage values."""
+        content = f"""MODEL gpt-4
+ADAPTER mock
+CONTEXT-LIMIT {limit_value}
+PROMPT Test.
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.context_limit == expected
+
+    @pytest.mark.parametrize("cycles", [1, 5, 10, 100])
+    def test_max_cycles_variants(self, cycles):
+        """MAX-CYCLES directive accepts positive integers."""
+        content = f"""MODEL gpt-4
+ADAPTER mock
+MAX-CYCLES {cycles}
+PROMPT Test.
+"""
+        conv = ConversationFile.parse(content)
+        assert conv.max_cycles == cycles
 
 
 class TestEdgeCases:

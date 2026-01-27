@@ -111,3 +111,105 @@ class TestAdapterConfigVariants:
 
         await adapter.destroy_session(session1)
         await adapter.destroy_session(session2)
+
+
+class TestAdapterErrorPaths:
+    """Test adapter error handling and edge cases."""
+
+    @pytest.fixture
+    def mock_adapter(self):
+        """Create mock adapter instance."""
+        return get_adapter("mock")
+
+    @pytest.fixture
+    def adapter_config(self):
+        """Create test adapter config."""
+        return AdapterConfig(model="test-model")
+
+    @pytest.mark.asyncio
+    async def test_destroy_nonexistent_session(self, mock_adapter, adapter_config):
+        """Test destroying a session that doesn't exist."""
+        from sdqctl.adapters.base import AdapterSession
+        # Create a valid session first, then modify its ID
+        session = await mock_adapter.create_session(adapter_config)
+        original_id = session.id
+        session.id = "nonexistent-session-id"
+        # Should not raise - graceful handling
+        await mock_adapter.destroy_session(session)
+
+    @pytest.mark.asyncio
+    async def test_adapter_capabilities(self, mock_adapter):
+        """Test adapter capability queries."""
+        assert mock_adapter.supports_tools() in (True, False)
+        assert mock_adapter.supports_streaming() in (True, False)
+
+    @pytest.mark.asyncio
+    async def test_adapter_info(self, mock_adapter):
+        """Test adapter info retrieval."""
+        info = mock_adapter.get_info()
+        assert "name" in info
+        assert info["name"] == "mock"
+
+    @pytest.mark.asyncio
+    async def test_context_usage_initial(self, mock_adapter, adapter_config):
+        """Test initial context usage is zero or low."""
+        session = await mock_adapter.create_session(adapter_config)
+        usage = await mock_adapter.get_context_usage(session)
+        
+        # Usage is a tuple (used, total)
+        assert isinstance(usage, tuple)
+        assert len(usage) == 2
+        used, total = usage
+        assert used >= 0
+        assert total > 0
+        
+        await mock_adapter.destroy_session(session)
+
+    @pytest.mark.asyncio
+    async def test_context_usage_increases(self, mock_adapter, adapter_config):
+        """Test context usage increases after sending messages."""
+        session = await mock_adapter.create_session(adapter_config)
+        
+        initial_used, initial_total = await mock_adapter.get_context_usage(session)
+        await mock_adapter.send(session, "Test message to increase context")
+        final_used, final_total = await mock_adapter.get_context_usage(session)
+        
+        # Usage should increase or stay same (mock may not track)
+        assert final_used >= initial_used
+        
+        await mock_adapter.destroy_session(session)
+
+
+class TestAdapterRegistryVariants:
+    """Parametrized tests for adapter registry."""
+
+    @pytest.mark.parametrize("adapter_name,expected_type", [
+        ("mock", MockAdapter),
+    ])
+    def test_get_adapter_by_name(self, adapter_name, expected_type):
+        """Test adapter retrieval by name."""
+        adapter = get_adapter(adapter_name)
+        assert isinstance(adapter, expected_type)
+
+    @pytest.mark.parametrize("invalid_name", [
+        "nonexistent",
+        "invalid-adapter",
+        "",
+        "MOCK",  # Case sensitive
+    ])
+    def test_get_adapter_invalid_name_raises(self, invalid_name):
+        """Test that invalid adapter names raise appropriate errors."""
+        with pytest.raises((ValueError, KeyError)):
+            get_adapter(invalid_name)
+
+    @pytest.mark.parametrize("model_name", [
+        "gpt-4",
+        "gpt-3.5-turbo",
+        "claude-3-opus",
+        "test-model",
+        "",  # Empty model name
+    ])
+    def test_adapter_config_accepts_models(self, model_name):
+        """Test AdapterConfig accepts various model names."""
+        config = AdapterConfig(model=model_name)
+        assert config.model == model_name

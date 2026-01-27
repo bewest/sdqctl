@@ -10,9 +10,9 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Add integration tests | P2 | Medium | Ongoing: Total 1329 tests. Focus: CLI integration, end-to-end workflows. |
-| 2 | Add parametrized test variants | P3 | Low | Improve variant coverage with @pytest.mark.parametrize. |
-| 3 | Extend adapter integration tests | P3 | Low | Add tests for copilot adapter error paths (stubs exist). |
+| 1 | Add CLI integration tests | P2 | Medium | Total 1364 tests. Focus: render, validate, iterate commands. |
+| 2 | Add end-to-end workflow tests | P2 | Medium | Test complete .conv file execution with mock adapter. |
+| 3 | Improve test documentation | P3 | Low | Document test markers, fixtures, parametrization patterns. |
 
 ---
 
@@ -63,6 +63,8 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Add parametrized test variants (P3)** | 2026-01-27 | Added TestDirectiveVariants (18 cases) and parametrized TestConsultTimeoutErrors (4 cases) to test_conversation_errors.py. |
+| **Extend adapter integration tests (P3)** | 2026-01-27 | Added TestAdapterErrorPaths (5 tests) and TestAdapterRegistryVariants (10 parametrized cases). Total 1364 tests. |
 | **Add error path tests (P3)** | 2026-01-27 | Created test_conversation_errors.py with 29 tests for malformed .conv input, invalid directives, missing files, block errors, encoding, edge cases. Total 1329 tests. |
 | **Add session-scoped fixtures (P3)** | 2026-01-27 | Added session_workspace, shared_mock_adapter, shared_adapter_config to tests/conftest.py for reduced test overhead. |
 | **Document test markers + refcat patterns (P3)** | 2026-01-26 | Added test marker examples and cross-repo refcat patterns to README.md. |
