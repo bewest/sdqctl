@@ -111,7 +111,8 @@ Items not yet assigned to work packages:
 
 | Item | Source | Notes |
 |------|--------|-------|
-| `--once` flag for non-repeating CLI prompts | [OQ-006] | **Blocked** - needs use case definition |
+| `--introduce [N] <prompt>` flag | User request | Inject prompt only for first N cycles, then elide. Merges between epilogue and first PROMPT. Use case: one-time context injection that doesn't repeat every cycle. |
+| `--once` flag for non-repeating CLI prompts | [OQ-006] | **Blocked** - needs use case definition. May be superseded by `--introduce 1`. |
 | Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
 
