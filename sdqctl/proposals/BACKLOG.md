@@ -16,11 +16,11 @@
 
 ---
 
-## Ready Queue (0 Actionable Items)
+## Ready Queue (1 Actionable Item)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| *(No items in ready queue)* | | | | |
+| 1 | Cross-project UCA pattern discovery | P3 | Medium | WP-005 step 3: Analyze UCAs across Loop/AAPS/Trio for common patterns. Builds on audit report. |
 
 ---
 
