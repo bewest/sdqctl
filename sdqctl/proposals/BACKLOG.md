@@ -6,13 +6,17 @@
 
 ---
 
-## Ready Queue (3 Actionable Items)
+## Ready Queue (7 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
-| 2 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
-| 3 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
+| 1 | Default verbosity key actions | P3 | Low | **UNBLOCKED** - OQ-004 resolved. Show spinner, phase, context %, events. |
+| 2 | `--introduction <prompt>` flag | P3 | Low | Inject prompt in cycle 1 only. OQ-006 resolved. |
+| 3 | `--until N <prompt>` flag | P3 | Low | Inject prompt in cycles 1 through N. OQ-006 resolved. |
+| 4 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
+| 5 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 6 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
+| 7 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
 
 ---
 
@@ -40,7 +44,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| Default verbosity key actions | Low | **Blocked by OQ-004** → [VERBOSITY-DEFAULTS.md](VERBOSITY-DEFAULTS.md) |
+| *(All P3 Low items promoted to Ready Queue)* | | |
 
 ---
 
@@ -112,9 +116,6 @@ Items not yet assigned to work packages:
 | Item | Source | Notes |
 |------|--------|-------|
 | Agent output on stdout by default | User request | Agent responses not visible even with `-vvv`. Should print agent output to stdout by default for observability. **Context**: Users can't see what the agent is doing/thinking without this. May need `--quiet` to suppress if too verbose. |
-| `--introduce [N] <prompt>` flag | User request | Inject prompt only for first N cycles, then elide. Merges between epilogue and first PROMPT. Use case: one-time context injection that doesn't repeat every cycle. **Naming tradeoffs**: `--introduce` (recommended: follows typesetting form prologue→introduce→body→epilogue), `--warmup` (feedback team: intuitive but informal), `--prime` (pump analogy: domain-relevant but jargon), `--kickoff` (project mgmt: clear but overloaded term). |
-| `--once` flag for non-repeating CLI prompts | [OQ-006] | **Blocked** - needs use case definition. May be superseded by `--introduce 1`. |
-| Performance benchmark suite | [OQ-005] | **Blocked** - needs scope decision |
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
 
 ---
