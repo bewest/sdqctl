@@ -35,7 +35,7 @@ from ..core.conversation import ConversationFile
 from ..core.exceptions import LoopDetected, MissingContextFiles
 from ..core.logging import WorkflowContext, get_logger, set_workflow_context
 from ..core.loop_detector import LoopDetector, generate_nonce
-from ..core.progress import WorkflowProgress
+from ..core.progress import WorkflowProgress, agent_response
 from ..core.progress import progress as progress_print
 from ..core.session import Session
 from ..utils.output import PromptWriter
@@ -810,6 +810,13 @@ async def _cycle_async(
                                 adapter_session,
                                 full_prompt,
                                 on_reasoning=collect_reasoning
+                            )
+
+                            # Print agent response to stdout for observability
+                            agent_response(
+                                response,
+                                cycle=cycle_num + 1,
+                                prompt=prompt_idx + 1
                             )
 
                             # Sync local context tracking with SDK's token count (Q-020)

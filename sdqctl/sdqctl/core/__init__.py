@@ -10,7 +10,7 @@ from .conversation import (
     substitute_template_variables,
 )
 from .logging import get_logger, setup_logging
-from .progress import ProgressTracker, is_quiet, progress, set_quiet
+from .progress import ProgressTracker, agent_response, is_quiet, progress, set_quiet
 from .session import ExecutionContext, Session, create_execution_context
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     "FileRestrictions",
     "ContextManager",
     "Session",
+    "agent_response",
     "apply_iteration_context",
     "create_execution_context",
     "get_logger",

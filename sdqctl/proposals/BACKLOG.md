@@ -6,15 +6,14 @@
 
 ---
 
-## Ready Queue (5 Actionable Items)
+## Ready Queue (4 Actionable Items)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Agent output on stdout by default | P3 | Low | User request. Print agent responses to stdout for observability. May need `--quiet` to suppress. |
-| 2 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
-| 3 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
-| 4 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
-| 5 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
+| 1 | WP-001 first item: Domain-partitioned queues | P3 | Medium | Part of SDK Economy work package |
+| 2 | Performance benchmark suite | P3 | Medium | **UNBLOCKED** - OQ-005 resolved. Scope: code + workflow + SDK (comprehensive). |
+| 3 | LSP support for refcat | P3 | High | Language Server Protocol for IDE integration. |
+| 4 | Multiple .conv files in mixed mode | P3 | High | Complex; requires positional prologue tracking |
 
 ---
 
@@ -121,6 +120,7 @@ Items not yet assigned to work packages:
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Agent output on stdout (P3)** | 2026-01-27 | Added `agent_response()` function. Agent responses now print to stdout by default. Respects `--quiet`. 4 tests. Total 1476 tests. |
 | **`--introduction` and `--until` flags (P3)** | 2026-01-27 | Added `--introduction` (cycle 1 only) and `--until N` (cycles 1-N) prompt injection. 5 tests. Total 1472 tests. |
 | **Default verbosity key actions (P3)** | 2026-01-27 | Verified existing implementation meets OQ-004 requirements: spinner, phase, context %, events, cycle/step progress all visible at default verbosity. |
 | **Work package markers (P3)** | 2026-01-27 | Added WP-001 (SDK Economy), WP-002 (Monitoring), WP-003 (Upstream). Consolidated items from Future section. |

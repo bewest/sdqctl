@@ -480,3 +480,53 @@ class TestTimestamps:
         captured = capsys.readouterr()
         # Should not have timestamp
         assert captured.out == "Plain message\n"
+
+
+class TestAgentResponse:
+    """Tests for agent_response function."""
+
+    def test_agent_response_prints_to_stdout(self, capsys):
+        """agent_response should print response to stdout."""
+        from sdqctl.core.progress import agent_response, set_quiet
+
+        set_quiet(False)
+        agent_response("Hello from agent", cycle=1, prompt=1)
+
+        captured = capsys.readouterr()
+        assert "Hello from agent" in captured.out
+        assert "[Agent Cycle 1, Prompt 1]" in captured.out
+
+    def test_agent_response_quiet_mode(self, capsys):
+        """agent_response should not print in quiet mode."""
+        from sdqctl.core.progress import agent_response, set_quiet
+
+        set_quiet(True)
+        agent_response("Should not appear")
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+        # Reset quiet mode
+        set_quiet(False)
+
+    def test_agent_response_no_cycle(self, capsys):
+        """agent_response with no cycle should show simple header."""
+        from sdqctl.core.progress import agent_response, set_quiet
+
+        set_quiet(False)
+        agent_response("Simple response")
+
+        captured = capsys.readouterr()
+        assert "[Agent]" in captured.out
+        assert "Simple response" in captured.out
+
+    def test_agent_response_cycle_only(self, capsys):
+        """agent_response with cycle but no prompt."""
+        from sdqctl.core.progress import agent_response, set_quiet
+
+        set_quiet(False)
+        agent_response("Cycle response", cycle=2)
+
+        captured = capsys.readouterr()
+        assert "[Agent Cycle 2]" in captured.out
+        assert "Cycle response" in captured.out

@@ -163,6 +163,10 @@ sdqctl render iterate workflow.conv --json | jq '...' | sdqctl iterate --from-js
 | `compact` | Summarize after each cycle |
 | `fresh` | New session each cycle |
 
+**Output Behavior:**
+
+Agent responses are printed to stdout by default for observability. Use `--quiet` to suppress all progress and response output.
+
 ---
 
 ## apply

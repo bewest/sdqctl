@@ -104,6 +104,35 @@ def progress_done(duration_seconds: float) -> None:
     progress(f"Done in {duration_seconds:.1f}s")
 
 
+def agent_response(response: str, cycle: int = 0, prompt: int = 0) -> None:
+    """Print agent response to stdout (unless quiet mode).
+
+    Displays the agent's response text for observability. Users can see
+    what the agent is doing/thinking without needing -vvv.
+
+    Args:
+        response: The agent's response text
+        cycle: Current cycle number (1-indexed, 0 if not in cycle mode)
+        prompt: Current prompt number (1-indexed, 0 if single prompt)
+    """
+    if _quiet:
+        return
+
+    # Format header based on context
+    if cycle > 0 and prompt > 0:
+        header = f"[Agent Cycle {cycle}, Prompt {prompt}]"
+    elif cycle > 0:
+        header = f"[Agent Cycle {cycle}]"
+    else:
+        header = "[Agent]"
+
+    # Print with clear visual separation
+    print(f"\n{header}", file=sys.stdout)
+    print("-" * len(header), file=sys.stdout)
+    print(response, file=sys.stdout)
+    print(file=sys.stdout, flush=True)
+
+
 @contextmanager
 def progress_timer():
     """Context manager that tracks elapsed time.
