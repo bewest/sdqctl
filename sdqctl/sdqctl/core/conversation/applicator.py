@@ -385,6 +385,15 @@ def apply_directive(conv, directive: Directive) -> None:
             # Timeout for CONSULT (e.g., "1h", "30m", "7d")
             conv.consult_timeout = directive.value.strip()
 
+        # LSP - Language Server Protocol queries
+        case DirectiveType.LSP:
+            # LSP type <name> [-p path] [-l lang]
+            # Creates a step that injects type definition into context
+            conv.steps.append(ConversationStep(
+                type="lsp",
+                content=directive.value.strip()
+            ))
+
         # Debug directives
         case DirectiveType.DEBUG:
             # Comma-separated debug categories

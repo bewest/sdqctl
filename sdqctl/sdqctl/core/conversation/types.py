@@ -148,6 +148,9 @@ class DirectiveType(Enum):
     HELP = "HELP"  # Inject help topic(s) into prologues: HELP directives workflow
     HELP_INLINE = "HELP-INLINE"  # Inject help inline before next prompt: HELP-INLINE stpa
 
+    # LSP - Language Server Protocol queries
+    LSP = "LSP"  # Query type/symbol info: LSP type Treatment -p ./src
+
     # File inclusion
     INCLUDE = "INCLUDE"  # Include another .conv file: INCLUDE common/setup.conv
 

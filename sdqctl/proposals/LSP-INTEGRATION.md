@@ -1,6 +1,6 @@
 # Proposal: LSP Integration for Semantic Code Context
 
-> **Status**: In Progress (Phase 2: 2/3 items complete)  
+> **Status**: Complete (Phase 1 + Phase 2)  
 > **Date**: 2026-01-27  
 > **Author**: sdqctl development  
 > **Scope**: Language Server Protocol integration for type-aware code analysis  
@@ -17,10 +17,10 @@
 - [x] TypeScript server detection (local node_modules + global PATH)
 - [x] `sdqctl lsp status` command
 
-### Phase 2: TypeScript Type Extraction 🔄 In Progress
+### Phase 2: TypeScript Type Extraction ✅ Complete
 - [x] `sdqctl lsp type <name>` - pattern-based type lookup
 - [x] JSON output mode (`--json`) for type definitions
-- [ ] `LSP type` directive for .conv workflows
+- [x] `LSP type` directive for .conv workflows
 
 ### Phase 3: Future
 - [ ] Symbol lookup implementation
@@ -188,7 +188,7 @@ Option C: **Hybrid** (recommended)
 - [ ] Implement TypeScript language server client
 - [ ] Implement `sdqctl lsp type <name>` for TypeScript
 - [ ] Add JSON output mode for type definitions
-- [ ] Add `LSP type` directive for .conv workflows
+- [x] Add `LSP type` directive for .conv workflows
 
 **Deliverables**:
 - Working TypeScript type extraction

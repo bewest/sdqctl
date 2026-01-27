@@ -451,3 +451,117 @@ export interface Treatment {
         client = get_client("typescript", tmp_path)
         assert client is not None
         assert client._initialized is True
+
+
+class TestLSPSteps:
+    """Tests for LSP step execution."""
+
+    def test_parse_lsp_args_type(self):
+        """Parse type lookup arguments."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("type Treatment")
+        assert result["subcommand"] == "type"
+        assert result["name"] == "Treatment"
+        assert result["path"] == "."
+        assert result["language"] is None
+
+    def test_parse_lsp_args_with_path(self):
+        """Parse with -p path option."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("type Treatment -p ./src")
+        assert result["name"] == "Treatment"
+        assert result["path"] == "./src"
+
+    def test_parse_lsp_args_with_language(self):
+        """Parse with -l language option."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("type Bolus -l typescript")
+        assert result["name"] == "Bolus"
+        assert result["language"] == "typescript"
+
+    def test_parse_lsp_args_all_options(self):
+        """Parse with all options."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("type Treatment -p ./externals/Loop -l swift")
+        assert result["subcommand"] == "type"
+        assert result["name"] == "Treatment"
+        assert result["path"] == "./externals/Loop"
+        assert result["language"] == "swift"
+
+    def test_parse_lsp_args_empty(self):
+        """Empty directive returns error."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("")
+        assert "error" in result
+
+    def test_parse_lsp_args_missing_name(self):
+        """Missing name returns error."""
+        from sdqctl.commands.lsp_steps import parse_lsp_args
+
+        result = parse_lsp_args("type")
+        assert "error" in result
+
+    def test_lookup_type_success(self, tmp_path):
+        """lookup_type finds type definition."""
+        from sdqctl.commands.lsp_steps import lookup_type
+
+        # Create fake tsserver
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        # Create TypeScript file
+        (tmp_path / "types.ts").write_text("""
+export interface Treatment {
+  id: string;
+}
+""")
+
+        result = lookup_type("Treatment", tmp_path, "typescript")
+        assert "type_definition" in result
+        assert result["type_definition"].name == "Treatment"
+
+    def test_lookup_type_not_found(self, tmp_path):
+        """lookup_type returns error when not found."""
+        from sdqctl.commands.lsp_steps import lookup_type
+
+        bin_dir = tmp_path / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True)
+        (bin_dir / "tsserver").write_text("#!/bin/sh")
+
+        (tmp_path / "types.ts").write_text("export interface Other {}")
+
+        result = lookup_type("NotFound", tmp_path, "typescript")
+        assert "error" in result
+
+
+class TestLSPDirective:
+    """Tests for LSP directive in conversation files."""
+
+    def test_directive_type_exists(self):
+        """DirectiveType.LSP exists."""
+        from sdqctl.core.conversation import DirectiveType
+
+        assert hasattr(DirectiveType, "LSP")
+        assert DirectiveType.LSP.value == "LSP"
+
+    def test_directive_creates_step(self):
+        """LSP directive creates step in conversation."""
+        from sdqctl.core.conversation import ConversationFile
+
+        conv_text = """
+MODEL mock
+LSP type Treatment -p ./src
+PROMPT Analyze the Treatment type
+"""
+        conv = ConversationFile.parse(conv_text.strip())
+        
+        # Find LSP step
+        lsp_steps = [s for s in conv.steps if s.type == "lsp"]
+        assert len(lsp_steps) == 1
+        assert "Treatment" in lsp_steps[0].content

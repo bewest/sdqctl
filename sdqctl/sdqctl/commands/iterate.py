@@ -73,6 +73,7 @@ from .prompt_steps import (
 )
 from .utils import run_async
 from .verify_steps import execute_verify_coverage_step, execute_verify_trace_step
+from .lsp_steps import execute_lsp_step
 
 logger = get_logger(__name__)
 console = Console()
@@ -881,6 +882,11 @@ async def _cycle_async(
 
                         elif step_type == "verify_coverage":
                             execute_verify_coverage_step(step, conv, progress_print)
+
+                        elif step_type == "lsp":
+                            execute_lsp_step(
+                                step, conv, session, console, progress_print
+                            )
 
                     progress.update(cycle_task, completed=cycle_num + 1)
 

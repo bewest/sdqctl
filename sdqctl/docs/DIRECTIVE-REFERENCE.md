@@ -39,6 +39,7 @@ Complete reference for sdqctl ConversationFile directives.
 | `ON-CONTEXT-LIMIT` | Action when limit reached | `ON-CONTEXT-LIMIT compact` |
 | `VALIDATION-MODE` | Validation strictness | `VALIDATION-MODE lenient` |
 | `REFCAT` | Code excerpt injection | `REFCAT @file.py#L10-L50` or `REFCAT @src/**/*.py` |
+| `LSP` | Inject type/symbol definitions | `LSP type Treatment -p ./src` |
 
 ### File Control Directives
 

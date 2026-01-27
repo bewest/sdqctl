@@ -13,15 +13,16 @@
 | SDK | [backlogs/sdk-integration.md](backlogs/sdk-integration.md) | Copilot SDK, adapters, sessions |
 | Architecture | [backlogs/architecture.md](backlogs/architecture.md) | Module structure, refactoring |
 | Directives | [backlogs/directives.md](backlogs/directives.md) | Directive system, plugins |
+| Live updated backlog requests from human mid run | [backlogs/directives.md](backlogs/LIVE-BACKLOG.md) | Directive system, plugins |
 
 ---
 
-## Ready Queue (7 Actionable Items)
+## Ready Queue (6 Actionable Items)
 
 **Groomed from WP-006 and WP-002** - 2026-01-27  
 **Priority**: Complete WP-006 Phase 2 (LSP) before WP-002 (Monitoring)  
 **WP-006 Phase 1**: ✅ Complete (5/5 items)  
-**WP-006 Phase 2**: In Progress (2/3 items done)
+**WP-006 Phase 2**: ✅ Complete (3/3 items done)
 
 ### WP-006: LSP Integration (Priority 1)
 
@@ -34,7 +35,7 @@
 | 5 | Add `sdqctl lsp status` command | P3 | Low | Phase 1 | ✅ Done |
 | 6 | Implement `sdqctl lsp type <name>` for TypeScript | P3 | Low | Phase 2 | ✅ Done |
 | 7 | Add JSON output mode for LSP type definitions | P3 | Low | Phase 2 | ✅ Done |
-| 8 | Add `LSP type` directive for .conv workflows | P3 | Low | Phase 2 | |
+| 8 | Add `LSP type` directive for .conv workflows | P3 | Low | Phase 2 | ✅ Done |
 
 ### WP-002: Continuous Monitoring (Priority 2 - after WP-006 Phase 2)
 
