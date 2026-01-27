@@ -129,6 +129,24 @@ Comprehensive research on STPA integration for Nightscout ecosystem, delivering 
 
 ---
 
+### WP-006: LSP Integration (P3 R&D)
+
+Language Server Protocol integration for semantic code context - type extraction, cross-project comparison, and intelligent code analysis.
+
+- [ ] Define LSP client interface in `sdqctl/lsp/`
+- [ ] Implement `sdqctl lsp type <name>` for TypeScript
+- [ ] Add `LSP type` directive for .conv workflows
+- [ ] Multi-language support (Swift, Kotlin, Python)
+- [ ] Cross-project type comparison (`lsp compare-types`)
+- [ ] Integration with ecosystem analysis workflows
+
+**Proposal**: [LSP-INTEGRATION.md](LSP-INTEGRATION.md)  
+**Supersedes**: "LSP support for refcat" backlog item  
+**Dependencies**: None (complements REFCAT, doesn't replace)  
+**Estimated**: 4-5 iterations, ~800 lines
+
+---
+
 ### Future (Unstarted)
 
 Items not yet assigned to work packages:
@@ -136,6 +154,22 @@ Items not yet assigned to work packages:
 | Item | Source | Notes |
 |------|--------|-------|
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
+
+---
+
+## Lessons Learned
+
+Design principles distilled from recent development iterations:
+
+| Lesson | Source | Implication |
+|--------|--------|-------------|
+| **Process over domain** | Ecosystem workflows | Commands/directives should be generic (`lsp type X`) not domain-specific (`lsp treatment`). Direction comes from `--prologue`. |
+| **Typesetting metaphor** | `--introduce` naming | CLI flags follow document structure: prologue→introduce→body→epilogue. New flags should fit this pattern. |
+| **Agent output visibility** | User feedback | Agent responses should print to stdout by default. Users can't debug what they can't see. |
+| **Plugin system decoupling** | Release cycle friction | Ecosystem teams need to extend sdqctl independently. Plugins > core features for domain-specific needs. |
+| **Warmup/priming pattern** | Feedback team | First-cycle-only context injection (`--introduce`) is a common need. One-time focus doesn't need to repeat. |
+| **LSP complements REFCAT** | Analysis workflow | Text extraction (REFCAT) and semantic queries (LSP) serve different needs. Both valuable. |
+| **STPA needs guides, not just proposals** | WP-005 outcome | Comprehensive usage guides with templates are more valuable than abstract framework proposals. |
 
 ---
 
