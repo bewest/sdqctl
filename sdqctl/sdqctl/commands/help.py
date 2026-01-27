@@ -77,6 +77,7 @@ sdqctl status                        # Check status
 sdqctl help                  # This overview
 sdqctl help run              # Command help
 sdqctl help directives       # Topic help
+sdqctl help -i               # Interactive browsing
 sdqctl <command> --help      # Click's built-in help
 ```
 
