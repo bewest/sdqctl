@@ -16,11 +16,11 @@
 
 ---
 
-## Ready Queue (0 Actionable Items)
+## Ready Queue (1 Actionable Item)
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| *(No items in ready queue)* | | | | |
+| 1 | Plugin authoring documentation | P3 | Low | WP-004 step 5: Create docs/PLUGIN-AUTHORING.md for ecosystem teams. |
 
 ---
 
