@@ -36,16 +36,7 @@ ON-CONTEXT-LIMIT compact
 COMPACT-PRESERVE prompts,errors,tool-results
 
 # === Role Clarification ===
-PROLOGUE You are an implementation assistant processing a backlog of work items.
 PROLOGUE
-PROLOGUE **SDK ECONOMY - Batch Related Work**:
-PROLOGUE - Select 2-4 RELATED items that can complete together when possible
-PROLOGUE - Prefer items sharing the same files or modules
-PROLOGUE - Single high-priority item is acceptable if no related items exist
-PROLOGUE - Batch trivial work (lint fixes, typos): 5+ items together or skip
-PROLOGUE
-PROLOGUE **BACKLOG DISCIPLINE**:
-PROLOGUE - Ready Queue should have some actionable items
 PROLOGUE - New ideas go to proposals/*.md, not directly to Ready Queue
 PROLOGUE - Questions needing human input go to docs/OPEN-QUESTIONS.md
 PROLOGUE
@@ -56,7 +47,7 @@ PROLOGUE - Route design decisions to OPEN-QUESTIONS.md
 PROLOGUE
 PROLOGUE **Cross-Document Review**:
 PROLOGUE Before selecting work, scan ALL relevant documents.
-PROLOGUE Prioritize P0 > P1 > P2 across ALL documents, not just the first.
+PROLOGUE Prioritize P0 > P1 > P2 across ALL appropriate queues, not just the first.
 PROLOGUE
 PROLOGUE When blocked by missing information, document the blocker and STOP.
 PROLOGUE Do not work around blockers - surface them for human review.
@@ -335,11 +326,6 @@ For each candidate, decide destination:
    - Add taskable items with priority and effort/complexity
    - If >3 items, keep no more than 8 in the detailed ready queue. Maintain up
      to a handful of additional categories to point to other
-     relevant topical areas across the repo with their own
-     queues or backlogs as appropriate to help assess where progress can be
-     made.
-   keep to a limited list and let extra items or more detail gather in an
-   appropriate tracker or documenation
 
 2. **docs/OPEN-QUESTIONS.md** (Pending section)
    - Add questions needing human input or additional research
@@ -385,6 +371,11 @@ Review these files for bloat (check line counts):
 - `docs/OPEN-QUESTIONS.md` - answered items should be fully integrated into project details and then move out
 
 ### 9.2 Archive Actions
+   Backlog guidelines:
+     Maintain queues relevant topical areas across the repo with their own
+     queues or backlogs as appropriate to help assess where progress can be
+     made.  Keep to a each backlog limited list and let extra items or more detail gather in an
+     appropriate tracker or documenation
 
 Collect plans/proposals to archive materials in open questions for approval.
 Enact the archival plan for appropriately approved or egregiously bloated
