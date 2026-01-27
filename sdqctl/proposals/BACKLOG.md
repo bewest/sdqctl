@@ -28,7 +28,7 @@
 | # | Item | Priority | Effort | Status |
 |---|------|----------|--------|--------|
 | 1 | Trim RECENTLY COMPLETED section (max 20 lines) | P2 | Low | ✅ Done |
-| 2 | Documentation audit - find outdated docs | P2 | Medium | Ready |
+| 2 | Documentation audit - find outdated docs | P2 | Medium | ✅ Done |
 | 3 | Backlog organization - archive old material | P2 | Medium | Ready |
 
 **Source**: LIVE-BACKLOG.md (human mid-run request)
@@ -68,8 +68,29 @@
 | WP-005: STPA Deep Integration | ✅ Complete | Audit, patterns, usage guide, roadmap |
 | WP-004: Plugin System (partial) | ✅ Complete | Schema, discovery, hello world, authoring docs |
 | docs/COMMANDS.md | ✅ Updated | LSP + drift sections |
+| WP-003 #2: Documentation audit | ✅ Complete | 29 docs scanned, findings below |
 
 *Older items → [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)*
+
+## Documentation Audit Findings (2026-01-27)
+
+**29 docs scanned** in `/docs/` directory.
+
+### Issues Found
+
+| Issue | Files Affected | Priority | Notes |
+|-------|----------------|----------|-------|
+| `sdqctl run` references | 13 docs | P3 | `run` now thin wrapper to `iterate -n 1`; docs still show as primary |
+| TODO/FIXME markers | 4 docs | P3 | EXTENDING-VERIFIERS, SYNTHESIS-CYCLES, TRACEABILITY-WORKFLOW |
+| Oldest unchanged (Jan 25) | 8 docs | P3 | May need review: FEATURE-INTERACTIONS, NIGHTSCOUT-ECOSYSTEM, PIPELINE-SCHEMA, REVERSE-ENGINEERING, SECURITY-MODEL, SYNTHESIS-CYCLES, TRACEABILITY-WORKFLOW, WORKFLOW-DESIGN |
+
+### Recommendations
+
+1. **Low Priority** - `run` command docs are still accurate (it works, just wraps iterate)
+2. **No Action Needed** - TODOs are intentional example code, not missing implementations
+3. **Future Review** - 8 oldest docs may need freshness check in next cycle
+
+**Verdict**: No urgent doc updates required. Backlog hygiene complete.
 
 ## Recently Groomed (2026-01-27)
 
