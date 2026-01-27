@@ -10,9 +10,9 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| 1 | Add CLI integration tests | P2 | Medium | Total 1364 tests. Focus: render, validate, iterate commands. |
-| 2 | Add end-to-end workflow tests | P2 | Medium | Test complete .conv file execution with mock adapter. |
-| 3 | Improve test documentation | P3 | Low | Document test markers, fixtures, parametrization patterns. |
+| 1 | Improve test documentation | P3 | Low | Document test markers, fixtures, parametrization patterns. |
+| 2 | Add flow command integration tests | P3 | Low | Test flow command with multiple .conv files. |
+| 3 | Add apply command integration tests | P3 | Low | Test apply command for per-component workflows. |
 
 ---
 
@@ -63,11 +63,11 @@
 
 | Item | Date | Notes |
 |------|------|-------|
+| **Add CLI integration tests (P2)** | 2026-01-27 | Created test_cli_integration.py with 17 tests: render (4), validate (2), iterate (3), cycle (2), status (2), help (4). |
+| **Add end-to-end workflow tests (P2)** | 2026-01-27 | Extended test_workflow_integration.py with 5 new classes: EndToEndWorkflows (2), ErrorHandling (1), Verify (1), Compact (1). Total 1386 tests. |
 | **Add parametrized test variants (P3)** | 2026-01-27 | Added TestDirectiveVariants (18 cases) and parametrized TestConsultTimeoutErrors (4 cases) to test_conversation_errors.py. |
 | **Extend adapter integration tests (P3)** | 2026-01-27 | Added TestAdapterErrorPaths (5 tests) and TestAdapterRegistryVariants (10 parametrized cases). Total 1364 tests. |
 | **Add error path tests (P3)** | 2026-01-27 | Created test_conversation_errors.py with 29 tests for malformed .conv input, invalid directives, missing files, block errors, encoding, edge cases. Total 1329 tests. |
-| **Add session-scoped fixtures (P3)** | 2026-01-27 | Added session_workspace, shared_mock_adapter, shared_adapter_config to tests/conftest.py for reduced test overhead. |
-| **Document test markers + refcat patterns (P3)** | 2026-01-26 | Added test marker examples and cross-repo refcat patterns to README.md. |
 | **Add @pytest.mark.slow (P3)** | 2026-01-26 | Marked 1 slow test (timeout test). Enables `pytest -m "not slow"` for faster runs (~1s savings). |
 | **Expand test markers (P3)** | 2026-01-26 | Added tests/integration/conftest.py with auto-marker. 15 integration tests now selectable with `-m integration`. |
 | **Q-019A: Progress timestamps (P3)** | 2026-01-26 | Added `set_timestamps()` to core/progress.py. Enabled when `-v` used. +4 tests. Total 1300 tests. |
