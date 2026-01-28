@@ -61,14 +61,26 @@ sdqctl iterate backlog.conv -n 8 \
 | `verify` | Static verification (refs, links, traceability) | [COMMANDS.md](docs/COMMANDS.md#verify) |
 | `refcat` | Extract file content with line precision | [COMMANDS.md](docs/COMMANDS.md#refcat) |
 | `sessions` | Session management (list, resume, cleanup) | [COMMANDS.md](docs/COMMANDS.md#sessions) |
+| `resume` | Resume paused workflow from checkpoint | [COMMANDS.md](docs/COMMANDS.md#resume) |
 | `status` | System and adapter status | [COMMANDS.md](docs/COMMANDS.md#status) |
 | `validate` | Syntax validation for .conv files | [COMMANDS.md](docs/COMMANDS.md#validate) |
+| `show` | Display parsed workflow structure | [COMMANDS.md](docs/COMMANDS.md#show) |
 | `init` | Initialize sdqctl in a project | [COMMANDS.md](docs/COMMANDS.md#init) |
 | `help` | Built-in help system | [COMMANDS.md](docs/COMMANDS.md#help) |
 
+**Utility commands:**
+
+| Command | Purpose | Documentation |
+|---------|---------|---------------|
+| `artifact` | Artifact ID generation and utilities | [COMMANDS.md](docs/COMMANDS.md#artifact) |
+| `plugin` | Plugin management and validation | [COMMANDS.md](docs/COMMANDS.md#plugin) |
+| `lsp` | Language server queries for type info | [COMMANDS.md](docs/COMMANDS.md#lsp) |
+| `drift` | Detect ecosystem alignment drift | [COMMANDS.md](docs/COMMANDS.md#drift) |
+| `workspace` | Workspace configuration management | [COMMANDS.md](docs/COMMANDS.md#workspace) |
+
 ### Directives
 
-ConversationFiles support 40+ directives for workflow control. See [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) for complete documentation.
+ConversationFiles support 70+ directives for workflow control. See [DIRECTIVE-REFERENCE.md](docs/DIRECTIVE-REFERENCE.md) for complete documentation.
 
 Key directive categories:
 - **Context**: `CONTEXT`, `REFCAT`, `LSP` - inject file content and type definitions
@@ -202,18 +214,47 @@ ADAPTER copilot
 MODE audit
 MAX-CYCLES 1
 
-CONTEXT @lib/auth/*.js
-CONTEXT @tests/auth.test.js
-
-CONTEXT-LIMIT 80%
+# === Context Management ===
+# Hint at locations - let agent read on demand (avoids overstuffing)
+CONTEXT-LIMIT 70%
 ON-CONTEXT-LIMIT compact
 
-PROMPT Analyze authentication for security vulnerabilities.
-PROMPT Generate a report with severity ratings.
+# === Role Clarification ===
+PROLOGUE You are a security auditor. Your job is to:
+PROLOGUE 1. Identify vulnerabilities with file:line references
+PROLOGUE 2. Rate by severity (Critical, High, Medium, Low)
+PROLOGUE 3. Provide actionable remediation steps
+
+# === Process Phases ===
+PROMPT ## Phase 1: Discovery
+Check the authentication module in lib/auth/ for security issues.
+Start with auth_handler.py and trace the token validation flow.
+
+PROMPT ## Phase 2: Analysis
+For each finding, document:
+- Severity rating and location (file:line)
+- Description and proof of concept
+- Recommended remediation
+
+PROMPT ## Phase 3: Report
+Generate a security audit report summarizing all findings.
 
 OUTPUT-FORMAT markdown
 OUTPUT-FILE security-report.md
 ```
+
+**Best practices demonstrated:**
+- **Hint, don't inject** — Process directions mention file paths; agent reads on demand
+- **Role clarity** — PROLOGUE establishes auditor role explicitly
+- **Process phases** — Structured as Discovery → Analysis → Report
+- **Context limits** — 70% threshold prevents overstuffing
+
+> **When you need specific code snippets**, use `REFCAT` for precise, attributable extraction:
+> ```dockerfile
+> REFCAT @lib/auth.py#L50-L80  # Lines 50-80 only
+> REFCAT @lib/token.py#/def validate_token/  # Find by pattern
+> ```
+> See [CONTEXT-MANAGEMENT.md](docs/CONTEXT-MANAGEMENT.md) for detailed guidance.
 
 ### Directives
 
@@ -871,8 +912,8 @@ pip install -e ".[dev]"
 pytest
 
 # Run tests with markers
-pytest -m integration       # Integration tests only (15 tests)
-pytest -m "not slow"        # Skip slow tests (~1s faster)
+pytest -m integration       # Integration tests only
+pytest -m "not slow"        # Skip slow tests
 pytest -m "not integration" # Unit tests only
 
 # Lint
@@ -883,6 +924,10 @@ ruff check sdqctl/
 
 ### Recently Completed
 
+- ✅ **CONSULT Directive** - Pause with proactive question presentation on resume ([proposal](proposals/CONSULT-DIRECTIVE.md))
+- ✅ **LSP Integration** - Language server queries for type definitions (`sdqctl lsp type`)
+- ✅ **Drift Detection** - Ecosystem alignment drift monitoring (`sdqctl drift`)
+- ✅ **Plugin System** - Plugin validation, sandboxing, and management (`sdqctl plugin`)
 - ✅ **ON-FAILURE/ON-SUCCESS Blocks** - Conditional execution after RUN commands
 - ✅ **All Quirks Resolved** - Q-013 tool name fix completes quirk backlog
 - ✅ **REFCAT Command** - Extract file content with line ranges (`@file.py#L10-L50`) for precise context injection

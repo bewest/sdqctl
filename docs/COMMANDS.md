@@ -26,6 +26,7 @@ Complete reference for all sdqctl CLI commands.
 | `show` | Display parsed workflow | `sdqctl show workflow.conv` |
 | `init` | Initialize project | `sdqctl init` |
 | `help` | Built-in help | `sdqctl help directives` |
+| `workspace` | Multi-repo operations | `sdqctl workspace search "bolus"` |
 
 ---
 
@@ -785,6 +786,41 @@ sdqctl help --list
 - `variables` - Template variable reference
 - `context` - Context management strategies
 - `examples` - Example workflows
+
+---
+
+## workspace
+
+Multi-repository workspace management for ecosystem alignment projects.
+
+```bash
+sdqctl workspace COMMAND [OPTIONS]
+```
+
+**Subcommands:**
+
+| Command | Purpose |
+|---------|---------|
+| `status` | Show status of all external repositories |
+| `search` | Search across all external repositories |
+| `diff` | Compare implementations across repos |
+
+**Examples:**
+```bash
+# Show status of externals/
+sdqctl workspace status
+
+# Search across all repos
+sdqctl workspace search "bolus"
+sdqctl workspace search "determineBasal" --type ts
+
+# Compare implementations
+sdqctl workspace diff "insulin calculation"
+```
+
+**Use Case:**
+
+For projects with external repositories in `externals/` (e.g., ecosystem alignment workspaces), the workspace command provides unified cross-repo operations without manual directory navigation.
 
 ---
 
