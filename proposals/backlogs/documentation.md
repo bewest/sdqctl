@@ -18,7 +18,19 @@
 
 ### DOC-001: Documentation coherency audit
 
-**Goal**: Systematically review all 29 docs for coherency optimized for autonomous operation.
+**Goal**: Systematically review all 31 docs for coherency optimized for autonomous operation.
+
+**Phase 1 Findings (2026-01-29)**:
+- ✅ v2 alignment: All docs now use `iterate` (DOC-002 completed)
+- ✅ Core docs (GETTING-STARTED, COMMANDS): Current
+- ✅ Architecture docs: Current (last updated 2026-01-27)
+- ⚠️ TODO markers: 3 docs have markers, but in example code (intentional)
+- ✅ New docs added: SUBPROJECT-TOOLING.md, PLUGIN-AUTHORING.md updated
+
+**Remaining for Phase 2-3**:
+- Scan Context, Workflows, Verification sections
+- Check cross-references between docs
+- Verify GLOSSARY.md terminology consistency
 
 **Scope** (by section):
 
