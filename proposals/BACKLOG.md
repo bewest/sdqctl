@@ -13,6 +13,7 @@
 | SDK | [backlogs/sdk-integration.md](backlogs/sdk-integration.md) | Copilot SDK, adapters, sessions |
 | Architecture | [backlogs/architecture.md](backlogs/architecture.md) | Module structure, refactoring |
 | Directives | [backlogs/directives.md](backlogs/directives.md) | Directive system, plugins |
+| Documentation | [backlogs/documentation.md](backlogs/documentation.md) | Doc quality, coherency, onboarding |
 | Live updated backlog requests from human mid run | [LIVE-BACKLOG.md](LIVE-BACKLOG.md) | Live backlog requests |
 
 ---
