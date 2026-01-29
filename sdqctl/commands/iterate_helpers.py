@@ -391,7 +391,9 @@ async def perform_compaction(
     reason: str,
     console: "Console",
     progress_print,
-) -> None:
+    reset_session: bool = False,
+    adapter_config: Optional["AdapterConfig"] = None,
+) -> Optional["AdapterSession"]:
     """Perform context compaction and log result.
 
     Args:
@@ -402,10 +404,37 @@ async def perform_compaction(
         reason: Human-readable reason (e.g., "before cycle 2", "context near limit")
         console: Console for output
         progress_print: Function for progress messages
+        reset_session: If True, destroy old session and create new with summary
+        adapter_config: Required when reset_session=True, config for new session
+
+    Returns:
+        New adapter session if reset_session=True, None otherwise
     """
     console.print(f"\n[yellow]Compacting {reason}...[/yellow]")
     progress_print("  🗜  Compacting context...")
 
+    if reset_session:
+        if adapter_config is None:
+            raise ValueError("adapter_config required when reset_session=True")
+
+        # Use compact_with_session_reset if adapter supports it
+        if hasattr(ai_adapter, 'compact_with_session_reset'):
+            new_session, compact_result = await ai_adapter.compact_with_session_reset(
+                adapter_session,
+                adapter_config,
+                conv.compact_preserve,
+                compaction_prologue=getattr(conv, 'compaction_prologue', None),
+                compaction_epilogue=getattr(conv, 'compaction_epilogue', None),
+            )
+            tokens_msg = f"{compact_result.tokens_before} → {compact_result.tokens_after} tokens"
+            console.print(f"[green]Compacted (new session): {tokens_msg}[/green]")
+            progress_print(f"  🗜  Compacted (new session): {tokens_msg}")
+            return new_session
+        else:
+            # Fallback for adapters without compact_with_session_reset
+            logger.warning("Adapter doesn't support compact_with_session_reset, using standard compact")
+
+    # Standard compaction (no session reset)
     compact_result = await ai_adapter.compact(
         adapter_session,
         conv.compact_preserve,
@@ -415,6 +444,7 @@ async def perform_compaction(
     tokens_msg = f"{compact_result.tokens_before} → {compact_result.tokens_after} tokens"
     console.print(f"[green]Compacted: {tokens_msg}[/green]")
     progress_print(f"  🗜  Compacted: {tokens_msg}")
+    return None
 
 
 def _merge_help_inline_steps(steps, conv) -> list:

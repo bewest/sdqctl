@@ -211,6 +211,9 @@ sdqctl iterate workflow.conv -n 10
 # Disable infinite sessions (use client-side compaction)
 sdqctl iterate workflow.conv -n 10 --no-infinite-sessions
 
+# Client-side compaction with session reset (destroy old, create new with summary)
+sdqctl iterate workflow.conv -n 10 --no-infinite-sessions --reset-on-compact
+
 # Custom thresholds
 sdqctl iterate workflow.conv -n 10 \
     --compaction-min 25 \
@@ -225,8 +228,23 @@ sdqctl iterate workflow.conv -n 10 \
 | `--compaction-min` | `COMPACTION-MIN` | 30% | Skip compaction if context below this |
 | `--compaction-threshold` | `COMPACTION-THRESHOLD` | 80% | Start background compaction |
 | `--compaction-max` | `COMPACTION-MAX` | 95% | Block until compaction complete |
+| `--reset-on-compact` | N/A | off | Destroy session and create new with compacted summary |
 
 > **Note**: `--min-compaction-density` and `--buffer-threshold` are deprecated aliases.
+
+### Session Reset on Compaction
+
+When `--reset-on-compact` is enabled, client-side compaction will:
+
+1. Send `/compact` to get a summary of the conversation
+2. Destroy the old session
+3. Create a new session
+4. Inject the compacted summary into the new session
+
+This ensures a truly clean context window. Use when:
+- SDK infinite sessions are disabled (`--no-infinite-sessions`)
+- You need guaranteed context reduction (not just in-place compaction)
+- Testing or debugging compaction behavior
 
 ### When to Use Manual COMPACT
 

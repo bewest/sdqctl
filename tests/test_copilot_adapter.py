@@ -1378,6 +1378,61 @@ class TestModelChangeEvent:
         assert stats.model == "claude-opus-4"
 
 
+class TestCompactSimplified:
+    """Test that compact() sends just /compact without extra text."""
+
+    @pytest.mark.asyncio
+    async def test_compact_sends_just_slash_compact(
+        self, mock_copilot_client, mock_copilot_session
+    ):
+        """Test that compact() sends just '/compact' without extra text."""
+        mock_copilot_client.create_session.return_value = mock_copilot_session
+
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        config = AdapterConfig(model="gpt-4")
+        session = await adapter.create_session(config)
+
+        # Track what gets sent
+        sent_prompts = []
+
+        async def capture_send(prompt):
+            sent_prompts.append(prompt)
+            # Simulate compact response via events
+            handler = mock_copilot_session._event_handler
+
+            event = MagicMock()
+            event.type = MockEventType("assistant.turn_start")
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("assistant.message")
+            event.data = MagicMock(content="Compacted summary")
+            handler(event)
+
+            event = MagicMock()
+            event.type = MockEventType("session.idle")
+            handler(event)
+
+        mock_copilot_session.send = capture_send
+        mock_copilot_session.get_messages = AsyncMock(return_value=[
+            MagicMock(role="user", content="test"),
+        ])
+
+        # Call compact with preserve items and summary_prompt
+        await adapter.compact(
+            session,
+            preserve=["errors", "findings"],
+            summary_prompt="Summarize the key points"
+        )
+
+        # Verify only "/compact" was sent (no extra text)
+        assert len(sent_prompts) == 1
+        # SDK sends dict with 'prompt' key
+        sent = sent_prompts[0]
+        prompt_text = sent.get('prompt', sent) if isinstance(sent, dict) else sent
+        assert prompt_text == "/compact"
 
 
 class TestCompactWithSessionReset:

@@ -118,6 +118,8 @@ console = Console()
               help="[DEPRECATED] Use --compaction-min instead")
 @click.option("--no-infinite-sessions", is_flag=True,
               help="Disable SDK infinite sessions (use client-side compaction)")
+@click.option("--reset-on-compact", is_flag=True,
+              help="Reset session after compaction (destroy old, create new with summary)")
 @click.option("--compaction-threshold", type=int, default=None,
               help="Start background compaction at this %% (default: 80)")
 @click.option("--compaction-max", type=int, default=None,
@@ -163,6 +165,7 @@ def iterate(
     compaction_min: Optional[int],
     min_compaction_density: Optional[int],
     no_infinite_sessions: bool,
+    reset_on_compact: bool,
     compaction_threshold: Optional[int],
     compaction_max: Optional[int],
     buffer_threshold: Optional[int],
@@ -397,6 +400,7 @@ def iterate(
         verbosity=verbosity, show_prompt=show_prompt_flag,
         compaction_min=effective_compaction_min,
         no_infinite_sessions=no_infinite_sessions,
+        reset_on_compact=reset_on_compact,
         compaction_threshold=compaction_threshold,
         compaction_max=effective_compaction_max,
         json_errors=json_errors,
@@ -434,6 +438,7 @@ async def _cycle_async(
     show_prompt: bool = False,
     compaction_min: Optional[int] = None,
     no_infinite_sessions: bool = False,
+    reset_on_compact: bool = False,
     compaction_threshold: Optional[int] = None,
     compaction_max: Optional[int] = None,
     json_errors: bool = False,
@@ -711,20 +716,28 @@ async def _cycle_async(
 
                     # Session mode: compact = compact at start of each cycle (after first)
                     if session_mode == "compact" and cycle_num > 0:
-                        await perform_compaction(
+                        new_session = await perform_compaction(
                             ai_adapter, adapter_session, conv, session,
-                            f"before cycle {cycle_num + 1}", console, progress_print
+                            f"before cycle {cycle_num + 1}", console, progress_print,
+                            reset_session=reset_on_compact,
+                            adapter_config=adapter_config,
                         )
+                        if new_session is not None:
+                            adapter_session = new_session
 
                     # Check for compaction (accumulate mode, or when context limit reached)
                     # Use effective_min which defaults to 30% if not set
                     effective_min = compaction_min if compaction_min is not None else 30
                     needs_compact = session.needs_compaction(effective_min)
                     if session_mode == "accumulate" and needs_compact:
-                        await perform_compaction(
+                        new_session = await perform_compaction(
                             ai_adapter, adapter_session, conv, session,
-                            "context near limit", console, progress_print
+                            "context near limit", console, progress_print,
+                            reset_session=reset_on_compact,
+                            adapter_config=adapter_config,
                         )
+                        if new_session is not None:
+                            adapter_session = new_session
 
                     # Checkpoint if configured
                     if session.should_checkpoint():
@@ -867,10 +880,17 @@ async def _cycle_async(
                             effective_min_compact = (
                                 compaction_min if compaction_min is not None else 30
                             )
-                            await execute_compact_step(
+                            result = await execute_compact_step(
                                 step, conv, session, ai_adapter, adapter_session,
-                                effective_min_compact, console, progress_print
+                                effective_min_compact, console, progress_print,
+                                reset_session=reset_on_compact,
+                                adapter_config=adapter_config,
                             )
+                            # Handle session reset if it occurred
+                            if reset_on_compact and isinstance(result, tuple):
+                                _, new_session = result
+                                if new_session is not None:
+                                    adapter_session = new_session
 
                         elif step_type == "checkpoint":
                             execute_checkpoint_step(

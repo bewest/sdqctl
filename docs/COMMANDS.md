@@ -156,6 +156,7 @@ sdqctl render iterate workflow.conv --json | jq '...' | sdqctl iterate --from-js
 | `--introduction` | Inject prompt in cycle 1 only (repeatable) |
 | `--until N PROMPT` | Inject PROMPT in cycles 1 through N |
 | `--no-infinite-sessions` | Disable SDK native compaction |
+| `--reset-on-compact` | Reset session after compaction (destroy old, create new) |
 | `--compaction-min` | Skip compaction below this % (default: 30) |
 | `--compaction-threshold` | Background compaction threshold % (default: 80) |
 | `--compaction-max` | Block until complete at this % (default: 95) |

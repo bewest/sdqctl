@@ -1,0 +1,21 @@
+{
+  "reason": "No P0/P1 work available. P2 items exist (DIR-001..003, DOC-001..004) but require human prioritization. WP-003 blocked on OQ-UP-001..004 pending questions.",
+  "needs_review": true,
+  "available_p2_work": [
+    "DIR-001: Custom directive types from plugins",
+    "DIR-002: Extensible DirectiveType enum",
+    "DIR-003: Custom directive execution hooks",
+    "DOC-002: Deprecation cleanup",
+    "DOC-003: HELP-INLINE topic expansion",
+    "DOC-004: Subproject tooling guide",
+    "DOC-001: Documentation coherency audit"
+  ],
+  "pending_questions": [
+    "OQ-UP-001: Branching strategies for upstream repos?",
+    "OQ-UP-002: Auto-create issues before PRs?",
+    "OQ-UP-003: CLA requirement handling?",
+    "OQ-UP-004: Project-specific CI integration?",
+    "OQ-UP-005: Additional consolidation work needed?"
+  ],
+  "recommendation": "Select P2 priority: Directives (DIR-*) or Documentation (DOC-*)"
+}

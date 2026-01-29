@@ -313,18 +313,17 @@ class CopilotAdapter(AdapterBase):
         The /compact command triggers native SDK compaction which is more
         efficient than re-summarization. Falls back to base implementation
         if /compact doesn't work as expected.
+
+        Note: We send just "/compact" without extra text to let the SDK
+        handle compaction natively. The preserve and summary_prompt args
+        are used only for the fallback path.
         """
         tokens_before, _ = await self.get_context_usage(session)
 
         # Try /compact command first (native SDK compaction)
         try:
-            # Build preserve instruction if provided
-            preserve_hint = ""
-            if preserve:
-                preserve_hint = f"Preserve: {', '.join(preserve)}. "
-
-            compact_prompt = f"/compact {preserve_hint}{summary_prompt}".strip()
-            response = await self.send(session, compact_prompt)
+            # Send just /compact - SDK handles compaction natively
+            response = await self.send(session, "/compact")
 
             tokens_after, _ = await self.get_context_usage(session)
 

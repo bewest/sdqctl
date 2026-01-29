@@ -196,3 +196,132 @@ class TestExecuteCompactStep:
 
         # Verify token count was updated
         assert session.context.window.used_tokens == 3000
+
+
+class TestExecuteCompactStepWithReset:
+    """Tests for compact step execution with session reset."""
+
+    @pytest.mark.asyncio
+    async def test_compact_with_reset_calls_compact_with_session_reset(self):
+        """Verify reset_session=True calls compact_with_session_reset."""
+        from sdqctl.adapters.base import CompactionResult
+
+        step = Mock()
+        step.preserve = ["errors"]
+
+        conv = Mock()
+        conv.compact_preserve = ["prompts"]
+        conv.compaction_prologue = None
+        conv.compaction_epilogue = None
+
+        session = Mock()
+        session.needs_compaction = Mock(return_value=True)
+
+        context = Mock()
+        context.window = Mock()
+        session.context = context
+
+        new_adapter_session = Mock()
+        compact_result = CompactionResult(
+            preserved_content="Summary",
+            summary="Summary",
+            tokens_before=10000,
+            tokens_after=2000,
+        )
+
+        ai_adapter = AsyncMock()
+        ai_adapter.compact_with_session_reset = AsyncMock(
+            return_value=(new_adapter_session, compact_result)
+        )
+
+        adapter_session = Mock()
+        adapter_config = Mock()
+        console = Mock()
+        progress = Mock()
+
+        result = await execute_compact_step(
+            step, conv, session, ai_adapter, adapter_session,
+            0.30, console, progress,
+            reset_session=True,
+            adapter_config=adapter_config,
+        )
+
+        # Verify compact_with_session_reset was called
+        ai_adapter.compact_with_session_reset.assert_called_once()
+        call_args = ai_adapter.compact_with_session_reset.call_args
+
+        # Check preserve list includes both conv and step items
+        preserve_arg = call_args[0][2]  # Third positional arg
+        assert "prompts" in preserve_arg
+        assert "errors" in preserve_arg
+
+        # Verify returns tuple with new session
+        assert isinstance(result, tuple)
+        performed, returned_session = result
+        assert performed is True
+        assert returned_session is new_adapter_session
+
+        # Verify token count synced
+        assert session.context.window.used_tokens == 2000
+
+    @pytest.mark.asyncio
+    async def test_compact_with_reset_skipped_returns_tuple(self):
+        """Verify skipped compaction returns (False, None) with reset_session."""
+        step = Mock()
+        conv = Mock()
+        session = Mock()
+        session.needs_compaction = Mock(return_value=False)
+
+        ai_adapter = AsyncMock()
+        adapter_session = Mock()
+        adapter_config = Mock()
+        console = Mock()
+        progress = Mock()
+
+        result = await execute_compact_step(
+            step, conv, session, ai_adapter, adapter_session,
+            0.30, console, progress,
+            reset_session=True,
+            adapter_config=adapter_config,
+        )
+
+        assert result == (False, None)
+
+    @pytest.mark.asyncio
+    async def test_compact_with_reset_fallback_without_method(self):
+        """Verify fallback when adapter lacks compact_with_session_reset."""
+        step = Mock()
+        step.preserve = []
+
+        conv = Mock()
+        conv.compact_preserve = []
+
+        session = Mock()
+        session.needs_compaction = Mock(return_value=True)
+        session.get_compaction_prompt = Mock(return_value="Summarize")
+        session.add_message = Mock()
+
+        context = Mock()
+        context.window = Mock()
+        session.context = context
+
+        # Adapter without compact_with_session_reset
+        ai_adapter = AsyncMock(spec=['send', 'get_context_usage'])
+        ai_adapter.send = AsyncMock(return_value="Summary")
+        ai_adapter.get_context_usage = AsyncMock(return_value=(3000, 10000))
+
+        adapter_session = Mock()
+        adapter_config = Mock()
+        console = Mock()
+        progress = Mock()
+
+        result = await execute_compact_step(
+            step, conv, session, ai_adapter, adapter_session,
+            0.30, console, progress,
+            reset_session=True,
+            adapter_config=adapter_config,
+        )
+
+        # Falls back to standard compaction, returns (True, None)
+        assert result == (True, None)
+        ai_adapter.send.assert_called_once()
