@@ -20,7 +20,7 @@ sdqctl status --auth
 sdqctl validate workflow.conv
 
 # Test with mock adapter (no AI calls)
-sdqctl run workflow.conv --adapter mock --dry-run
+sdqctl iterate workflow.conv --adapter mock --dry-run
 ```
 
 ---
@@ -303,7 +303,7 @@ sdqctl render run workflow.conv
 sdqctl show workflow.conv
 
 # Dry run (no file writes)
-sdqctl run workflow.conv --dry-run
+sdqctl iterate workflow.conv --dry-run
 ```
 
 ---

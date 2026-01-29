@@ -152,7 +152,7 @@ Stop file instructions are now **automatically injected** on the first prompt of
 
 ```bash
 # Disable automatic stop file instructions
-sdqctl run workflow.conv --no-stop-file-prologue
+sdqctl iterate workflow.conv --no-stop-file-prologue
 sdqctl iterate workflow.conv --no-stop-file-prologue
 sdqctl apply workflow.conv --components "*.py" --no-stop-file-prologue
 ```

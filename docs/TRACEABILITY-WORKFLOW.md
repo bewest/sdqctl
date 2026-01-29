@@ -45,7 +45,7 @@ OUTPUT-FILE requirements/requirements.md
 ```
 
 ```bash
-sdqctl run requirements-discovery.conv --adapter copilot
+sdqctl iterate requirements-discovery.conv --adapter copilot
 ```
 
 ### Output Example
@@ -223,7 +223,7 @@ The `examples/workflows/test-discovery.conv` demonstrates this pattern:
 
 ```bash
 # Run the discovery
-sdqctl run examples/workflows/test-discovery.conv --adapter copilot
+sdqctl iterate examples/workflows/test-discovery.conv --adapter copilot
 
 # Review output
 cat reports/test-discovery-*.md
@@ -294,16 +294,16 @@ Instead of one massive workflow, use phases:
 
 ```bash
 # Phase 1: Requirements
-sdqctl run requirements-discovery.conv --adapter copilot
+sdqctl iterate requirements-discovery.conv --adapter copilot
 
 # Phase 2: Specs (references Phase 1 output)
-sdqctl run spec-generator.conv --adapter copilot
+sdqctl iterate spec-generator.conv --adapter copilot
 
 # Phase 3: Tests (references Phase 2 output)
-sdqctl run test-scaffolding.conv --adapter copilot
+sdqctl iterate test-scaffolding.conv --adapter copilot
 
 # Phase 4: Verification (checks all phases)
-sdqctl run verification-loop.conv --adapter copilot
+sdqctl iterate verification-loop.conv --adapter copilot
 ```
 
 Each phase outputs to files that the next phase references.

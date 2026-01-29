@@ -280,9 +280,9 @@ sdqctl render iterate workflow.conv --json \
 
 # Conditional workflow based on verify results
 if sdqctl verify refs --json | jq -e '.passed'; then
-  sdqctl run workflow.conv
+  sdqctl iterate workflow.conv
 else
-  sdqctl run fix-refs.conv
+  sdqctl iterate fix-refs.conv
 fi
 ```
 
@@ -303,10 +303,10 @@ sdqctl validate workflows/audit.conv
 sdqctl render run workflows/audit.conv
 
 # 4. Test with mock
-sdqctl run workflows/audit.conv --adapter mock -v
+sdqctl iterate workflows/audit.conv --adapter mock -v
 
 # 5. Run for real
-sdqctl run workflows/audit.conv --adapter copilot
+sdqctl iterate workflows/audit.conv --adapter copilot
 ```
 
 ### Pattern 2: Debug Reference Issues

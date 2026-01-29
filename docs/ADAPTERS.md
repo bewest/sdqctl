@@ -53,7 +53,7 @@ sdqctl status --auth
 
 ```bash
 # CLI usage
-sdqctl run workflow.conv --adapter copilot
+sdqctl iterate workflow.conv --adapter copilot
 
 # ConversationFile
 ADAPTER copilot
@@ -156,10 +156,10 @@ Built-in adapter for testing workflows without AI calls.
 
 ```bash
 # CLI - always available
-sdqctl run workflow.conv --adapter mock
+sdqctl iterate workflow.conv --adapter mock
 
 # With dry-run (no file writes)
-sdqctl run workflow.conv --adapter mock --dry-run
+sdqctl iterate workflow.conv --adapter mock --dry-run
 
 # ConversationFile
 ADAPTER mock
@@ -203,7 +203,7 @@ pip install anthropic
 export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Usage (after implementation)
-sdqctl run workflow.conv --adapter claude --model claude-3-opus
+sdqctl iterate workflow.conv --adapter claude --model claude-3-opus
 ```
 
 ### ConversationFile
@@ -242,7 +242,7 @@ pip install openai
 export OPENAI_API_KEY="sk-..."
 
 # Usage (after implementation)
-sdqctl run workflow.conv --adapter openai --model gpt-4-turbo
+sdqctl iterate workflow.conv --adapter openai --model gpt-4-turbo
 ```
 
 ### ConversationFile
@@ -356,7 +356,7 @@ The adapter will select a model that meets requirements while optimizing for pre
 When an adapter is unavailable, sdqctl provides helpful errors:
 
 ```bash
-$ sdqctl run workflow.conv --adapter claude
+$ sdqctl iterate workflow.conv --adapter claude
 Error: Adapter 'claude' not available. 
 Install with: pip install anthropic
 

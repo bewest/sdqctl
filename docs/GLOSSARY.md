@@ -213,10 +213,11 @@ See: [BACKLOG.md Work Packages section](../proposals/BACKLOG.md#work-packages)
 
 These share a name but are **completely unrelated**:
 
-**`sdqctl run`** — CLI command that executes a workflow with an AI agent.
+**`sdqctl run`** *(deprecated)* — CLI command that executes a workflow with an AI agent.
 - Sends prompts to the configured adapter (copilot, openai, etc.)
 - "Yields control" to the agent for the conversation duration
-- Example: `sdqctl run workflow.conv --adapter copilot`
+- **Deprecated**: Use `sdqctl iterate` instead (forwards to `iterate -n 1`)
+- Example: `sdqctl iterate workflow.conv --adapter copilot`
 
 **`RUN`** — Directive in `.conv` files that executes shell commands locally.
 - Runs before/after prompts, captures output for context
@@ -234,16 +235,17 @@ PROMPT Fix any failures.
 # sdqctl run my-workflow.conv  # ← run command: sends to AI
 ```
 
-### run vs cycle (commands)
+### run vs iterate (commands)
 
-Both commands execute workflows, but with different iteration counts:
+Both commands execute workflows, but `run` is deprecated:
 
-**`sdqctl run`** — Executes workflow **once** (1 iteration).
+**`sdqctl run`** *(deprecated)* — Executes workflow **once** (1 iteration).
+- Forwards to `sdqctl iterate -n 1`
 - Good for: Testing, priming, single-spike work
-- Example: `sdqctl run workflow.conv --adapter copilot`
+- Example: `sdqctl iterate workflow.conv --adapter copilot`
 
-**`sdqctl iterate`** — Executes workflow **N times** (N iterations).
-- Good for: Iterative refinement, backlog processing
+**`sdqctl iterate`** — Executes workflow **N times** (N iterations, default 1).
+- Good for: All workflow execution (single or multi-cycle)
 - Example: `sdqctl iterate workflow.conv -n 3 --adapter copilot`
 
 **Note**: The name `iterate` can be confusing—it sounds singular but means "iterate N times." See [Philosophy](PHILOSOPHY.md#command-roles) for details and [CLI-ERGONOMICS.md](../proposals/CLI-ERGONOMICS.md) for potential rename options.

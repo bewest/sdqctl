@@ -50,7 +50,7 @@ OUTPUT-FILE docs/architecture-overview.md
 ```
 
 ```bash
-sdqctl run code-analysis.conv --adapter copilot
+sdqctl iterate code-analysis.conv --adapter copilot
 ```
 
 ### Key Insight: Let the Agent Explore
@@ -164,7 +164,7 @@ OUTPUT-FILE requirements/extracted-requirements.md
 ### Step 1: Analyze Structure
 
 ```bash
-sdqctl run code-analysis.conv --adapter copilot
+sdqctl iterate code-analysis.conv --adapter copilot
 ```
 
 The agent explores:
@@ -274,9 +274,9 @@ Instead of one massive doc generation:
 
 ```bash
 # Generate in phases, each builds on previous
-sdqctl run code-analysis.conv          # → architecture-overview.md
-sdqctl run api-docs-generator.conv     # → API.md (references architecture)
-sdqctl run design-decisions.conv       # → design-decisions.md
+sdqctl iterate code-analysis.conv          # → architecture-overview.md
+sdqctl iterate api-docs-generator.conv     # → API.md (references architecture)
+sdqctl iterate design-decisions.conv       # → design-decisions.md
 ```
 
 Each phase references previous outputs as context hints.

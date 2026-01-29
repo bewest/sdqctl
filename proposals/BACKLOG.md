@@ -70,12 +70,12 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
+| DOC-002: Deprecation cleanup | ✅ Complete | 11 docs updated, `run` → `iterate` migration complete |
 | DOC-004: Subproject tooling guide | ✅ Complete | docs/SUBPROJECT-TOOLING.md - setup, handlers, workflows |
 | DIR-001: Parser integration | ✅ Complete | Custom directives in .conv, pipeline execution, 13 tests |
 | DIR-003: Custom directive execution hooks | ✅ Complete | DirectiveExecutionContext, hooks registry, 17 tests |
 | DIR-002: Extensible DirectiveType | ✅ Complete | Hybrid enum + string registry, 11 tests |
 | DOC-003: HELP-INLINE topic expansion | ✅ Complete | 4 new topics: plugins, verify, iterate, compaction (17 total) |
-| DOC-002 Phase 1: GETTING-STARTED.md | ✅ Complete | 7 `run` → `iterate` updates, deprecation note |
 
 ## Recently Completed (2026-01-27)
 
@@ -141,7 +141,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| DOC-002: Deprecation cleanup | 1 iteration | Phase 1 done, 12 docs remain (low priority) |
+| *(No P2 items)* | | |
 
 *Details in domain backlogs: [documentation.md](backlogs/documentation.md), [directives.md](backlogs/directives.md)*
 

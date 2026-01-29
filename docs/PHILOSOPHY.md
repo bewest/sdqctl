@@ -189,9 +189,9 @@ This pattern appears at multiple levels:
 
 If you find yourself running:
 ```bash
-sdqctl run step1.conv
-sdqctl run step2.conv  
-sdqctl run step3.conv
+sdqctl iterate step1.conv
+sdqctl iterate step2.conv  
+sdqctl iterate step3.conv
 ```
 
 This is a signal that these workflows should be consolidated with proper context management.
@@ -228,7 +228,7 @@ PROMPT ## Phase 3: Execution (was step3.conv)
 
 ```bash
 # Discovery → Implementation is a natural break
-sdqctl run test-discovery.conv --adapter copilot
+sdqctl iterate test-discovery.conv --adapter copilot
 # Human reviews findings, then:
 sdqctl iterate implement-improvements.conv -n 3 --adapter copilot
 ```
@@ -257,7 +257,7 @@ sdqctl improving itself (demonstrates state relay + convergence):
 
 ```bash
 # 1. Discover issues → creates backlog
-sdqctl run test-discovery.conv --adapter copilot
+sdqctl iterate test-discovery.conv --adapter copilot
 
 # 2. Iterate through backlog items
 sdqctl iterate implement-improvements.conv -n 3 --adapter copilot

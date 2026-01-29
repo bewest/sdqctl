@@ -151,10 +151,10 @@ This means:
 sdqctl -v run workflow.conv
 
 # Piped to file: clean output
-sdqctl run workflow.conv > output.md
+sdqctl iterate workflow.conv > output.md
 
 # Piped to less: clean output
-sdqctl run workflow.conv | less
+sdqctl iterate workflow.conv | less
 ```
 
 ## Implementation Details
@@ -285,7 +285,7 @@ else:
 
 ```bash
 # Basic run
-sdqctl run workflow.conv
+sdqctl iterate workflow.conv
 
 # Show progress with context %
 sdqctl -v run workflow.conv

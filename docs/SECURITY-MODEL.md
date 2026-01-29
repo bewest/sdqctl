@@ -84,7 +84,7 @@ jobs:
     permissions:
       contents: read  # No write access
     steps:
-      - run: sdqctl run workflow.conv --dry-run  # Preview first
+      - run: sdqctl iterate workflow.conv --dry-run  # Preview first
 ```
 
 ---
@@ -200,10 +200,10 @@ OUTPUT-DIR /tmp/
 ```bash
 # Run from dedicated workspace
 cd /workspace/project
-sdqctl run workflow.conv
+sdqctl iterate workflow.conv
 
 # Use --dry-run to preview outputs
-sdqctl run workflow.conv --dry-run
+sdqctl iterate workflow.conv --dry-run
 ```
 
 ---
@@ -270,10 +270,10 @@ jobs:
         run: sdqctl validate workflow.conv
         
       - name: Dry run
-        run: sdqctl run workflow.conv --dry-run
+        run: sdqctl iterate workflow.conv --dry-run
         
       - name: Execute (if needed)
-        run: sdqctl run workflow.conv
+        run: sdqctl iterate workflow.conv
         env:
           ALLOW_SHELL: "false"  # Extra safety
 ```
@@ -322,7 +322,7 @@ RUN_ENV API_KEY=$API_KEY  # Inherited from CI secrets
 sdqctl -vvv run workflow.conv 2>&1 | tee audit.log
 
 # Structured JSON output
-sdqctl run workflow.conv --json-errors 2>&1 | jq
+sdqctl iterate workflow.conv --json-errors 2>&1 | jq
 ```
 
 ---

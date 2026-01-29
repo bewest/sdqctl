@@ -286,7 +286,7 @@ sdqctl iterate workflow.conv -n 10 --session-mode compact
 ### Step 1: Generate a Test Discovery Report
 
 ```bash
-sdqctl run examples/workflows/test-discovery.conv --adapter copilot
+sdqctl iterate examples/workflows/test-discovery.conv --adapter copilot
 # Outputs: reports/test-discovery-2026-01-22.md
 ```
 
@@ -472,9 +472,9 @@ Running multiple focused workflows in sequence often completes faster than a sin
 
 ```bash
 # Three focused workflows: 20 min total (faster than predicted 30-40 min)
-sdqctl run 01-design.conv --adapter copilot && \
-sdqctl run 02-implement.conv --adapter copilot && \
-sdqctl run 03-verify.conv --adapter copilot
+sdqctl iterate 01-design.conv --adapter copilot && \
+sdqctl iterate 02-implement.conv --adapter copilot && \
+sdqctl iterate 03-verify.conv --adapter copilot
 ```
 
 **Why it works**:
@@ -526,18 +526,18 @@ Structured workflows with clear specifications tend to produce **more output tha
 
 ### Lesson #31: CHECKPOINT Requires `iterate`
 
-The CHECKPOINT directive is **only processed by `sdqctl iterate`**, not `sdqctl run`.
+The CHECKPOINT directive is **only processed by `sdqctl iterate`** (the `run` command is deprecated).
 
 ```dockerfile
 PROMPT Do some work.
-CHECKPOINT phase-1    # ← Ignored by 'run', saved by 'cycle'
+CHECKPOINT phase-1    # ← Saved by 'iterate'
 PROMPT Continue work.
 ```
 
 If your workflow needs resumability, use `iterate`:
 ```bash
 sdqctl iterate workflow.conv --adapter copilot  # ✅ Checkpoints work
-sdqctl run workflow.conv --adapter copilot    # ❌ Checkpoints ignored
+sdqctl iterate workflow.conv --adapter copilot    # ❌ Checkpoints ignored
 ```
 
 See [GETTING-STARTED.md](GETTING-STARTED.md#run-vs-cycle-vs-apply) for full comparison.
