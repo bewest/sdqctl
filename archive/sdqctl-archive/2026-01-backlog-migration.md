@@ -333,3 +333,39 @@ def _check_minimal_response(self, response, cycle_number, tools_called=0):
         return False
     return len(response.strip()) < self.min_response_length
 ```
+
+---
+
+## DIR-004: CLI Subcommand Generation (2026-01-29)
+
+Added CLI access to custom directive handlers.
+
+### New Commands
+
+| Command | Purpose |
+|---------|---------|
+| `sdqctl plugin run <TYPE> <NAME>` | Execute any handler directly |
+| `sdqctl plugin handlers` | List ALL handlers (VERIFY, HYGIENE, etc.) |
+
+### Features
+
+- `--json` output mode for both commands
+- `--timeout` override for run command
+- `--type` filter for handlers command
+- Case-insensitive directive type matching
+
+### Files Changed
+
+```
+sdqctl/commands/plugin.py  +229 lines (run/handlers commands)
+tests/test_plugins.py      +233 lines (10 new tests, 40 total)
+docs/COMMANDS.md           Updated plugin section
+docs/PLUGIN-AUTHORING.md   Added CLI examples
+docs/SUBPROJECT-TOOLING.md Updated verification section
+docs/GETTING-STARTED.md    Added plugin to commands table
+```
+
+### Related
+
+- Proposal: [PLUGIN-SYSTEM.md](../../proposals/PLUGIN-SYSTEM.md)
+- Backlog: [backlogs/directives.md](../../proposals/backlogs/directives.md)
