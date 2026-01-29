@@ -10,7 +10,7 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| DOC-001 | **Documentation coherency audit** | P2 | 2-3 iterations | Review all docs for autonomous operation optimization |
+| *(No active items)* | | | | All documentation work complete |
 
 ---
 
@@ -33,9 +33,13 @@
 - ✅ Verification docs: All use `iterate`, no stale refs
 - ✅ Cross-references: All links valid
 
-**Remaining for Phase 3**:
-- GLOSSARY.md terminology audit
-- Final consistency check
+**Phase 3 Findings (2026-01-29)**:
+- ✅ GLOSSARY.md: 261 lines, comprehensive terminology
+- ✅ Deprecation notices: `run`, "Quine-like", "Escape Hatch" marked
+- ✅ Cross-references to other docs: Valid
+- ✅ Consistent with codebase terminology
+
+**Status**: ✅ COMPLETE - All 31 docs audited
 
 **Scope** (by section):
 
@@ -149,6 +153,7 @@ docs/SUBPROJECT-SETUP.md
 
 | Item | Date | Notes |
 |------|------|-------|
+| DOC-001: Documentation coherency audit | 2026-01-29 | 31 docs audited, all v2-aligned, terminology consistent |
 | DOC-002: Deprecation cleanup | 2026-01-29 | Phase 2: Updated 11 docs, `run` → `iterate` migration complete |
 | DOC-004: Subproject tooling guide | 2026-01-29 | Created docs/SUBPROJECT-TOOLING.md with setup, handlers, workflows |
 | DOC-003: HELP-INLINE topic expansion | 2026-01-29 | Added 4 topics: plugins, verify, iterate, compaction (17 total) |

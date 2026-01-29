@@ -70,6 +70,7 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
+| DOC-001: Documentation coherency audit | ✅ Complete | 31 docs audited, all v2-aligned |
 | DOC-002: Deprecation cleanup | ✅ Complete | 11 docs updated, `run` → `iterate` migration complete |
 | DOC-004: Subproject tooling guide | ✅ Complete | docs/SUBPROJECT-TOOLING.md - setup, handlers, workflows |
 | DIR-001: Parser integration | ✅ Complete | Custom directives in .conv, pipeline execution, 13 tests |
@@ -141,7 +142,7 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| DOC-001: Documentation coherency audit | 2-3 iterations | Review all docs for autonomous operation |
+| *(No P2 items)* | | |
 
 *Details in domain backlogs: [documentation.md](backlogs/documentation.md), [directives.md](backlogs/directives.md)*
 
