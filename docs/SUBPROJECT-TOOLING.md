@@ -265,9 +265,16 @@ sdqctl verify plugin --list
 ### Verify Registration
 
 ```bash
-# Check plugin discovery
+# Check VERIFY plugin discovery
 sdqctl plugin list
-sdqctl plugin list -v  # verbose with capabilities
+sdqctl plugin list --json
+
+# List ALL handlers (VERIFY, HYGIENE, TRACE, etc.)
+sdqctl plugin handlers
+sdqctl plugin handlers --type HYGIENE
+
+# Run a handler directly
+sdqctl plugin run HYGIENE queue-stats --json
 ```
 
 ### Debug Mode

@@ -381,7 +381,7 @@ sdqctl lsp type Bolus -l typescript         # Explicit language
 
 ## plugin
 
-Plugin management commands for validating and discovering sdqctl plugins.
+Plugin management commands for validating, discovering, and executing sdqctl plugins.
 
 ```bash
 sdqctl plugin SUBCOMMAND [OPTIONS]
@@ -390,15 +390,28 @@ sdqctl plugin SUBCOMMAND [OPTIONS]
 **Subcommands:**
 | Subcommand | Purpose |
 |------------|---------|
-| `list` | List discovered plugins |
+| `list` | List discovered VERIFY plugins |
+| `handlers` | List ALL handlers (VERIFY, HYGIENE, TRACE, etc.) |
+| `run` | Execute a plugin handler directly |
 | `validate` | Validate plugin structure and manifest |
 | `capabilities` | List available plugin capabilities |
 
 **Examples:**
 ```bash
-# List discovered plugins
+# List discovered VERIFY plugins
 sdqctl plugin list
 sdqctl plugin list --json
+
+# List ALL handlers including non-VERIFY types
+sdqctl plugin handlers
+sdqctl plugin handlers --type HYGIENE
+sdqctl plugin handlers --json
+
+# Run a plugin handler directly
+sdqctl plugin run HYGIENE queue-stats
+sdqctl plugin run VERIFY ecosystem-gaps --json
+sdqctl plugin run HYGIENE check-queues --workspace /path/to/project
+sdqctl plugin run HYGIENE slow-check --timeout 120
 
 # Validate plugin manifest
 sdqctl plugin validate                    # Current directory

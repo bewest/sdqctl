@@ -50,9 +50,20 @@ PROMPT Analyze the verification results.
 Or via CLI:
 
 ```bash
+# Run VERIFY plugins through verify command
 sdqctl verify plugin my-check
 sdqctl verify plugin my-check -v  # verbose output
 sdqctl verify plugin --list       # list available plugins
+
+# Run ANY directive type directly (VERIFY, HYGIENE, TRACE, etc.)
+sdqctl plugin run VERIFY my-check
+sdqctl plugin run HYGIENE queue-stats --json
+sdqctl plugin run TRACE uca --workspace /path/to/project
+
+# List all handlers across all directive types
+sdqctl plugin handlers
+sdqctl plugin handlers --type HYGIENE
+sdqctl plugin handlers --json
 ```
 
 ---

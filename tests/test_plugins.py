@@ -564,3 +564,236 @@ directives:
             result = runner.invoke(plugin, ["validate"])
             assert result.exit_code == 1
             assert "not found" in result.output
+
+
+class TestPluginRunCommand:
+    """Tests for sdqctl plugin run command (DIR-004)."""
+
+    def test_run_handler_success(self, tmp_path):
+        """Run a handler that succeeds."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  HYGIENE:
+    queue-stats:
+      handler: echo "queues ok"
+      description: "Check queues"
+""")
+            result = runner.invoke(plugin, ["run", "HYGIENE", "queue-stats"])
+            assert result.exit_code == 0
+            assert "queues ok" in result.output
+
+    def test_run_handler_failure(self, tmp_path):
+        """Run a handler that fails."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  HYGIENE:
+    failing-check:
+      handler: sh -c 'echo "error" >&2; exit 1'
+      description: "Always fails"
+""")
+            result = runner.invoke(plugin, ["run", "HYGIENE", "failing-check"])
+            assert result.exit_code == 1
+
+    def test_run_handler_not_found(self, tmp_path):
+        """Error when handler not found."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(plugin, ["run", "HYGIENE", "nonexistent"])
+            assert result.exit_code == 1
+            assert "not found" in result.output.lower()
+
+    def test_run_handler_json_output(self, tmp_path):
+        """Run handler with JSON output."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+        import json
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    test-check:
+      handler: echo "test output"
+      description: "Test verification"
+""")
+            result = runner.invoke(plugin, ["run", "VERIFY", "test-check", "--json"])
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert data["success"] is True
+            assert "test output" in data["stdout"]
+
+    def test_run_handler_case_insensitive_type(self, tmp_path):
+        """Directive type lookup is case-insensitive."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  HYGIENE:
+    check:
+      handler: echo "ok"
+      description: "Test"
+""")
+            result = runner.invoke(plugin, ["run", "hygiene", "check"])
+            assert result.exit_code == 0
+            assert "ok" in result.output
+
+    def test_run_handler_timeout_override(self, tmp_path):
+        """Override handler timeout via CLI."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  HYGIENE:
+    slow:
+      handler: sleep 10
+      description: "Slow handler"
+      timeout: 60
+""")
+            # Override to 1 second to trigger timeout
+            result = runner.invoke(
+                plugin, ["run", "HYGIENE", "slow", "--timeout", "1", "--json"]
+            )
+            import json
+            data = json.loads(result.output)
+            assert data["success"] is False
+            assert "timed out" in data.get("error", "").lower()
+
+
+class TestPluginHandlersCommand:
+    """Tests for sdqctl plugin handlers command (DIR-004)."""
+
+    def test_handlers_lists_all_types(self, tmp_path):
+        """List handlers includes non-VERIFY types."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    ref-check:
+      handler: echo ok
+      description: "Check refs"
+  HYGIENE:
+    queue-stats:
+      handler: echo stats
+      description: "Queue stats"
+  TRACE:
+    uca:
+      handler: echo trace
+      description: "Trace UCA"
+""")
+            result = runner.invoke(plugin, ["handlers"])
+            assert result.exit_code == 0
+            assert "VERIFY:" in result.output
+            assert "HYGIENE:" in result.output
+            assert "TRACE:" in result.output
+            assert "ref-check" in result.output
+            assert "queue-stats" in result.output
+            assert "uca" in result.output
+
+    def test_handlers_filter_by_type(self, tmp_path):
+        """Filter handlers by directive type."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    ref-check:
+      handler: echo ok
+      description: "Check refs"
+  HYGIENE:
+    queue-stats:
+      handler: echo stats
+      description: "Queue stats"
+""")
+            result = runner.invoke(plugin, ["handlers", "--type", "HYGIENE"])
+            assert result.exit_code == 0
+            assert "HYGIENE:" in result.output
+            assert "queue-stats" in result.output
+            assert "VERIFY" not in result.output
+            assert "ref-check" not in result.output
+
+    def test_handlers_json_output(self, tmp_path):
+        """List handlers as JSON."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+        import json
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            sdqctl_dir = Path(".sdqctl")
+            sdqctl_dir.mkdir()
+            (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  HYGIENE:
+    queue-stats:
+      handler: echo stats
+      description: "Queue stats"
+      timeout: 15
+""")
+            result = runner.invoke(plugin, ["handlers", "--json"])
+            assert result.exit_code == 0
+            data = json.loads(result.output)
+            assert len(data["handlers"]) == 1
+            handler = data["handlers"][0]
+            assert handler["directive_type"] == "HYGIENE"
+            assert handler["name"] == "queue-stats"
+            assert handler["timeout"] == 15
+
+    def test_handlers_empty(self, tmp_path):
+        """Show message when no handlers found."""
+        from click.testing import CliRunner
+        from sdqctl.commands.plugin import plugin
+
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(plugin, ["handlers"])
+            assert result.exit_code == 0
+            assert "No handlers discovered" in result.output

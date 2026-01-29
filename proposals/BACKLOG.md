@@ -20,7 +20,7 @@
 
 ## Ready Queue (0 Actionable Items)
 
-**All items complete or blocked** - 2026-01-27  
+**All items complete or blocked** - 2026-01-29  
 **Note**: WP-003 blocked pending human review of OQ-UP-001..004
 
 ### WP-003: Upstream Contribution (Priority 1) - BLOCKED
@@ -70,6 +70,7 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
+| DIR-004: CLI subcommand generation | ✅ Complete | `plugin run` + `plugin handlers` commands, 10 tests |
 | DOC-001: Documentation coherency audit | ✅ Complete | 31 docs audited, all v2-aligned |
 | DOC-002: Deprecation cleanup | ✅ Complete | 11 docs updated, `run` → `iterate` migration complete |
 | DOC-004: Subproject tooling guide | ✅ Complete | docs/SUBPROJECT-TOOLING.md - setup, handlers, workflows |
@@ -164,6 +165,7 @@ Pre-grouped items that can complete together in 1-2 iterations. Prioritized with
 |----|------|--------|------------------|
 | WP-001 | SDK Economy Optimization | ✅ Complete | Domain backlogs, metrics schema, core/metrics.py |
 | WP-002 | Continuous Monitoring | ✅ Complete | monitoring module, drift CLI, 19 tests |
+| WP-004 | Plugin System | ✅ Complete | Manifest schema, discovery, security, run/handlers CLI |
 | WP-005 | STPA Deep Integration | ✅ Complete | Audit, patterns, usage guide, roadmap |
 | WP-006 | LSP Integration | ✅ Complete | lsp module, type lookup, LSP directive |
 
@@ -178,19 +180,19 @@ Related items for contributing fixes upstream:
 **Dependencies**: WP-002 (needs drift detection) ✅  
 **Estimated**: 2 iterations, ~300 lines
 
-### WP-004: Plugin System (P3 R&D) - Partial
+### WP-004: Plugin System ✅ Complete
 
 Enable ecosystem teams to extend sdqctl with custom directives/commands.
 
 - [x] Define `.sdqctl/directives.yaml` manifest schema ✅
 - [x] Implement directive discovery from manifest ✅
 - [x] Hello world plugin ✅
-- [ ] Security/sandboxing implementation
+- [x] Security/sandboxing implementation ✅
 - [x] Plugin authoring documentation ✅
 - [x] `sdqctl verify plugin` command ✅
+- [x] `sdqctl plugin run` + `plugin handlers` commands ✅ (DIR-004)
 
-**Proposal**: [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md)  
-**Remaining**: Security/sandboxing (1 item)
+**Proposal**: [PLUGIN-SYSTEM.md](PLUGIN-SYSTEM.md)
 
 ---
 

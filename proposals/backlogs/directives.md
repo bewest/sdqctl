@@ -10,7 +10,7 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| DIR-004 | **CLI subcommand generation** | P3 | 1 iteration | Optional: `sdqctl hygiene queue-stats` style commands |
+| *(No active items)* | | | | All directive work complete |
 
 ---
 
@@ -18,16 +18,18 @@
 
 ### DIR-004: CLI subcommand generation for custom directives
 
-**Problem**: Custom directives can only be used in .conv files. Users may want CLI access like `sdqctl hygiene queue-stats`.
+**Status**: ✅ COMPLETE (2026-01-29)
 
-**Current state**: DIR-001..003 complete. Custom directives work in pipelines but not as standalone CLI commands.
+**Problem**: Custom directives can only be used in .conv files. Users may want CLI access like `sdqctl plugin run HYGIENE queue-stats`.
 
-**Scope**:
-- Dynamic CLI command registration from plugin manifests
-- Command help text from manifest description
-- Argument handling from manifest args spec
+**Implementation**:
+- `sdqctl plugin run <TYPE> <NAME>` - Execute any handler directly
+- `sdqctl plugin handlers` - List ALL handlers (not just VERIFY)
+- `--json` output mode for both commands
+- `--type` filter for handlers command
+- `--timeout` override for run command
 
-**Priority**: P3 (nice-to-have, not blocking core workflows)
+**Tests**: 10 new tests in TestPluginRunCommand and TestPluginHandlersCommand
 
 ---
 
@@ -89,6 +91,7 @@ if handler.directive_type == "VERIFY":
 
 | Item | Date | Notes |
 |------|------|-------|
+| **DIR-004: CLI subcommand generation** | 2026-01-29 | `plugin run` + `plugin handlers` commands, 10 tests |
 | **DIR-001: Parser integration** | 2026-01-29 | Custom directives in .conv files, pipeline execution, 13 tests |
 | **DIR-003: Custom directive execution hooks** | 2026-01-29 | DirectiveExecutionContext, hooks registry, 17 tests |
 | **DIR-002: Extensible DirectiveType** | 2026-01-29 | Hybrid approach: enum + string registry, 11 tests |

@@ -182,6 +182,7 @@ This is useful for:
 | `apply` | Apply workflow to multiple components | Batch processing |
 | `render` | Preview prompts without AI calls | Debugging, validation |
 | `verify` | Static verification suite | Pre-flight checks |
+| `plugin` | Plugin management and execution | Run custom handlers, list plugins |
 | `lsp` | Language server queries | Type definitions, code analysis |
 | `drift` | Detect external repo changes | Alignment monitoring |
 | `refcat` | Extract file content with line ranges | Precise context injection |
