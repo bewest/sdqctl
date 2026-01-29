@@ -135,6 +135,7 @@ docs/SUBPROJECT-SETUP.md
 
 | Item | Date | Notes |
 |------|------|-------|
+| DOC-002 Phase 1: GETTING-STARTED.md | 2026-01-29 | Updated all `run` → `iterate`, added deprecation note |
 | Initial documentation structure | 2026-01-21 | 29 docs created |
 | Documentation audit | 2026-01-27 | Issues logged in BACKLOG.md |
 

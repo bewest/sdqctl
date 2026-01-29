@@ -69,8 +69,8 @@ When using GitHub Copilot, `init` creates two files that enhance the Copilot exp
 **`.github/skills/sdqctl-verify.md`** — A Copilot skill that teaches Copilot how to validate and test sdqctl workflows. Copilot can use this skill to:
 - Validate workflow syntax (`sdqctl validate`)
 - Inspect parsed structure (`sdqctl show`)
-- Preview execution (`sdqctl run --dry-run`)
-- Test with mock adapter (`sdqctl run --adapter mock`)
+- Preview execution (`sdqctl iterate --dry-run`)
+- Test with mock adapter (`sdqctl iterate --adapter mock`)
 
 **What are Copilot skills?** Skills are markdown files that give Copilot specialized knowledge for specific tasks. When you ask Copilot to validate a workflow, it can reference the skill file for correct commands.
 
@@ -107,11 +107,16 @@ This sets project-wide defaults so you don't need to specify them in every workf
 
 ```bash
 # Inline prompt with mock adapter (no AI calls)
-sdqctl run "Analyze this codebase for security issues" --adapter mock --dry-run
+sdqctl iterate "Analyze this codebase for security issues" --adapter mock --dry-run
 
-# With real AI
-sdqctl run "Analyze this codebase" --adapter copilot
+# With real AI (single iteration)
+sdqctl iterate "Analyze this codebase" --adapter copilot
+
+# Multi-cycle iteration
+sdqctl iterate "Analyze and improve the codebase" --adapter copilot -n 3
 ```
+
+> **Note**: Use `iterate` as the primary command. The legacy `run` command still works but is deprecated (forwards to `iterate -n 1`).
 
 ### 2. Create a ConversationFile
 
@@ -133,13 +138,13 @@ Run it:
 
 ```bash
 # Preview what would happen
-sdqctl run my-audit.conv --dry-run
+sdqctl iterate my-audit.conv --dry-run
 
 # Execute with mock (for testing)
-sdqctl run my-audit.conv --adapter mock -v
+sdqctl iterate my-audit.conv --adapter mock -v
 
 # Execute with real AI
-sdqctl run my-audit.conv --adapter copilot
+sdqctl iterate my-audit.conv --adapter copilot
 ```
 
 ### 3. Render Without Executing
@@ -327,10 +332,10 @@ See [PHILOSOPHY.md](PHILOSOPHY.md#extended-workflow-pattern-v2) for design ratio
 Use `-v` flags to control output verbosity:
 
 ```bash
-sdqctl run my-audit.conv              # Default: just results
-sdqctl -v run my-audit.conv           # Progress with context %
-sdqctl -vv run my-audit.conv          # Stream agent responses
-sdqctl -vvv run my-audit.conv         # Full debug output
+sdqctl iterate my-audit.conv              # Default: just results
+sdqctl -v iterate my-audit.conv           # Progress with context %
+sdqctl -vv iterate my-audit.conv          # Stream agent responses
+sdqctl -vvv iterate my-audit.conv         # Full debug output
 ```
 
 ### See What Prompts Are Sent
@@ -339,10 +344,10 @@ Use `-P` (`--show-prompt`) to display expanded prompts on stderr:
 
 ```bash
 # See prompts in terminal
-sdqctl -P run my-audit.conv
+sdqctl -P iterate my-audit.conv
 
 # Capture prompts to file while running
-sdqctl -P run my-audit.conv 2> prompts.log
+sdqctl -P iterate my-audit.conv 2> prompts.log
 
 # Full debugging: prompts + streaming
 sdqctl -vv -P iterate my-audit.conv -n 3
@@ -521,10 +526,10 @@ OUTPUT-FILE security-report.md
 
 ```bash
 # Test with mock first
-sdqctl run security-audit.conv --adapter mock --dry-run
+sdqctl iterate security-audit.conv --adapter mock --dry-run
 
 # Run for real
-sdqctl run security-audit.conv --adapter copilot
+sdqctl iterate security-audit.conv --adapter copilot
 ```
 
 ---
@@ -713,8 +718,8 @@ See `examples/workflows/` for ready-to-use templates, including:
 ## Quick Reference
 
 ```bash
-# Run workflow
-sdqctl run workflow.conv --adapter copilot
+# Run workflow (single iteration)
+sdqctl iterate workflow.conv --adapter copilot
 
 # Preview prompts (use subcommand: run, cycle, or apply)
 sdqctl render run workflow.conv
