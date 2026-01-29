@@ -1,6 +1,6 @@
 # sdqctl Proposal Backlog
 
-> **Last Updated**: 2026-01-27  
+> **Last Updated**: 2026-01-29  
 > **Purpose**: Track active work items and proposals only  
 > **Archive**: Completed work → [`archive/2026-01-backlog-migration.md`](../archive/2026-01-backlog-migration.md)
 
@@ -66,6 +66,12 @@
 
 ---
 
+## Recently Completed (2026-01-29)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| DOC-002 Phase 1: GETTING-STARTED.md | ✅ Complete | 7 `run` → `iterate` updates, deprecation note |
+
 ## Recently Completed (2026-01-27)
 
 | Item | Status | Notes |
@@ -130,13 +136,19 @@
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| *(No P2 items)* | | |
+| DOC-002: Deprecation cleanup | 1 iteration | Phase 1 done (GETTING-STARTED.md), 12 docs remain |
+| DOC-003: HELP-INLINE topic expansion | 1 iteration | Add plugin, verify, iterate topics |
+| DOC-004: Subproject tooling guide | 1 iteration | Guide for externals |
+| DIR-002: Extensible DirectiveType enum | 1 iteration | Enable plugin directive types |
+| DIR-003: Custom directive execution hooks | 1 iteration | Wire plugins into pipeline |
+
+*Details in domain backlogs: [documentation.md](backlogs/documentation.md), [directives.md](backlogs/directives.md)*
 
 ### P3: Low
 
 | Item | Effort | Notes |
 |------|--------|-------|
-| *(All P3 Low items promoted to Ready Queue)* | | |
+| WP-003: Upstream Contribution | 2 iterations | ⏸️ Blocked: OQ-UP-001..004 |
 
 ---
 
