@@ -888,6 +888,22 @@ async def _cycle_async(
                                 step, conv, session, console, progress_print
                             )
 
+                        elif step_type == "custom_directive":
+                            from ..plugins import execute_custom_directive
+                            result = execute_custom_directive(
+                                directive_type=step.directive_name,
+                                directive_value=step_content,
+                                workspace_root=Path(conv.cwd) if conv.cwd else Path.cwd(),
+                                line_number=step.line_number,
+                                session_id=session.id if session else None,
+                                cycle_number=cycle_num + 1,
+                            )
+                            if result.output:
+                                progress_print(f"[dim]{step.directive_name}:[/dim] {result.output}")
+                            if not result.success:
+                                for err in result.errors:
+                                    progress_print(f"[red]Error:[/red] {err}")
+
                     progress.update(cycle_task, completed=cycle_num + 1)
 
             # Mark complete (session cleanup in finally block)

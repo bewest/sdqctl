@@ -3,7 +3,7 @@
 import re
 from typing import Optional
 
-from .types import Directive, DirectiveType
+from .types import Directive, DirectiveType, is_custom_directive
 
 
 def parse_line(line: str, line_num: int) -> Optional[Directive]:
@@ -24,11 +24,19 @@ def parse_line(line: str, line_num: int) -> Optional[Directive]:
     directive_name = match.group(1)
     value = match.group(2).strip() if match.group(2) else ""
 
-    # Try to match to DirectiveType
+    # Try to match to DirectiveType enum (built-in directives)
     try:
         dtype = DirectiveType(directive_name)
         return Directive(type=dtype, value=value, line_number=line_num, raw_line=line)
     except ValueError:
+        # Check if it's a registered custom directive (from plugins)
+        if is_custom_directive(directive_name):
+            return Directive(
+                type=directive_name,  # String type for custom directives
+                value=value,
+                line_number=line_num,
+                raw_line=line
+            )
         # Unknown directive - ignore for forward compatibility
         return None
 

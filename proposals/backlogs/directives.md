@@ -74,6 +74,7 @@ if handler.directive_type == "VERIFY":
 
 | Item | Date | Notes |
 |------|------|-------|
+| **DIR-001: Parser integration** | 2026-01-29 | Custom directives in .conv files, pipeline execution, 13 tests |
 | **DIR-003: Custom directive execution hooks** | 2026-01-29 | DirectiveExecutionContext, hooks registry, 17 tests |
 | **DIR-002: Extensible DirectiveType** | 2026-01-29 | Hybrid approach: enum + string registry, 11 tests |
 | **Directive discovery from manifest** | 2026-01-27 | WP-004 step 2: Created sdqctl/plugins.py. 21 tests. |

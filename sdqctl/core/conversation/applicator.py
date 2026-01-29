@@ -3,7 +3,7 @@
 import re
 import warnings
 
-from .types import ConversationStep, Directive, DirectiveType
+from .types import ConversationStep, Directive, DirectiveType, is_custom_directive
 
 
 def apply_directive(conv, directive: Directive) -> None:
@@ -406,6 +406,16 @@ def apply_directive(conv, directive: Directive) -> None:
             # Path for event log (supports template variables)
             conv.event_log = directive.value.strip()
 
+        case _:
+            # Check if this is a custom directive (string type from plugins)
+            if directive.is_custom:
+                conv.steps.append(ConversationStep(
+                    type="custom_directive",
+                    content=directive.value,
+                    directive_name=directive.type_name,
+                    line_number=directive.line_number,
+                ))
+
 
 def apply_directive_to_block(steps: list[ConversationStep], directive: Directive) -> None:
     """Apply a directive inside an ON-FAILURE/ON-SUCCESS block.
@@ -440,9 +450,16 @@ def apply_directive_to_block(steps: list[ConversationStep], directive: Directive
         case DirectiveType.NEW_CONVERSATION:
             steps.append(ConversationStep(type="new_conversation"))
         case _:
+            # Check if this is a custom directive (string type from plugins)
+            if directive.is_custom:
+                steps.append(ConversationStep(
+                    type="custom_directive",
+                    content=directive.value,
+                    directive_name=directive.type_name,
+                    line_number=directive.line_number,
+                ))
             # Silently ignore configuration directives in blocks
             # This allows blocks to contain only execution-oriented directives
-            pass
 
 
 # Aliases for backward compatibility
