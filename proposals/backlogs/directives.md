@@ -10,7 +10,7 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| DIR-001 | **Custom directive types from plugins** | P2 | 1-2 iterations | Parser integration for custom directives |
+| *(No active items)* | | | | All directive work complete |
 
 ---
 
