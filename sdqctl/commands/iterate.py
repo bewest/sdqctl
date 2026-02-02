@@ -887,18 +887,25 @@ async def _cycle_async(
 
                             # Execute RUN commands and replace placeholders
                             from .utils import run_subprocess, truncate_output
+                            run_cwd = Path(conv.run_cwd or conv.cwd or ".").resolve()
                             for cmd_idx, cmd in enumerate(run_commands):
                                 placeholder = f"{{{{RUN:{cmd_idx}:{cmd}}}}}"
                                 try:
-                                    result = run_subprocess(cmd, cwd=conv.cwd)
+                                    result = run_subprocess(
+                                        cmd,
+                                        allow_shell=conv.allow_shell,
+                                        timeout=conv.run_timeout,
+                                        cwd=run_cwd,
+                                        env=conv.run_env or None,
+                                    )
                                     output = result.stdout or ""
                                     if result.returncode != 0 and result.stderr:
                                         output = f"{output}\n[stderr]\n{result.stderr}"
                                     # Truncate output if needed
-                                    output = truncate_output(output, limit=50000)
-                                    prompt = prompt.replace(placeholder, f"[Command: {cmd}]\n{output}")
+                                    output = truncate_output(output, limit=conv.run_output_limit or 50000)
+                                    prompt = prompt.replace(placeholder, f"+ {cmd}\n{output}")
                                 except Exception as e:
-                                    prompt = prompt.replace(placeholder, f"[Command: {cmd}]\n[Error: {e}]")
+                                    prompt = prompt.replace(placeholder, f"+ {cmd}\n[Error: {e}]")
 
                             session.state.prompt_index = prompt_idx
                             workflow_ctx.prompt = prompt_idx + 1
@@ -940,15 +947,19 @@ async def _cycle_async(
 
                             # Check for loops
                             loop_check = check_response_loop(
-                                response, loop_detector, session, all_responses,
-                                cycle_num, prompt_idx
+                                response, last_reasoning, cycle_num,
+                                ai_adapter, adapter_session, loop_detector
                             )
-                            if loop_check.should_break:
-                                format_loop_output(loop_check, console, progress_print)
-                                break
+                            if loop_check.detected:
+                                format_loop_output(
+                                    loop_check.loop_result, loop_detector, session,
+                                    cycle_num, conv.max_cycles, console, progress_print
+                                )
+                                raise loop_check.loop_result
 
                             # Process response
                             agent_response(response)
+                            session.add_message("user", prompt)
                             session.add_message("assistant", response)
                             all_responses.append({
                                 "cycle": cycle_num + 1,
