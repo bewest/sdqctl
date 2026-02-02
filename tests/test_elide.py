@@ -118,3 +118,65 @@ class TestProcessElidedSteps:
         ]
         result = process_elided_steps(steps)
         assert len(result) == 1
+
+
+class TestElideIntegration:
+    """Integration tests verifying ELIDE turn counting in iterate.py."""
+
+    def test_run_elide_prompt_elide_prompt_produces_one_turn(self):
+        """Verifies: RUN + ELIDE + PROMPT + ELIDE + PROMPT = 1 AI turn.
+        
+        This is the documented behavior from CONVERSATION-LIFECYCLE.md.
+        The pattern should merge into a single merged_prompt step.
+        """
+        steps = [
+            ConversationStep(type="run", content="echo test"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Analyze this output"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Then suggest fixes"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # All should merge into 1 step = 1 AI turn
+        assert len(result) == 1, f"Expected 1 turn, got {len(result)}"
+        assert result[0].type == "merged_prompt"
+        
+        # The merged content should contain all prompts
+        assert "Analyze this output" in result[0].content
+        assert "Then suggest fixes" in result[0].content
+        
+        # The RUN command should be attached for execution
+        assert hasattr(result[0], 'run_commands')
+        assert "echo test" in result[0].run_commands
+
+    def test_multiple_runs_elided_into_single_turn(self):
+        """Multiple RUN commands can be elided into a single turn."""
+        steps = [
+            ConversationStep(type="run", content="echo first"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="echo second"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Analyze both outputs"),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].run_commands) == 2
+        assert "echo first" in result[0].run_commands
+        assert "echo second" in result[0].run_commands
+
+    def test_without_elide_each_prompt_is_separate_turn(self):
+        """Without ELIDE, each PROMPT is a separate turn (baseline)."""
+        steps = [
+            ConversationStep(type="prompt", content="First prompt"),
+            ConversationStep(type="prompt", content="Second prompt"),
+            ConversationStep(type="prompt", content="Third prompt"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # Without ELIDE, all prompts remain separate = 3 turns
+        assert len(result) == 3
+        for step in result:
+            assert step.type == "prompt"

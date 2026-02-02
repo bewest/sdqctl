@@ -74,6 +74,7 @@ from .prompt_steps import (
 from .utils import run_async
 from .verify_steps import execute_verify_coverage_step, execute_verify_trace_step
 from .lsp_steps import execute_lsp_step
+from .elide import process_elided_steps
 
 logger = get_logger(__name__)
 console = Console()
@@ -772,6 +773,10 @@ async def _cycle_async(
                     steps_to_process = _merge_help_inline_steps(
                         steps_to_process, conv
                     )
+
+                    # Process ELIDE directives - merge adjacent steps into single prompts
+                    steps_to_process = process_elided_steps(steps_to_process)
+
                     total_prompts = len(conv.prompts)
 
                     prompt_idx = 0
@@ -867,6 +872,83 @@ async def _cycle_async(
                                 raise loop_check.loop_result
 
                             session.add_message("user", prompt)
+                            session.add_message("assistant", response)
+                            all_responses.append({
+                                "cycle": cycle_num + 1,
+                                "prompt": prompt_idx + 1,
+                                "response": response
+                            })
+                            prompt_idx += 1
+
+                        elif step_type == "merged_prompt":
+                            # Handle ELIDE-merged steps: execute RUN commands and inject output
+                            prompt = step_content
+                            run_commands = getattr(step, 'run_commands', [])
+
+                            # Execute RUN commands and replace placeholders
+                            from .utils import run_subprocess, truncate_output
+                            for cmd_idx, cmd in enumerate(run_commands):
+                                placeholder = f"{{{{RUN:{cmd_idx}:{cmd}}}}}"
+                                try:
+                                    result = run_subprocess(cmd, cwd=conv.cwd)
+                                    output = result.stdout or ""
+                                    if result.returncode != 0 and result.stderr:
+                                        output = f"{output}\n[stderr]\n{result.stderr}"
+                                    # Truncate output if needed
+                                    output = truncate_output(output, limit=50000)
+                                    prompt = prompt.replace(placeholder, f"[Command: {cmd}]\n{output}")
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"[Command: {cmd}]\n[Error: {e}]")
+
+                            session.state.prompt_index = prompt_idx
+                            workflow_ctx.prompt = prompt_idx + 1
+
+                            # Build full prompt with all injections
+                            prompt_ctx = PromptContext(
+                                prompt=prompt,
+                                prompt_idx=prompt_idx,
+                                total_prompts=total_prompts,
+                                cycle_num=cycle_num,
+                                max_cycles=conv.max_cycles,
+                                session_mode=session_mode,
+                                context_content=context_content,
+                                template_vars=cycle_vars,
+                                no_stop_file_prologue=no_stop_file_prologue,
+                                verbosity=verbosity,
+                            )
+                            build_result = build_full_prompt(
+                                prompt_ctx, conv, session, loop_detector
+                            )
+                            full_prompt = build_result.full_prompt
+                            context_pct = build_result.context_pct
+
+                            emit_prompt_progress(
+                                prompt_ctx, context_pct, workflow_progress,
+                                prompt_writer, full_prompt
+                            )
+
+                            last_reasoning.clear()
+
+                            def collect_reasoning(reasoning: str) -> None:
+                                last_reasoning.append(reasoning)
+
+                            response = await ai_adapter.send(
+                                adapter_session,
+                                full_prompt,
+                                on_reasoning=collect_reasoning
+                            )
+
+                            # Check for loops
+                            loop_check = check_response_loop(
+                                response, loop_detector, session, all_responses,
+                                cycle_num, prompt_idx
+                            )
+                            if loop_check.should_break:
+                                format_loop_output(loop_check, console, progress_print)
+                                break
+
+                            # Process response
+                            agent_response(response)
                             session.add_message("assistant", response)
                             all_responses.append({
                                 "cycle": cycle_num + 1,
