@@ -180,3 +180,209 @@ class TestElideIntegration:
         assert len(result) == 3
         for step in result:
             assert step.type == "prompt"
+
+
+class TestBacklogCyclePatterns:
+    """Tests for patterns found in backlog-cycle.conv workflow.
+    
+    These tests verify that real-world workflow patterns produce
+    the expected turn structure.
+    """
+
+    def test_phase0_pattern_prompt_elide_runs_elide_prompt(self):
+        """Phase 0 pattern: PROMPT + ELIDE + (RUN + ELIDE)×3 + PROMPT = 1 turn.
+        
+        From backlog-cycle.conv lines 43-58:
+        PROMPT ## Phase 0: State Check
+        ELIDE
+        RUN git status
+        ELIDE
+        RUN swift build
+        ELIDE
+        RUN swift test
+        ELIDE
+        PROMPT Review status:
+        """
+        steps = [
+            ConversationStep(type="prompt", content="## Phase 0: State Check"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="git status"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="swift build"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="swift test"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Review status:"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # All 9 steps merge into 1 turn
+        assert len(result) == 1, f"Expected 1 turn, got {len(result)}"
+        assert result[0].type == "merged_prompt"
+        
+        # Should have all 3 RUN commands
+        assert len(result[0].run_commands) == 3
+        assert "git status" in result[0].run_commands
+        assert "swift build" in result[0].run_commands
+        assert "swift test" in result[0].run_commands
+        
+        # Should have both prompts merged
+        assert "Phase 0: State Check" in result[0].content
+        assert "Review status:" in result[0].content
+
+    def test_compact_breaks_elide_chain(self):
+        """COMPACT between ELIDE chains creates separate turns.
+        
+        From backlog-cycle.conv line 95:
+        Phase 1 chain ends, COMPACT, Phase 2 starts fresh.
+        """
+        steps = [
+            # Phase 1 chain
+            ConversationStep(type="prompt", content="Phase 1: Task Selection"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="head backlogs"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Select task"),
+            # COMPACT breaks the chain
+            ConversationStep(type="compact", content=""),
+            # Phase 2 - separate turn
+            ConversationStep(type="prompt", content="Phase 2: Execute"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # Should produce: merged_prompt, compact, prompt = 3 steps
+        assert len(result) == 3
+        assert result[0].type == "merged_prompt"
+        assert result[1].type == "compact"
+        assert result[2].type == "prompt"
+
+    def test_four_runs_elided_into_single_turn(self):
+        """Four RUN commands in an ELIDE chain (from Phase 1 pattern).
+        
+        From backlog-cycle.conv lines 61-74:
+        PROMPT + ELIDE + RUN + ELIDE + RUN + ELIDE + RUN + ELIDE + RUN + ELIDE + PROMPT
+        """
+        steps = [
+            ConversationStep(type="prompt", content="## Phase 1: Task Selection"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="head LIVE-BACKLOG.md"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="head MASTER-BACKLOG.md"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="grep apps.md"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="grep cgm.md"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Task Selection Criteria:"),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].run_commands) == 4
+
+    def test_multiple_phases_with_standalone_prompts(self):
+        """Multiple phases where some prompts are standalone (no ELIDE).
+        
+        Simulates Phase 2 (standalone) followed by Phase 3 (with ELIDE).
+        """
+        steps = [
+            # Phase 2: standalone prompt (no RUNs)
+            ConversationStep(type="prompt", content="## Phase 2: Execute Work"),
+            # Phase 3: with ELIDE chain
+            ConversationStep(type="prompt", content="## Phase 3: Verify"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="swift build"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="swift test"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Verification Checklist:"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # Phase 2 prompt is standalone, Phase 3 merges
+        assert len(result) == 2
+        assert result[0].type == "prompt"
+        assert result[0].content == "## Phase 2: Execute Work"
+        assert result[1].type == "merged_prompt"
+        assert len(result[1].run_commands) == 2
+
+
+class TestBacklogCycleWorkflowParsing:
+    """End-to-end parsing tests for backlog-cycle.conv style workflows."""
+
+    def test_parse_workflow_with_frontmatter(self):
+        """Workflow with YAML frontmatter parses correctly."""
+        from sdqctl.core.conversation.file import ConversationFile
+        
+        content = """---
+name: backlog-cycle
+description: Full development cycle
+version: 3.1.0
+---
+
+MODEL gpt-4
+ADAPTER mock
+RUN-TIMEOUT 120s
+
+PROMPT Phase 0
+ELIDE
+RUN git status
+ELIDE
+PROMPT Review
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert conv.model == "gpt-4"
+        assert conv.adapter == "mock"
+        assert conv.run_timeout == 120
+        assert len(conv.steps) == 5  # prompt, elide, run, elide, prompt
+
+    def test_full_phase_pattern_produces_correct_turns(self):
+        """Full multi-phase workflow produces expected turn count."""
+        from sdqctl.core.conversation.file import ConversationFile
+        
+        content = """MODEL gpt-4
+ADAPTER mock
+
+# Phase 0: State Check (1 turn)
+PROMPT ## Phase 0: State Check
+ELIDE
+RUN git status
+ELIDE
+RUN swift build
+ELIDE
+PROMPT Review status
+
+# COMPACT breaks chain
+COMPACT
+
+# Phase 2: Execute (1 turn, standalone)
+PROMPT ## Phase 2: Execute Work
+
+# Phase 3: Verify (1 turn)
+PROMPT ## Phase 3: Verify
+ELIDE
+RUN swift test
+ELIDE
+PROMPT Verification complete
+"""
+        conv = ConversationFile.parse(content)
+        result = process_elided_steps(conv.steps)
+        
+        # Expected: merged(Phase0), compact, prompt(Phase2), merged(Phase3)
+        assert len(result) == 4
+        
+        # Phase 0: merged with 2 RUN commands
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].run_commands) == 2
+        
+        # COMPACT
+        assert result[1].type == "compact"
+        
+        # Phase 2: standalone prompt
+        assert result[2].type == "prompt"
+        
+        # Phase 3: merged with 1 RUN command
+        assert result[3].type == "merged_prompt"
+        assert len(result[3].run_commands) == 1
