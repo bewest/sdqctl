@@ -648,3 +648,107 @@ class TestExtendedDirectivesElide:
         assert len(result) == 1
         assert "[FUTURE_DIRECTIVE]" in result[0].content
         assert "some future content" in result[0].content
+
+
+class TestElideWithPluginVerifiers:
+    """Tests for ELIDE behavior with plugin VERIFY handlers."""
+
+    def test_verify_elide_stores_verify_type_for_plugin(self):
+        """VERIFY with plugin name is stored correctly for ELIDE execution."""
+        # Simulates VERIFY build-all from t1pal workspace
+        steps = [
+            ConversationStep(type="prompt", content="Check the build:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify",
+                content="",
+                verify_type="build-all",  # Plugin verifier name
+                verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Fix any issues."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].verify_commands) == 1
+        assert result[0].verify_commands[0][0] == "build-all"
+        assert "{{VERIFY:0:build-all}}" in result[0].content
+
+    def test_verify_elide_multiple_plugin_verifiers(self):
+        """Multiple plugin verifiers in ELIDE chain."""
+        steps = [
+            ConversationStep(type="prompt", content="Run all checks:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify", content="",
+                verify_type="build-linux", verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify", content="",
+                verify_type="build-ios", verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify", content="",
+                verify_type="test-linux", verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Address all failures."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert len(result[0].verify_commands) == 3
+        verify_types = [v[0] for v in result[0].verify_commands]
+        assert verify_types == ["build-linux", "build-ios", "test-linux"]
+
+
+class TestElideCustomDirectivePreservesMetadata:
+    """Tests that custom directive metadata is preserved for execution."""
+
+    def test_custom_directive_preserves_directive_name(self):
+        """Custom directive step preserves directive_name attribute."""
+        step = ConversationStep(type="custom_directive", content="arg1 arg2")
+        step.directive_name = "HYGIENE"
+        step.line_number = 42
+        
+        steps = [
+            ConversationStep(type="prompt", content="Check hygiene:"),
+            ConversationStep(type="elide", content=""),
+            step,
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Fix issues."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert len(result[0].custom_directives) == 1
+        directive_name, content, orig_step = result[0].custom_directives[0]
+        assert directive_name == "HYGIENE"
+        assert content == "arg1 arg2"
+        # Original step preserved for line_number access
+        assert orig_step.line_number == 42
+
+    def test_lsp_preserves_options(self):
+        """LSP step preserves query options."""
+        step = ConversationStep(type="lsp", content="type Treatment -p ./src")
+        step.lsp_query = "type Treatment -p ./src"
+        step.lsp_options = {"project_path": "./src", "language": "swift"}
+        
+        steps = [
+            ConversationStep(type="prompt", content="Analyze:"),
+            ConversationStep(type="elide", content=""),
+            step,
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Explain."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert len(result[0].lsp_commands) == 1
+        query, options = result[0].lsp_commands[0]
+        assert query == "type Treatment -p ./src"
+        assert options == {"project_path": "./src", "language": "swift"}

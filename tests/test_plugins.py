@@ -797,3 +797,173 @@ directives:
             result = runner.invoke(plugin, ["handlers"])
             assert result.exit_code == 0
             assert "No handlers discovered" in result.output
+
+
+class TestDirectiveHandlerInjectOption:
+    """Tests for inject option in DirectiveHandler."""
+
+    def test_inject_default_true(self):
+        """Default inject value is True."""
+        handler = DirectiveHandler(
+            name="test",
+            directive_type="VERIFY",
+            handler="echo test",
+            description="Test",
+        )
+        assert handler.inject is True
+
+    def test_inject_explicit_false(self):
+        """Can set inject to False."""
+        handler = DirectiveHandler(
+            name="test",
+            directive_type="VERIFY",
+            handler="echo test",
+            description="Test",
+            inject=False,
+        )
+        assert handler.inject is False
+
+    def test_manifest_parses_inject_false(self, tmp_path):
+        """Parse inject: false from manifest."""
+        manifest_file = tmp_path / "directives.yaml"
+        manifest_file.write_text("""
+version: 1
+directives:
+  HYGIENE:
+    side-effect:
+      handler: touch /tmp/marker
+      description: "Run side effect without output"
+      inject: false
+""")
+        manifest = PluginManifest.from_file(manifest_file)
+        assert len(manifest.handlers) == 1
+        assert manifest.handlers[0].inject is False
+
+    def test_manifest_inject_default_true(self, tmp_path):
+        """Manifest without inject field defaults to True."""
+        manifest_file = tmp_path / "directives.yaml"
+        manifest_file.write_text("""
+version: 1
+directives:
+  VERIFY:
+    normal:
+      handler: echo output
+      description: "Normal with output"
+""")
+        manifest = PluginManifest.from_file(manifest_file)
+        assert len(manifest.handlers) == 1
+        assert manifest.handlers[0].inject is True
+
+
+class TestDirectiveExecutionResultInject:
+    """Tests for inject_into_prompt in DirectiveExecutionResult."""
+
+    def test_ok_default_inject_true(self):
+        """DirectiveExecutionResult.ok() defaults to inject=True."""
+        from sdqctl.plugins import DirectiveExecutionResult
+        result = DirectiveExecutionResult.ok("output")
+        assert result.inject_into_prompt is True
+
+    def test_ok_explicit_inject_false(self):
+        """DirectiveExecutionResult.ok() can set inject=False."""
+        from sdqctl.plugins import DirectiveExecutionResult
+        result = DirectiveExecutionResult.ok("output", inject=False)
+        assert result.inject_into_prompt is False
+
+    def test_fail_default_inject_true(self):
+        """DirectiveExecutionResult.fail() defaults to inject=True."""
+        from sdqctl.plugins import DirectiveExecutionResult
+        result = DirectiveExecutionResult.fail(["error"])
+        assert result.inject_into_prompt is True
+
+    def test_constructor_inject_field(self):
+        """DirectiveExecutionResult constructor accepts inject_into_prompt."""
+        from sdqctl.plugins import DirectiveExecutionResult
+        result = DirectiveExecutionResult(
+            success=True,
+            output="test",
+            inject_into_prompt=False,
+        )
+        assert result.inject_into_prompt is False
+
+
+class TestWorkspacePluginLoading:
+    """Tests for loading plugins from workflow workspace."""
+
+    def test_load_plugin_verifiers_from_path(self, tmp_path):
+        """load_plugin_verifiers uses start_path for discovery."""
+        # Create a workspace with plugins
+        workspace = tmp_path / "my-project"
+        workspace.mkdir()
+        sdqctl_dir = workspace / ".sdqctl"
+        sdqctl_dir.mkdir()
+        (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    build-check:
+      handler: echo "build ok"
+      description: "Check build"
+""")
+        # Load from workspace path
+        verifiers = load_plugin_verifiers(workspace)
+        assert "build-check" in verifiers
+        assert verifiers["build-check"].name == "build-check"
+
+    def test_load_plugin_verifiers_from_subdirectory(self, tmp_path):
+        """load_plugin_verifiers discovers plugins from parent directories."""
+        # Create workspace with plugins
+        workspace = tmp_path / "my-project"
+        workspace.mkdir()
+        sdqctl_dir = workspace / ".sdqctl"
+        sdqctl_dir.mkdir()
+        (sdqctl_dir / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    custom-verify:
+      handler: echo custom
+      description: "Custom verification"
+""")
+        # Load from a subdirectory
+        subdir = workspace / "src" / "deep"
+        subdir.mkdir(parents=True)
+        verifiers = load_plugin_verifiers(subdir)
+        assert "custom-verify" in verifiers
+
+    def test_different_workspaces_different_plugins(self, tmp_path):
+        """Different workspaces can have different plugins."""
+        # Workspace A
+        ws_a = tmp_path / "project-a"
+        ws_a.mkdir()
+        sdqctl_a = ws_a / ".sdqctl"
+        sdqctl_a.mkdir()
+        (sdqctl_a / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    plugin-a:
+      handler: echo a
+      description: "Plugin A"
+""")
+        # Workspace B
+        ws_b = tmp_path / "project-b"
+        ws_b.mkdir()
+        sdqctl_b = ws_b / ".sdqctl"
+        sdqctl_b.mkdir()
+        (sdqctl_b / "directives.yaml").write_text("""
+version: 1
+directives:
+  VERIFY:
+    plugin-b:
+      handler: echo b
+      description: "Plugin B"
+""")
+        # Load from each workspace
+        verifiers_a = load_plugin_verifiers(ws_a)
+        verifiers_b = load_plugin_verifiers(ws_b)
+        
+        assert "plugin-a" in verifiers_a
+        assert "plugin-b" not in verifiers_a
+        assert "plugin-b" in verifiers_b
+        assert "plugin-a" not in verifiers_b
