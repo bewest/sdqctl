@@ -178,6 +178,7 @@ class DirectiveHandler:
     args: list[dict[str, Any]] = field(default_factory=list)
     timeout: int = 30
     requires: list[str] = field(default_factory=list)  # Capabilities
+    inject: bool = True  # Whether to inject output into prompt (for ELIDE support)
     
     # Valid capabilities
     VALID_CAPABILITIES = frozenset({
@@ -228,6 +229,7 @@ class PluginManifest:
                     args=config.get("args", []),
                     timeout=config.get("timeout", 30),
                     requires=config.get("requires", []),
+                    inject=config.get("inject", True),  # Default: inject output
                 )
                 handlers.append(handler)
 

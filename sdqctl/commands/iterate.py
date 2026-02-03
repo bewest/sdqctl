@@ -914,22 +914,30 @@ async def _cycle_async(
                                     prompt = prompt.replace(placeholder, f"+ {cmd}\n[Error: {e}]")
 
                             # Execute VERIFY commands and replace placeholders
+                            # Load verifiers including plugins from the workflow's workspace
                             from ..verifiers import VERIFIERS
+                            from ..plugins import load_plugin_verifiers
                             verify_path = conv.source_path.parent if conv.source_path else Path.cwd()
+                            # Load plugin verifiers from the workflow's workspace
+                            workspace_verifiers = dict(VERIFIERS)
+                            plugin_verifiers = load_plugin_verifiers(verify_path)
+                            for name, pv in plugin_verifiers.items():
+                                workspace_verifiers[name] = lambda pv=pv: pv
+                            
                             for verify_idx, (verify_type, verify_options) in enumerate(verify_commands):
                                 placeholder = f"{{{{VERIFY:{verify_idx}:{verify_type}}}}}"
                                 try:
                                     # Run verifier(s)
                                     if verify_type == "all":
-                                        verifier_names = list(VERIFIERS.keys())
+                                        verifier_names = list(workspace_verifiers.keys())
                                     else:
                                         verifier_names = [verify_type]
 
                                     verify_output_lines = [f"## VERIFY {verify_type}\n"]
                                     all_passed = True
                                     for name in verifier_names:
-                                        if name in VERIFIERS:
-                                            verifier = VERIFIERS[name]()
+                                        if name in workspace_verifiers:
+                                            verifier = workspace_verifiers[name]()
                                             result = verifier.verify(verify_path)
                                             status = "✅" if result.passed else "❌"
                                             verify_output_lines.append(f"{status} {name}: {result.summary}")
@@ -1038,11 +1046,16 @@ async def _cycle_async(
                                         session_id=session.id if hasattr(session, 'id') else None,
                                         cycle_number=cycle_num + 1,
                                     )
-                                    if result.success:
-                                        custom_output = f"## {directive_name}\n{result.output}"
+                                    # Respect inject_into_prompt - directive can choose to suppress output
+                                    if result.inject_into_prompt:
+                                        if result.success:
+                                            custom_output = f"## {directive_name}\n{result.output}"
+                                        else:
+                                            custom_output = f"## {directive_name}\n[Error: {'; '.join(result.errors)}]"
+                                        prompt = prompt.replace(placeholder, custom_output)
                                     else:
-                                        custom_output = f"## {directive_name}\n[Error: {'; '.join(result.errors)}]"
-                                    prompt = prompt.replace(placeholder, custom_output)
+                                        # Directive chose not to inject - remove placeholder silently
+                                        prompt = prompt.replace(placeholder, "")
                                 except Exception as e:
                                     prompt = prompt.replace(placeholder, f"## {directive_name}\n[Error: {e}]")
 
