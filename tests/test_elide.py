@@ -481,3 +481,170 @@ class TestVerifyElideIntegration:
         assert len(result[0].verify_commands) == 2
         assert result[0].verify_commands[0][0] == "refs"
         assert result[0].verify_commands[1][0] == "links"
+
+
+class TestExtendedDirectivesElide:
+    """Tests for ELIDE with additional context-generating directives."""
+
+    def test_refcat_elide_produces_placeholder(self):
+        """REFCAT + ELIDE should produce merged_prompt with refcat_commands."""
+        steps = [
+            ConversationStep(type="prompt", content="Review the following code:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="refcat", content="@src/main.py#L10-L50"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Suggest improvements."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].refcat_commands) == 1
+        assert result[0].refcat_commands[0] == "@src/main.py#L10-L50"
+        assert "{{REFCAT:0:@src/main.py#L10-L50}}" in result[0].content
+
+    def test_lsp_elide_produces_placeholder(self):
+        """LSP + ELIDE should produce merged_prompt with lsp_commands."""
+        step = ConversationStep(type="lsp", content="type Treatment -p ./src")
+        step.lsp_query = "type Treatment -p ./src"
+        step.lsp_options = {}
+        
+        steps = [
+            ConversationStep(type="prompt", content="Analyze this type:"),
+            ConversationStep(type="elide", content=""),
+            step,
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Explain the design."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].lsp_commands) == 1
+        assert result[0].lsp_commands[0][0] == "type Treatment -p ./src"
+        assert "{{LSP:0:type Treatment -p ./src}}" in result[0].content
+
+    def test_help_inline_elide_produces_placeholder(self):
+        """HELP-INLINE + ELIDE should produce merged_prompt with help_inline_commands."""
+        steps = [
+            ConversationStep(type="prompt", content="Follow these guidelines:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="help_inline", content="directives workflow"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Create a new workflow."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].help_inline_commands) == 1
+        assert result[0].help_inline_commands[0] == "directives workflow"
+        assert "{{HELP:0:directives workflow}}" in result[0].content
+
+    def test_custom_directive_elide_produces_placeholder(self):
+        """Custom directive + ELIDE should produce merged_prompt with custom_directives."""
+        step = ConversationStep(type="custom_directive", content="check-queues --verbose")
+        step.directive_name = "HYGIENE"
+        
+        steps = [
+            ConversationStep(type="prompt", content="Review hygiene status:"),
+            ConversationStep(type="elide", content=""),
+            step,
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Address any issues."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].custom_directives) == 1
+        assert result[0].custom_directives[0][0] == "HYGIENE"
+        assert result[0].custom_directives[0][1] == "check-queues --verbose"
+        assert "{{CUSTOM:0:HYGIENE}}" in result[0].content
+
+    def test_consult_elide_produces_placeholder(self):
+        """CONSULT + ELIDE should produce merged_prompt with consult_commands."""
+        steps = [
+            ConversationStep(type="prompt", content="Based on this advice:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="consult", content="What are best practices for error handling in Python?"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Implement error handling."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].consult_commands) == 1
+        assert "best practices for error handling" in result[0].consult_commands[0]
+        # Placeholder includes truncated content (first 50 chars)
+        assert "{{CONSULT:0:" in result[0].content
+
+    def test_mixed_directives_all_merge(self):
+        """Multiple different directive types should all merge properly."""
+        refcat_step = ConversationStep(type="refcat", content="@lib/utils.py#L1-L20")
+        lsp_step = ConversationStep(type="lsp", content="type Utils")
+        lsp_step.lsp_query = "type Utils"
+        lsp_step.lsp_options = {}
+        
+        steps = [
+            ConversationStep(type="prompt", content="Analyze this codebase:"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="git status"),
+            ConversationStep(type="elide", content=""),
+            refcat_step,
+            ConversationStep(type="elide", content=""),
+            lsp_step,
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="verify", content="", verify_type="refs", verify_options={}),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Provide summary."),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].run_commands) == 1
+        assert len(result[0].refcat_commands) == 1
+        assert len(result[0].lsp_commands) == 1
+        assert len(result[0].verify_commands) == 1
+        # All placeholders present
+        assert "{{RUN:0:" in result[0].content
+        assert "{{REFCAT:0:" in result[0].content
+        assert "{{LSP:0:" in result[0].content
+        assert "{{VERIFY:0:" in result[0].content
+
+    def test_pause_breaks_elide_chain(self):
+        """PAUSE is a control directive and should break ELIDE chain."""
+        import logging
+        
+        steps = [
+            ConversationStep(type="prompt", content="Start"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="pause", content=""),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Continue"),
+        ]
+        
+        # Should log a warning about pause breaking the chain
+        result = process_elided_steps(steps)
+        
+        # pause should have been emitted separately
+        # The chain is broken, but we still process what we can
+        assert any(step.type == "pause" for step in result if hasattr(step, 'type'))
+
+    def test_unknown_step_type_warns_and_includes_content(self):
+        """Unknown step types should warn and include content as-is."""
+        steps = [
+            ConversationStep(type="prompt", content="Start"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="future_directive", content="some future content"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Continue"),
+        ]
+        result = process_elided_steps(steps)
+        
+        # Should merge and include content with type label
+        assert len(result) == 1
+        assert "[FUTURE_DIRECTIVE]" in result[0].content
+        assert "some future content" in result[0].content

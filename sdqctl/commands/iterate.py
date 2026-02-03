@@ -881,10 +881,15 @@ async def _cycle_async(
                             prompt_idx += 1
 
                         elif step_type == "merged_prompt":
-                            # Handle ELIDE-merged steps: execute RUN and VERIFY commands and inject output
+                            # Handle ELIDE-merged steps: execute context-generating directives and inject output
                             prompt = step_content
                             run_commands = getattr(step, 'run_commands', [])
                             verify_commands = getattr(step, 'verify_commands', [])
+                            refcat_commands = getattr(step, 'refcat_commands', [])
+                            lsp_commands = getattr(step, 'lsp_commands', [])
+                            consult_commands = getattr(step, 'consult_commands', [])
+                            help_inline_commands = getattr(step, 'help_inline_commands', [])
+                            custom_directives = getattr(step, 'custom_directives', [])
 
                             # Execute RUN commands and replace placeholders
                             from .utils import run_subprocess, truncate_output
@@ -941,6 +946,105 @@ async def _cycle_async(
                                     prompt = prompt.replace(placeholder, verify_output)
                                 except Exception as e:
                                     prompt = prompt.replace(placeholder, f"## VERIFY {verify_type}\n[Error: {e}]")
+
+                            # Execute REFCAT commands and replace placeholders
+                            from ..core.refcat import extract_content, format_for_context, parse_ref
+                            refcat_cwd = Path(conv.cwd or ".").resolve()
+                            for refcat_idx, ref in enumerate(refcat_commands):
+                                placeholder = f"{{{{REFCAT:{refcat_idx}:{ref}}}}}"
+                                try:
+                                    parsed = parse_ref(ref)
+                                    content_result = extract_content(parsed, cwd=refcat_cwd)
+                                    refcat_output = format_for_context(content_result)
+                                    prompt = prompt.replace(placeholder, refcat_output)
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"## REFCAT {ref}\n[Error: {e}]")
+
+                            # Execute LSP commands and replace placeholders
+                            from .lsp_steps import lookup_type, parse_lsp_args
+                            lsp_cwd = Path(conv.cwd or ".").resolve()
+                            for lsp_idx, (lsp_query, lsp_options) in enumerate(lsp_commands):
+                                placeholder = f"{{{{LSP:{lsp_idx}:{lsp_query}}}}}"
+                                try:
+                                    args = parse_lsp_args(lsp_query)
+                                    if args.get("error"):
+                                        prompt = prompt.replace(placeholder, f"## LSP\n[Error: {args['error']}]")
+                                        continue
+                                    subcommand = args.get("subcommand", "type")
+                                    name = args.get("name", "")
+                                    project_path = lsp_cwd
+                                    if args.get("path") and args["path"] != ".":
+                                        project_path = lsp_cwd / args["path"]
+                                    if subcommand == "type":
+                                        result = lookup_type(name, project_path, args.get("language"))
+                                        if "error" in result:
+                                            prompt = prompt.replace(placeholder, f"## LSP type {name}\n[Error: {result['error']}]")
+                                        else:
+                                            type_def = result["type_definition"]
+                                            lsp_output = f"## LSP type {name}\n{type_def.to_markdown()}"
+                                            prompt = prompt.replace(placeholder, lsp_output)
+                                    else:
+                                        prompt = prompt.replace(placeholder, f"## LSP\n[Unknown subcommand: {subcommand}]")
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"## LSP\n[Error: {e}]")
+
+                            # Execute HELP-INLINE commands and replace placeholders
+                            from ..core.help_topics import TOPICS
+                            for help_idx, topic_list in enumerate(help_inline_commands):
+                                placeholder = f"{{{{HELP:{help_idx}:{topic_list}}}}}"
+                                try:
+                                    topics = topic_list.strip().split()
+                                    help_output_parts = []
+                                    for topic in topics:
+                                        if topic.lower() in TOPICS:
+                                            help_output_parts.append(f"## {topic.upper()}\n{TOPICS[topic.lower()]}")
+                                        else:
+                                            help_output_parts.append(f"## {topic.upper()}\n[Unknown help topic: {topic}]")
+                                    help_output = "\n\n".join(help_output_parts)
+                                    prompt = prompt.replace(placeholder, help_output)
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"## HELP\n[Error: {e}]")
+
+                            # Execute CONSULT commands and replace placeholders
+                            # CONSULT is special - it runs an AI sub-conversation
+                            for consult_idx, consult_prompt in enumerate(consult_commands):
+                                # Find placeholder (only first 50 chars were stored)
+                                placeholder_prefix = f"{{{{CONSULT:{consult_idx}:"
+                                placeholder_end = prompt.find("}}}}", prompt.find(placeholder_prefix))
+                                if placeholder_end > 0:
+                                    placeholder = prompt[prompt.find(placeholder_prefix):placeholder_end + 4]
+                                    try:
+                                        # Run a sub-conversation with the consult prompt
+                                        consult_response = await ai_adapter.send(
+                                            adapter_session,
+                                            f"[CONSULT REQUEST]\n{consult_prompt}\n\n[Provide a focused response.]",
+                                        )
+                                        consult_output = f"## CONSULT\n{consult_response}"
+                                        prompt = prompt.replace(placeholder, consult_output)
+                                    except Exception as e:
+                                        prompt = prompt.replace(placeholder, f"## CONSULT\n[Error: {e}]")
+
+                            # Execute custom directives and replace placeholders
+                            from ..plugins import execute_custom_directive
+                            for custom_idx, (directive_name, directive_content, orig_step) in enumerate(custom_directives):
+                                placeholder = f"{{{{CUSTOM:{custom_idx}:{directive_name}}}}}"
+                                try:
+                                    workspace = conv.source_path.parent if conv.source_path else Path.cwd()
+                                    result = execute_custom_directive(
+                                        directive_name,
+                                        directive_content,
+                                        workspace,
+                                        line_number=getattr(orig_step, 'line_number', 0),
+                                        session_id=session.id if hasattr(session, 'id') else None,
+                                        cycle_number=cycle_num + 1,
+                                    )
+                                    if result.success:
+                                        custom_output = f"## {directive_name}\n{result.output}"
+                                    else:
+                                        custom_output = f"## {directive_name}\n[Error: {'; '.join(result.errors)}]"
+                                    prompt = prompt.replace(placeholder, custom_output)
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"## {directive_name}\n[Error: {e}]")
 
                             session.state.prompt_index = prompt_idx
                             workflow_ctx.prompt = prompt_idx + 1
