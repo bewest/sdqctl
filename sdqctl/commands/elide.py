@@ -102,6 +102,7 @@ def process_elided_steps(steps: list) -> list:
             # Combine prompts, run outputs become placeholders for later injection
             merged_contents = []
             merged_run_commands = []
+            merged_verify_commands = []
             has_prompt = False
 
             for step in group:
@@ -116,6 +117,13 @@ def process_elided_steps(steps: list) -> list:
                     merged_run_commands.append(content)
                     # Add placeholder that will be replaced with output
                     merged_contents.append(f"{{{{RUN:{len(merged_run_commands) - 1}:{content}}}}}")
+                elif step_type == "verify":
+                    # Store VERIFY command to be executed and output injected
+                    verify_type = getattr(step, 'verify_type', 'all')
+                    verify_options = getattr(step, 'verify_options', {})
+                    merged_verify_commands.append((verify_type, verify_options))
+                    # Add placeholder that will be replaced with output
+                    merged_contents.append(f"{{{{VERIFY:{len(merged_verify_commands) - 1}:{verify_type}}}}}")
                 elif step_type in ("checkpoint", "compact", "new_conversation"):
                     # Control steps break the merge - shouldn't happen in valid ELIDE usage
                     logger.warning(f"ELIDE cannot merge control step type '{step_type}'")
@@ -130,6 +138,8 @@ def process_elided_steps(steps: list) -> list:
                 )
                 # Attach run commands for later execution
                 merged_step.run_commands = merged_run_commands  # type: ignore
+                # Attach verify commands for later execution
+                merged_step.verify_commands = merged_verify_commands  # type: ignore
                 merged_steps.append(merged_step)
 
     logger.debug(f"Processed {len(steps)} steps with ELIDE into {len(merged_steps)} merged steps")

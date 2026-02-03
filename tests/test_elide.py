@@ -386,3 +386,98 @@ PROMPT Verification complete
         # Phase 3: merged with 1 RUN command
         assert result[3].type == "merged_prompt"
         assert len(result[3].run_commands) == 1
+
+
+class TestVerifyElideIntegration:
+    """Tests for VERIFY + ELIDE integration (backlog-cycle-v2 patterns)."""
+
+    def test_verify_elide_prompt_produces_one_turn(self):
+        """VERIFY + ELIDE + PROMPT = 1 turn with verify output merged."""
+        steps = [
+            ConversationStep(
+                type="verify",
+                content="",
+                verify_type="refs",
+                verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Review verification results"),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert hasattr(result[0], 'verify_commands')
+        assert len(result[0].verify_commands) == 1
+        assert result[0].verify_commands[0][0] == "refs"
+        assert "{{VERIFY:0:refs}}" in result[0].content
+        assert "Review verification results" in result[0].content
+
+    def test_run_verify_elide_prompt_all_merge(self):
+        """RUN + ELIDE + VERIFY + ELIDE + PROMPT all merge into 1 turn.
+        
+        From backlog-cycle-v2.conv Phase 3 pattern:
+        ELIDE
+        VERIFY build-all
+        ELIDE
+        RUN swift test
+        ELIDE
+        PROMPT Verification Checklist
+        """
+        steps = [
+            ConversationStep(type="prompt", content="## Phase 3: Verify"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify",
+                content="",
+                verify_type="build-all",
+                verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="swift test 2>&1 | tail -20"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Verification Checklist:"),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        
+        # Should have 1 RUN and 1 VERIFY
+        assert len(result[0].run_commands) == 1
+        assert len(result[0].verify_commands) == 1
+        
+        # Content should have placeholders
+        assert "{{VERIFY:0:build-all}}" in result[0].content
+        assert "{{RUN:0:swift test" in result[0].content
+        assert "Phase 3: Verify" in result[0].content
+        assert "Verification Checklist:" in result[0].content
+
+    def test_multiple_verify_in_elide_chain(self):
+        """Multiple VERIFY commands in an ELIDE chain."""
+        steps = [
+            ConversationStep(type="prompt", content="Run all verifications"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify",
+                content="",
+                verify_type="refs",
+                verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(
+                type="verify",
+                content="",
+                verify_type="links",
+                verify_options={}
+            ),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Review all results"),
+        ]
+        result = process_elided_steps(steps)
+        
+        assert len(result) == 1
+        assert result[0].type == "merged_prompt"
+        assert len(result[0].verify_commands) == 2
+        assert result[0].verify_commands[0][0] == "refs"
+        assert result[0].verify_commands[1][0] == "links"

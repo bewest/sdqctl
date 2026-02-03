@@ -881,9 +881,10 @@ async def _cycle_async(
                             prompt_idx += 1
 
                         elif step_type == "merged_prompt":
-                            # Handle ELIDE-merged steps: execute RUN commands and inject output
+                            # Handle ELIDE-merged steps: execute RUN and VERIFY commands and inject output
                             prompt = step_content
                             run_commands = getattr(step, 'run_commands', [])
+                            verify_commands = getattr(step, 'verify_commands', [])
 
                             # Execute RUN commands and replace placeholders
                             from .utils import run_subprocess, truncate_output
@@ -906,6 +907,40 @@ async def _cycle_async(
                                     prompt = prompt.replace(placeholder, f"+ {cmd}\n{output}")
                                 except Exception as e:
                                     prompt = prompt.replace(placeholder, f"+ {cmd}\n[Error: {e}]")
+
+                            # Execute VERIFY commands and replace placeholders
+                            from ..verifiers import VERIFIERS
+                            verify_path = conv.source_path.parent if conv.source_path else Path.cwd()
+                            for verify_idx, (verify_type, verify_options) in enumerate(verify_commands):
+                                placeholder = f"{{{{VERIFY:{verify_idx}:{verify_type}}}}}"
+                                try:
+                                    # Run verifier(s)
+                                    if verify_type == "all":
+                                        verifier_names = list(VERIFIERS.keys())
+                                    else:
+                                        verifier_names = [verify_type]
+
+                                    verify_output_lines = [f"## VERIFY {verify_type}\n"]
+                                    all_passed = True
+                                    for name in verifier_names:
+                                        if name in VERIFIERS:
+                                            verifier = VERIFIERS[name]()
+                                            result = verifier.verify(verify_path)
+                                            status = "✅" if result.passed else "❌"
+                                            verify_output_lines.append(f"{status} {name}: {result.summary}")
+                                            if not result.passed:
+                                                all_passed = False
+                                                for err in result.errors[:5]:
+                                                    verify_output_lines.append(f"  - {err.file}:{err.line}: {err.message}")
+                                                if len(result.errors) > 5:
+                                                    verify_output_lines.append(f"  - ... and {len(result.errors) - 5} more")
+
+                                    verify_output = "\n".join(verify_output_lines)
+                                    if conv.verify_limit:
+                                        verify_output = truncate_output(verify_output, conv.verify_limit)
+                                    prompt = prompt.replace(placeholder, verify_output)
+                                except Exception as e:
+                                    prompt = prompt.replace(placeholder, f"## VERIFY {verify_type}\n[Error: {e}]")
 
                             session.state.prompt_index = prompt_idx
                             workflow_ctx.prompt = prompt_idx + 1
