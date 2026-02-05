@@ -405,7 +405,7 @@ from sdqctl.core.loop_detector import LoopDetector, LoopReason
 detector = LoopDetector(
     nonce="mytest123",          # Optional: override random nonce
     identical_threshold=2,      # N identical responses (Q-002: lowered from 3)
-    min_response_length=100,    # Chars below = suspicious (Q-002: raised from 50)
+    min_response_length=80,     # Chars below = suspicious (env: SDQCTL_MIN_RESPONSE_LENGTH)
 )
 
 # Check after each turn

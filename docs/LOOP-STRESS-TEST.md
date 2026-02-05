@@ -264,7 +264,7 @@ After the Q-002 fix, these are the default thresholds:
 | Setting | Default Value | Notes |
 |---------|---------------|-------|
 | `identical_threshold` | 2 | Triggers on 2 identical responses (was 3) |
-| `min_response_length` | 100 | Responses <100 chars trigger (was 50) |
+| `min_response_length` | 80 | Responses <80 chars trigger (configurable via `SDQCTL_MIN_RESPONSE_LENGTH`) |
 | `nonce` | Random 12-char hex | For stop file naming (auto-generated) |
 | `stop_file_dir` | CWD | Directory to check for stop file |
 

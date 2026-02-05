@@ -2,10 +2,12 @@
 Tests for loop detection in AI workflow cycles.
 """
 
+import os
 import pytest
 from sdqctl.core.loop_detector import (
     LoopDetector, 
     LOOP_REASONING_PATTERNS,
+    MIN_RESPONSE_LENGTH,
     generate_nonce,
     get_stop_file_name,
 )
@@ -93,7 +95,7 @@ class TestLoopDetectorReasoningPatterns:
     def test_no_detection_on_normal_reasoning(self):
         """Normal reasoning doesn't trigger detection."""
         detector = LoopDetector()
-        # Response must be >= 100 chars to avoid minimal response detection (Q-002)
+        # Response must be >= 80 chars to avoid minimal response detection
         long_response = (
             "Here's my analysis of the authentication module. "
             "The code follows best practices for security including proper hashing."
@@ -108,10 +110,10 @@ class TestLoopDetectorReasoningPatterns:
     def test_no_detection_on_empty_reasoning(self):
         """Empty reasoning doesn't trigger detection."""
         detector = LoopDetector()
-        # Response must be >= 100 chars to not trigger minimal response detection
+        # Response must be >= 80 chars to not trigger minimal response detection
         long_response = (
             "This is a normal response with enough content to pass the length "
-            "check that is now 100 characters minimum."
+            "check that is now 80 characters minimum."
         )
         result = detector.check(None, long_response, cycle_number=1)
         assert result is None
@@ -470,3 +472,25 @@ class TestStopFileInstruction:
         from sdqctl.core.loop_detector import STOP_FILE_INSTRUCTION
         
         assert "${STOP_FILE}" in STOP_FILE_INSTRUCTION
+
+
+class TestMinResponseLengthEnvVar:
+    """Test SDQCTL_MIN_RESPONSE_LENGTH environment variable."""
+
+    def test_default_min_response_length(self):
+        """Default MIN_RESPONSE_LENGTH is 80 chars."""
+        # Note: This test verifies the current default; env var may override at import time
+        assert MIN_RESPONSE_LENGTH == int(os.environ.get("SDQCTL_MIN_RESPONSE_LENGTH", "80"))
+
+    def test_detector_uses_module_constant(self):
+        """LoopDetector uses MIN_RESPONSE_LENGTH constant by default."""
+        detector = LoopDetector()
+        assert detector.min_response_length == MIN_RESPONSE_LENGTH
+
+    def test_detector_accepts_custom_min_response_length(self):
+        """LoopDetector accepts custom min_response_length parameter."""
+        detector = LoopDetector(min_response_length=50)
+        assert detector.min_response_length == 50
+
+        detector2 = LoopDetector(min_response_length=120)
+        assert detector2.min_response_length == 120
