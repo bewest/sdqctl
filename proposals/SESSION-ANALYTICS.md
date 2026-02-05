@@ -37,6 +37,14 @@ Analysis of 197 sessions revealed valuable patterns:
 
 **Key Finding**: Token usage is NOT available for historical sessions (streaming-only events). Only turns/tools can be backfilled.
 
+### Marathon Success Factors (from [analysis report](../reports/marathon-session-analysis-2026-02-05.md))
+
+| Factor | Optimal Value | Correlation |
+|--------|---------------|-------------|
+| Compaction cadence | ~170 turns | r=0.93 |
+| User engagement | ~3.7 turns/msg | r=0.85 |
+| Tool efficiency | ~1.07 tools/turn | r=0.81 |
+
 ---
 
 ## Proposed Commands
