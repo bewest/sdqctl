@@ -10,7 +10,13 @@
 
 | # | Item | Priority | Effort | Notes |
 |---|------|----------|--------|-------|
-| *(No active items)* | | | | |
+| SDK-001 | `sessions analytics` command | P2 | Low | Aggregate metrics view |
+| SDK-002 | `sessions outliers` command | P2 | Low | Detect anomalous sessions |
+| SDK-003 | `sessions trends` command | P3 | Medium | Time-based analysis |
+| SDK-004 | `sessions export` command | P3 | Medium | CSV/JSON export |
+| SDK-005 | Compaction recommendations engine | P3 | Medium | Suggest compaction for marathon sessions |
+
+**Proposal**: [SESSION-ANALYTICS.md](../SESSION-ANALYTICS.md)
 
 ---
 

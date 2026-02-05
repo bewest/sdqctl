@@ -202,6 +202,7 @@ Items not yet assigned to work packages:
 
 | Item | Source | Notes |
 |------|--------|-------|
+| Session Analytics (WP-007) | [SESSION-ANALYTICS.md](SESSION-ANALYTICS.md) | `sessions analytics/outliers/trends/export` commands |
 | `sdqctl agent analyze <topic>` | [AGENTIC-ANALYSIS.md](AGENTIC-ANALYSIS.md) | Autonomous multi-cycle deep-dive (R&D) |
 | WP-006 Phase 3: Multi-language LSP | [LSP-INTEGRATION.md](LSP-INTEGRATION.md) | Swift, Kotlin support |
 | WP-006 Phase 4: Cross-project compare | [LSP-INTEGRATION.md](LSP-INTEGRATION.md) | `lsp compare-types` |
@@ -287,6 +288,7 @@ Design principles distilled from recent development iterations:
 | [COMPACTION-UNIFICATION](COMPACTION-UNIFICATION.md) | ✅ Complete | COMPACTION-MAX directive, CLI alignment, None defaults. |
 | [HELP-INLINE](HELP-INLINE.md) | ✅ Complete | HELP-INLINE directive + ecosystem topics (gap-ids, 5-facet, stpa, conformance, nightscout). |
 | [VERBOSITY-DEFAULTS](VERBOSITY-DEFAULTS.md) | ✅ Complete | Verified existing implementation meets OQ-004 requirements. |
+| [SESSION-ANALYTICS](SESSION-ANALYTICS.md) | 📝 Draft | Session analytics: outliers, trends, aggregate insights. |
 | [SDK-ECONOMY](SDK-ECONOMY.md) | 📝 Draft | Iteration efficiency: batch selection, work packages, protection policies. |
 
 ---
