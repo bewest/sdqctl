@@ -7,6 +7,7 @@ Usage:
     sdqctl sessions list --filter "audit-*"
     sdqctl sessions list --verbose
     sdqctl sessions stats SESSION_ID
+    sdqctl sessions fetch-metrics SESSION_ID
     sdqctl sessions delete SESSION_ID
     sdqctl sessions delete SESSION_ID --force
     sdqctl sessions cleanup --older-than 7d
@@ -504,6 +505,99 @@ def session_stats(session_id: str, output_format: str):
         console.print(table)
 
     console.print()
+
+
+@sessions.command("fetch-metrics")
+@click.argument("session_id")
+@click.option("--adapter", "-a", default="copilot", help="Adapter to use (default: copilot)")
+def fetch_metrics(session_id: str, adapter: str):
+    """Fetch usage metrics from SDK session history.
+
+    Retrieves token usage from an existing session's event history.
+    Useful for getting metrics from sessions created outside sdqctl
+    or before metrics persistence was added.
+
+    \b
+    Examples:
+      sdqctl sessions fetch-metrics my-session-id
+    """
+    run_async(_fetch_metrics_async(session_id, adapter))
+
+
+async def _fetch_metrics_async(session_id: str, adapter_name: str):
+    """Async implementation of fetch_metrics."""
+    from ..adapters.base import AdapterConfig
+
+    try:
+        ai_adapter = get_adapter(adapter_name)
+        await ai_adapter.start()
+
+        try:
+            # Resume session to access its history
+            config = AdapterConfig(model="gpt-4", streaming=False)
+            console.print(f"[dim]Connecting to session: {session_id}[/dim]")
+
+            session = await ai_adapter.resume_session(session_id, config)
+
+            # Fetch usage from session history
+            if hasattr(ai_adapter, "get_session_usage_from_history"):
+                usage = await ai_adapter.get_session_usage_from_history(session)
+
+                if usage:
+                    input_tok = usage.get("input_tokens", 0)
+                    output_tok = usage.get("output_tokens", 0)
+                    turns = usage.get("turns", 0)
+                    tool_calls = usage.get("tool_calls", 0)
+
+                    console.print(f"\n[bold cyan]Session: {session_id}[/bold cyan]\n")
+                    console.print("[bold]Usage from History[/bold]")
+
+                    table = Table(show_header=False, box=None, padding=(0, 2))
+                    table.add_column("Label", style="dim")
+                    table.add_column("Value", justify="right")
+                    table.add_row("Input tokens", format_tokens(input_tok))
+                    table.add_row("Output tokens", format_tokens(output_tok))
+                    table.add_row("Total tokens", f"[bold]{format_tokens(input_tok + output_tok)}[/bold]")
+                    table.add_row("Turns", str(turns))
+                    table.add_row("Tool calls", str(tool_calls))
+                    console.print(table)
+
+                    # Save to metrics.json
+                    session_dir = SDQCTL_DIR / "sessions" / session_id
+                    session_dir.mkdir(parents=True, exist_ok=True)
+
+                    metrics = {
+                        "schema_version": "1.0",
+                        "session_id": session_id,
+                        "fetched_at": datetime.now(timezone.utc).isoformat(),
+                        "source": "session_history",
+                        "token_efficiency": {
+                            "input_tokens": input_tok,
+                            "output_tokens": output_tok,
+                        },
+                        "duration": {
+                            "cycles": turns,
+                        },
+                        "tools": {
+                            "total_calls": tool_calls,
+                        },
+                    }
+
+                    metrics_path = session_dir / "metrics.json"
+                    with open(metrics_path, "w") as f:
+                        json.dump(metrics, f, indent=2)
+
+                    console.print(f"\n[green]✓ Saved to {metrics_path}[/green]")
+                else:
+                    console.print("[yellow]No usage data found in session history[/yellow]")
+            else:
+                console.print(f"[yellow]Adapter '{adapter_name}' does not support fetching historical metrics[/yellow]")
+
+        finally:
+            await ai_adapter.stop()
+
+    except Exception as e:
+        console.print(f"[red]Error fetching metrics: {e}[/red]")
 
 
 @sessions.command("resume")

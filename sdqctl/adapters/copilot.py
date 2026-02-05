@@ -6,8 +6,11 @@ Install with: pip install github-copilot-sdk
 """
 
 import asyncio
+import json
 import logging
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
@@ -22,6 +25,9 @@ CopilotClient = None
 
 # Get logger for this module
 logger = logging.getLogger("sdqctl.adapters.copilot")
+
+# Default session storage directory
+SDQCTL_DIR = Path.home() / ".sdqctl"
 
 
 def _ensure_copilot_sdk():
@@ -155,7 +161,7 @@ class CopilotAdapter(AdapterBase):
         return session
 
     async def destroy_session(self, session: AdapterSession) -> None:
-        """Destroy a Copilot session."""
+        """Destroy a Copilot session and persist metrics."""
         if session.id in self.sessions:
             # Log final stats
             stats = self.session_stats.get(session.id)
@@ -174,6 +180,9 @@ class CopilotAdapter(AdapterBase):
                     f"{in_tok} in / {out_tok} out tokens{tool_summary}{intent_summary}"
                 )
 
+                # Persist metrics to session directory
+                self._persist_session_metrics(session, stats)
+
             try:
                 await session._internal.destroy()
             except Exception:
@@ -181,6 +190,53 @@ class CopilotAdapter(AdapterBase):
             del self.sessions[session.id]
             if session.id in self.session_stats:
                 del self.session_stats[session.id]
+
+    def _persist_session_metrics(self, session: AdapterSession, stats: SessionStats) -> None:
+        """Persist session metrics to metrics.json.
+
+        Called automatically when a session is destroyed.
+        """
+        try:
+            # Use SDK session ID if available, otherwise adapter session ID
+            session_id = session.sdk_session_id or session.id
+            session_dir = SDQCTL_DIR / "sessions" / session_id
+            session_dir.mkdir(parents=True, exist_ok=True)
+
+            now = datetime.now(timezone.utc)
+            started = stats.session_start_time or now
+            duration_secs = (now - started).total_seconds() if stats.session_start_time else 0
+
+            metrics = {
+                "schema_version": "1.0",
+                "session_id": session_id,
+                "started_at": started.isoformat(),
+                "ended_at": now.isoformat(),
+                "token_efficiency": {
+                    "input_tokens": stats.total_input_tokens,
+                    "output_tokens": stats.total_output_tokens,
+                    "io_ratio": round(
+                        stats.total_output_tokens / stats.total_input_tokens, 3
+                    ) if stats.total_input_tokens > 0 else 0,
+                },
+                "duration": {
+                    "total_seconds": round(duration_secs, 2),
+                    "cycles": stats.turns,
+                    "seconds_per_cycle": round(duration_secs / stats.turns, 2) if stats.turns > 0 else None,
+                },
+                "tools": {
+                    "total_calls": stats.total_tool_calls,
+                    "succeeded": stats.tool_calls_succeeded,
+                    "failed": stats.tool_calls_failed,
+                },
+            }
+
+            metrics_path = session_dir / "metrics.json"
+            with open(metrics_path, "w") as f:
+                json.dump(metrics, f, indent=2)
+            logger.debug(f"Persisted metrics to {metrics_path}")
+
+        except Exception as e:
+            logger.warning(f"Failed to persist session metrics: {e}")
 
     async def send(
         self,
@@ -275,6 +331,75 @@ class CopilotAdapter(AdapterBase):
         if stats and stats.event_collector:
             return stats.event_collector.export_jsonl(path)
         return 0
+
+    async def get_session_usage_from_history(
+        self, session: AdapterSession
+    ) -> Optional[dict[str, Any]]:
+        """Fetch cumulative usage metrics from session history.
+
+        Retrieves all events from a session and aggregates usage data from
+        assistant.usage events. Useful for getting metrics from resumed sessions
+        or sessions created outside sdqctl.
+
+        Args:
+            session: The adapter session (must have _internal set)
+
+        Returns:
+            Dict with aggregated usage:
+            {
+                "input_tokens": int,
+                "output_tokens": int,
+                "turns": int,
+                "tool_calls": int,
+            }
+            Returns None if session events cannot be retrieved.
+        """
+        copilot_session = session._internal
+        if not copilot_session:
+            return None
+
+        try:
+            events = await copilot_session.get_messages()
+
+            input_tokens = 0
+            output_tokens = 0
+            turns = 0
+            tool_calls = 0
+
+            for event in events:
+                event_type = getattr(event, "type", None)
+                if event_type is None:
+                    continue
+
+                # Convert enum to string if needed
+                type_str = event_type.value if hasattr(event_type, "value") else str(event_type)
+                data = getattr(event, "data", None)
+
+                if type_str == "assistant.usage" and data:
+                    input_tokens += getattr(data, "input_tokens", 0) or 0
+                    output_tokens += getattr(data, "output_tokens", 0) or 0
+
+                elif type_str == "assistant.turn_end":
+                    turns += 1
+
+                elif type_str == "tool.execution_complete":
+                    tool_calls += 1
+
+            logger.debug(
+                f"Session history usage: {input_tokens} in, {output_tokens} out, "
+                f"{turns} turns, {tool_calls} tool calls"
+            )
+
+            return {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "turns": turns,
+                "tool_calls": tool_calls,
+            }
+
+        except Exception as e:
+            logger.warning(f"Failed to get session usage from history: {e}")
+            return None
 
     async def get_context_usage(self, session: AdapterSession) -> tuple[int, int]:
         """Get context window usage.

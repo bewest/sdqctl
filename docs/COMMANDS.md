@@ -542,6 +542,7 @@ sdqctl sessions SUBCOMMAND [OPTIONS]
 |------------|---------|
 | `list` | List all sessions |
 | `stats` | Show detailed metrics for a session |
+| `fetch-metrics` | Fetch usage from SDK session history |
 | `delete` | Delete a session |
 | `cleanup` | Remove old sessions |
 | `resume` | Resume a session |
@@ -563,6 +564,9 @@ sdqctl sessions list --filter "audit-*"
 # Show detailed stats for a session
 sdqctl sessions stats my-session-id
 sdqctl sessions stats my-session-id --format json
+
+# Fetch metrics from SDK for an existing session
+sdqctl sessions fetch-metrics my-session-id
 
 # Delete session
 sdqctl sessions delete SESSION_ID --force
@@ -587,7 +591,10 @@ The `--verbose` flag and `stats` command display usage metrics from stored `metr
 | Duration | Total session runtime |
 | Items completed | Work items processed (if tracked) |
 
-> **Note:** Metrics are recorded when using `sdqctl iterate`. Sessions created via the SDK directly may not have stored metrics.
+**Metrics Sources:**
+- **Automatic**: Metrics are persisted when sessions are destroyed (new behavior)
+- **On-demand**: Use `fetch-metrics` to retrieve usage from SDK session history for older sessions
+- **iterate command**: Records metrics including work output
 
 > **Note:** `sessions resume` restores **SDK conversation history** (server-side).
 > For resuming from a local **PAUSE checkpoint file**, see [`resume`](#resume).

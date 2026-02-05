@@ -862,3 +862,118 @@ class TestRateLimitResumeFlow:
         
         assert stats.rate_limited is True
         assert "46 minutes" in stats.rate_limit_message
+
+
+class TestSessionsFetchMetricsCommand:
+    """Test sessions fetch-metrics command."""
+
+    def test_fetch_metrics_help(self, cli_runner):
+        """Test sessions fetch-metrics --help."""
+        result = cli_runner.invoke(cli, ["sessions", "fetch-metrics", "--help"])
+        assert result.exit_code == 0
+        assert "Fetch usage metrics" in result.output
+
+    def test_fetch_metrics_requires_session_id(self, cli_runner):
+        """Test fetch-metrics requires session_id."""
+        result = cli_runner.invoke(cli, ["sessions", "fetch-metrics"])
+        assert result.exit_code != 0
+        assert "SESSION_ID" in result.output or "Missing argument" in result.output
+
+
+class TestCopilotAdapterMetricsPersistence:
+    """Test automatic metrics persistence in CopilotAdapter."""
+
+    def test_persist_session_metrics_creates_file(self, tmp_path, monkeypatch):
+        """Test _persist_session_metrics creates metrics.json."""
+        from sdqctl.adapters.copilot import CopilotAdapter, SDQCTL_DIR
+        from sdqctl.adapters.stats import SessionStats
+        from sdqctl.adapters.base import AdapterSession
+        import sdqctl.adapters.copilot as copilot_module
+
+        # Mock SDQCTL_DIR
+        monkeypatch.setattr(copilot_module, "SDQCTL_DIR", tmp_path)
+
+        adapter = CopilotAdapter()
+        session = AdapterSession(
+            id="test-session",
+            adapter=adapter,
+            config=None,
+            sdk_session_id="sdk-123",
+        )
+
+        stats = SessionStats()
+        stats.total_input_tokens = 5000
+        stats.total_output_tokens = 2000
+        stats.turns = 3
+        stats.total_tool_calls = 10
+        stats.tool_calls_succeeded = 8
+        stats.tool_calls_failed = 2
+
+        adapter._persist_session_metrics(session, stats)
+
+        # Check metrics file was created
+        metrics_path = tmp_path / "sessions" / "sdk-123" / "metrics.json"
+        assert metrics_path.exists()
+
+        metrics = json.loads(metrics_path.read_text())
+        assert metrics["session_id"] == "sdk-123"
+        assert metrics["token_efficiency"]["input_tokens"] == 5000
+        assert metrics["token_efficiency"]["output_tokens"] == 2000
+        assert metrics["duration"]["cycles"] == 3
+        assert metrics["tools"]["total_calls"] == 10
+        assert metrics["tools"]["failed"] == 2
+
+
+class TestGetSessionUsageFromHistory:
+    """Test get_session_usage_from_history method."""
+
+    @pytest.mark.asyncio
+    async def test_get_usage_from_mocked_history(self):
+        """Test extracting usage from session history events."""
+        from sdqctl.adapters.copilot import CopilotAdapter
+        from sdqctl.adapters.base import AdapterSession
+
+        adapter = CopilotAdapter()
+
+        # Create mock session with mock history
+        mock_internal = MagicMock()
+
+        # Create mock events
+        class MockEventType:
+            def __init__(self, value):
+                self.value = value
+
+        class MockData:
+            def __init__(self, **kwargs):
+                for k, v in kwargs.items():
+                    setattr(self, k, v)
+
+        class MockEvent:
+            def __init__(self, type_val, data=None):
+                self.type = MockEventType(type_val)
+                self.data = data
+
+        mock_events = [
+            MockEvent("assistant.usage", MockData(input_tokens=1000, output_tokens=500)),
+            MockEvent("assistant.turn_end"),
+            MockEvent("tool.execution_complete"),
+            MockEvent("tool.execution_complete"),
+            MockEvent("assistant.usage", MockData(input_tokens=800, output_tokens=300)),
+            MockEvent("assistant.turn_end"),
+        ]
+        mock_internal.get_messages = AsyncMock(return_value=mock_events)
+
+        session = AdapterSession(
+            id="test",
+            adapter=adapter,
+            config=None,
+            _internal=mock_internal,
+        )
+
+        usage = await adapter.get_session_usage_from_history(session)
+
+        assert usage is not None
+        assert usage["input_tokens"] == 1800
+        assert usage["output_tokens"] == 800
+        assert usage["turns"] == 2
+        assert usage["tool_calls"] == 2
