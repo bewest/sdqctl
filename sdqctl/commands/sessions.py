@@ -107,6 +107,20 @@ def format_tokens(tokens: int) -> str:
         return str(tokens)
 
 
+def format_duration_short(seconds: float) -> str:
+    """Format duration in short form like '5m', '1h30m', '2h'."""
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    mins = int(seconds / 60)
+    if mins < 60:
+        return f"{mins}m"
+    hrs = mins // 60
+    remaining_mins = mins % 60
+    if remaining_mins:
+        return f"{hrs}h{remaining_mins}m"
+    return f"{hrs}h"
+
+
 def load_session_metrics(session_id: str) -> Optional[dict[str, Any]]:
     """Load metrics.json for a session if it exists.
 
@@ -211,28 +225,31 @@ async def _list_sessions_async(
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Modified", style="dim")
         if verbose:
+            table.add_column("Duration", style="blue", justify="right")
             table.add_column("Tokens", style="magenta", justify="right")
             table.add_column("Cycles", style="yellow", justify="right")
-        table.add_column("Summary", style="green", max_width=40 if not verbose else 30)
+        table.add_column("Summary", style="green", max_width=40 if not verbose else 25)
 
         for s in sessions_list[:50]:  # Limit display
             age = format_age(s.get("modified_time", ""))
             summary = s.get("summary") or ""
-            max_summary = 27 if verbose else 37
+            max_summary = 22 if verbose else 37
             if len(summary) > max_summary:
                 summary = summary[:max_summary] + "..."
 
             if verbose:
                 metrics = s.get("metrics", {})
                 token_eff = metrics.get("token_efficiency", {})
-                duration = metrics.get("duration", {})
+                duration_info = metrics.get("duration", {})
                 in_tok = token_eff.get("input_tokens", 0)
                 out_tok = token_eff.get("output_tokens", 0)
                 total_tok = in_tok + out_tok
-                cycles = duration.get("cycles", 0)
+                cycles = duration_info.get("cycles", 0)
+                total_secs = duration_info.get("total_seconds", 0)
                 tokens_str = format_tokens(total_tok) if total_tok else "-"
                 cycles_str = str(cycles) if cycles else "-"
-                table.add_row(s.get("id", "unknown"), age, tokens_str, cycles_str, summary)
+                duration_str = format_duration_short(total_secs) if total_secs else "-"
+                table.add_row(s.get("id", "unknown"), age, duration_str, tokens_str, cycles_str, summary)
             else:
                 table.add_row(s.get("id", "unknown"), age, summary)
 

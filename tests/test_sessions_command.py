@@ -12,6 +12,7 @@ from sdqctl.commands.sessions import (
     parse_duration,
     format_age,
     format_tokens,
+    format_duration_short,
     load_session_metrics,
     _list_sessions_async,
     _delete_session_async,
@@ -170,6 +171,33 @@ class TestFormatTokens:
         assert format_tokens(10000000) == "10.0M"
 
 
+class TestFormatDurationShort:
+    """Test format_duration_short utility."""
+
+    def test_seconds(self):
+        """Test seconds display."""
+        assert format_duration_short(30) == "30s"
+        assert format_duration_short(59) == "59s"
+
+    def test_minutes(self):
+        """Test minutes display."""
+        assert format_duration_short(60) == "1m"
+        assert format_duration_short(90) == "1m"
+        assert format_duration_short(300) == "5m"
+        assert format_duration_short(3540) == "59m"
+
+    def test_hours(self):
+        """Test hours display."""
+        assert format_duration_short(3600) == "1h"
+        assert format_duration_short(7200) == "2h"
+
+    def test_hours_and_minutes(self):
+        """Test combined hours and minutes."""
+        assert format_duration_short(5400) == "1h30m"
+        assert format_duration_short(3660) == "1h1m"
+        assert format_duration_short(9000) == "2h30m"
+
+
 class TestLoadSessionMetrics:
     """Test load_session_metrics utility."""
 
@@ -296,7 +324,7 @@ class TestSessionsListCommand:
         assert "older than 30 days" in result.output or "cleanup" in result.output
 
     def test_list_verbose_shows_tokens(self, cli_runner, mock_adapter, sample_sessions, tmp_path, monkeypatch):
-        """Test --verbose shows token usage from metrics."""
+        """Test --verbose shows token usage and duration from metrics."""
         import sdqctl.commands.sessions as sessions_module
         monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
 
@@ -307,7 +335,7 @@ class TestSessionsListCommand:
         session_dir.mkdir(parents=True)
         metrics = {
             "token_efficiency": {"input_tokens": 15000, "output_tokens": 5000},
-            "duration": {"cycles": 3},
+            "duration": {"cycles": 3, "total_seconds": 1800},
         }
         (session_dir / "metrics.json").write_text(json.dumps(metrics))
 
@@ -317,8 +345,11 @@ class TestSessionsListCommand:
         assert result.exit_code == 0
         assert "Tokens" in result.output
         assert "Cycles" in result.output
+        assert "Duration" in result.output
         # Should show token count for audit session
         assert "20.0K" in result.output or "15" in result.output
+        # Should show duration
+        assert "30m" in result.output
 
     def test_list_verbose_json_includes_metrics(self, cli_runner, mock_adapter, sample_sessions, tmp_path, monkeypatch):
         """Test --verbose --format json includes metrics."""
