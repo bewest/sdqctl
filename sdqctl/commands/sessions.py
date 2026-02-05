@@ -5,6 +5,8 @@ Usage:
     sdqctl sessions list
     sdqctl sessions list --format json
     sdqctl sessions list --filter "audit-*"
+    sdqctl sessions list --verbose
+    sdqctl sessions stats SESSION_ID
     sdqctl sessions delete SESSION_ID
     sdqctl sessions delete SESSION_ID --force
     sdqctl sessions cleanup --older-than 7d
@@ -16,7 +18,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -26,6 +28,9 @@ from ..adapters import get_adapter
 from .utils import run_async
 
 console = Console()
+
+# Default session storage directory
+SDQCTL_DIR = Path.home() / ".sdqctl"
 
 # Consultation prompt injected when resuming a CONSULT session
 CONSULTATION_PROMPT = """You are resuming a paused consultation session.
@@ -92,6 +97,34 @@ def format_age(timestamp_str: str) -> str:
         return "unknown"
 
 
+def format_tokens(tokens: int) -> str:
+    """Format token count with K/M suffix for readability."""
+    if tokens >= 1_000_000:
+        return f"{tokens / 1_000_000:.1f}M"
+    elif tokens >= 1_000:
+        return f"{tokens / 1_000:.1f}K"
+    else:
+        return str(tokens)
+
+
+def load_session_metrics(session_id: str) -> Optional[dict[str, Any]]:
+    """Load metrics.json for a session if it exists.
+
+    Args:
+        session_id: The session identifier
+
+    Returns:
+        Parsed metrics dict or None if not found
+    """
+    metrics_path = SDQCTL_DIR / "sessions" / session_id / "metrics.json"
+    if metrics_path.exists():
+        try:
+            return json.loads(metrics_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    return None
+
+
 @click.group("sessions")
 def sessions():
     """Manage conversation sessions.
@@ -117,17 +150,21 @@ def sessions():
 @click.option("--format", "output_format", type=click.Choice(["table", "json"]),
               default="table", help="Output format")
 @click.option("--filter", "name_filter", help="Filter by session name pattern (glob)")
+@click.option("--verbose", "-v", is_flag=True, help="Show token usage metrics")
 @click.option("--adapter", "-a", default="copilot", help="Adapter to use (default: copilot)")
-def list_sessions(output_format: str, name_filter: Optional[str], adapter: str):
+def list_sessions(output_format: str, name_filter: Optional[str], verbose: bool, adapter: str):
     """List all available sessions.
 
     Shows session ID, last modified time, and remote status.
     Use --filter to filter by session name pattern (e.g., 'audit-*').
+    Use --verbose to include token usage from stored metrics.
     """
-    run_async(_list_sessions_async(output_format, name_filter, adapter))
+    run_async(_list_sessions_async(output_format, name_filter, verbose, adapter))
 
 
-async def _list_sessions_async(output_format: str, name_filter: Optional[str], adapter_name: str):
+async def _list_sessions_async(
+    output_format: str, name_filter: Optional[str], verbose: bool, adapter_name: str
+):
     """Async implementation of list_sessions."""
     try:
         ai_adapter = get_adapter(adapter_name)
@@ -153,6 +190,13 @@ async def _list_sessions_async(output_format: str, name_filter: Optional[str], a
     # Sort by modified time (newest first)
     sessions_list.sort(key=lambda s: s.get("modified_time", ""), reverse=True)
 
+    # Enrich with metrics if verbose
+    if verbose:
+        for s in sessions_list:
+            metrics = load_session_metrics(s.get("id", ""))
+            if metrics:
+                s["metrics"] = metrics
+
     if output_format == "json":
         console.print_json(json.dumps({"sessions": sessions_list}))
     else:
@@ -166,19 +210,52 @@ async def _list_sessions_async(output_format: str, name_filter: Optional[str], a
         table = Table(title="Sessions")
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Modified", style="dim")
-        table.add_column("Summary", style="green", max_width=40)
+        if verbose:
+            table.add_column("Tokens", style="magenta", justify="right")
+            table.add_column("Cycles", style="yellow", justify="right")
+        table.add_column("Summary", style="green", max_width=40 if not verbose else 30)
 
         for s in sessions_list[:50]:  # Limit display
             age = format_age(s.get("modified_time", ""))
             summary = s.get("summary") or ""
-            if len(summary) > 37:
-                summary = summary[:37] + "..."
-            table.add_row(s.get("id", "unknown"), age, summary)
+            max_summary = 27 if verbose else 37
+            if len(summary) > max_summary:
+                summary = summary[:max_summary] + "..."
+
+            if verbose:
+                metrics = s.get("metrics", {})
+                token_eff = metrics.get("token_efficiency", {})
+                duration = metrics.get("duration", {})
+                in_tok = token_eff.get("input_tokens", 0)
+                out_tok = token_eff.get("output_tokens", 0)
+                total_tok = in_tok + out_tok
+                cycles = duration.get("cycles", 0)
+                tokens_str = format_tokens(total_tok) if total_tok else "-"
+                cycles_str = str(cycles) if cycles else "-"
+                table.add_row(s.get("id", "unknown"), age, tokens_str, cycles_str, summary)
+            else:
+                table.add_row(s.get("id", "unknown"), age, summary)
 
         console.print(table)
 
         if len(sessions_list) > 50:
             console.print(f"\n[dim]...and {len(sessions_list) - 50} more sessions[/dim]")
+
+        # Show totals in verbose mode
+        if verbose:
+            total_input = sum(
+                s.get("metrics", {}).get("token_efficiency", {}).get("input_tokens", 0)
+                for s in sessions_list
+            )
+            total_output = sum(
+                s.get("metrics", {}).get("token_efficiency", {}).get("output_tokens", 0)
+                for s in sessions_list
+            )
+            if total_input or total_output:
+                console.print(
+                    f"\n[dim]Total: {format_tokens(total_input)} input, "
+                    f"{format_tokens(total_output)} output tokens[/dim]"
+                )
 
         # Prompt for old sessions cleanup
         old_sessions = [
@@ -313,6 +390,103 @@ async def _cleanup_sessions_async(cutoff: datetime, dry_run: bool, adapter_name:
             await ai_adapter.stop()
     except Exception as e:
         console.print(f"[red]Error during cleanup: {e}[/red]")
+
+
+@sessions.command("stats")
+@click.argument("session_id")
+@click.option("--format", "output_format", type=click.Choice(["table", "json"]),
+              default="table", help="Output format")
+def session_stats(session_id: str, output_format: str):
+    """Show detailed metrics for a session.
+
+    Displays token usage, duration, cycles, and efficiency metrics
+    from the stored metrics.json file.
+
+    \b
+    Examples:
+      sdqctl sessions stats my-session-id
+      sdqctl sessions stats my-session-id --format json
+    """
+    metrics = load_session_metrics(session_id)
+
+    if not metrics:
+        console.print(f"[yellow]No metrics found for session: {session_id}[/yellow]")
+        console.print("[dim]Metrics are recorded when using 'sdqctl iterate'[/dim]")
+        return
+
+    if output_format == "json":
+        console.print_json(json.dumps(metrics))
+        return
+
+    # Table format - show detailed breakdown
+    console.print(f"\n[bold cyan]Session: {session_id}[/bold cyan]\n")
+
+    # Timing section
+    started = metrics.get("started_at", "unknown")
+    ended = metrics.get("ended_at", "ongoing")
+    duration = metrics.get("duration", {})
+    total_secs = duration.get("total_seconds", 0)
+
+    console.print("[bold]Timing[/bold]")
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column("Label", style="dim")
+    table.add_column("Value")
+
+    table.add_row("Started", started[:19] if started != "unknown" else started)
+    table.add_row("Ended", ended[:19] if ended and ended != "ongoing" else ended)
+    if total_secs:
+        mins, secs = divmod(int(total_secs), 60)
+        hrs, mins = divmod(mins, 60)
+        if hrs:
+            table.add_row("Duration", f"{hrs}h {mins}m {secs}s")
+        elif mins:
+            table.add_row("Duration", f"{mins}m {secs}s")
+        else:
+            table.add_row("Duration", f"{secs}s")
+    table.add_row("Cycles", str(duration.get("cycles", 0)))
+    if duration.get("seconds_per_cycle"):
+        table.add_row("Avg/Cycle", f"{duration['seconds_per_cycle']:.1f}s")
+    console.print(table)
+
+    # Token section
+    token_eff = metrics.get("token_efficiency", {})
+    input_tok = token_eff.get("input_tokens", 0)
+    output_tok = token_eff.get("output_tokens", 0)
+    total_tok = input_tok + output_tok
+
+    console.print("\n[bold]Token Usage[/bold]")
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column("Label", style="dim")
+    table.add_column("Value", justify="right")
+
+    table.add_row("Input tokens", format_tokens(input_tok))
+    table.add_row("Output tokens", format_tokens(output_tok))
+    table.add_row("Total tokens", f"[bold]{format_tokens(total_tok)}[/bold]")
+    if token_eff.get("io_ratio"):
+        table.add_row("I/O ratio", f"{token_eff['io_ratio']:.2f}")
+    if token_eff.get("tokens_per_item"):
+        table.add_row("Tokens/item", format_tokens(int(token_eff['tokens_per_item'])))
+    console.print(table)
+
+    # Work output section
+    work = metrics.get("work_output", {})
+    items = work.get("items_completed", 0)
+    lines = work.get("lines_changed", 0)
+
+    if items or lines:
+        console.print("\n[bold]Work Output[/bold]")
+        table = Table(show_header=False, box=None, padding=(0, 2))
+        table.add_column("Label", style="dim")
+        table.add_column("Value", justify="right")
+        if items:
+            table.add_row("Items completed", str(items))
+        if lines:
+            table.add_row("Lines changed", str(lines))
+        if duration.get("seconds_per_item"):
+            table.add_row("Avg time/item", f"{duration['seconds_per_item']:.1f}s")
+        console.print(table)
+
+    console.print()
 
 
 @sessions.command("resume")

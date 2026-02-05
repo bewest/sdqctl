@@ -541,6 +541,7 @@ sdqctl sessions SUBCOMMAND [OPTIONS]
 | Subcommand | Purpose |
 |------------|---------|
 | `list` | List all sessions |
+| `stats` | Show detailed metrics for a session |
 | `delete` | Delete a session |
 | `cleanup` | Remove old sessions |
 | `resume` | Resume a session |
@@ -550,11 +551,18 @@ sdqctl sessions SUBCOMMAND [OPTIONS]
 # List all sessions
 sdqctl sessions list
 
+# List with token usage metrics
+sdqctl sessions list --verbose
+
 # JSON format
 sdqctl sessions list --format json
 
 # Filter by pattern
 sdqctl sessions list --filter "audit-*"
+
+# Show detailed stats for a session
+sdqctl sessions stats my-session-id
+sdqctl sessions stats my-session-id --format json
 
 # Delete session
 sdqctl sessions delete SESSION_ID --force
@@ -566,6 +574,20 @@ sdqctl sessions cleanup --older-than 30d
 # Resume session
 sdqctl sessions resume my-session
 ```
+
+**Session Metrics:**
+
+The `--verbose` flag and `stats` command display usage metrics from stored `metrics.json` files:
+
+| Metric | Description |
+|--------|-------------|
+| Input tokens | Total tokens sent to the model |
+| Output tokens | Total tokens received from the model |
+| Cycles | Number of iteration cycles completed |
+| Duration | Total session runtime |
+| Items completed | Work items processed (if tracked) |
+
+> **Note:** Metrics are recorded when using `sdqctl iterate`. Sessions created via the SDK directly may not have stored metrics.
 
 > **Note:** `sessions resume` restores **SDK conversation history** (server-side).
 > For resuming from a local **PAUSE checkpoint file**, see [`resume`](#resume).

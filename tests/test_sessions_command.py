@@ -11,9 +11,12 @@ from sdqctl.cli import cli
 from sdqctl.commands.sessions import (
     parse_duration,
     format_age,
+    format_tokens,
+    load_session_metrics,
     _list_sessions_async,
     _delete_session_async,
     _cleanup_sessions_async,
+    SDQCTL_DIR,
 )
 
 
@@ -144,6 +147,79 @@ class TestFormatAge:
         assert result in ["just now", "unknown"] or "ago" in result
 
 
+class TestFormatTokens:
+    """Test format_tokens utility."""
+
+    def test_small_numbers(self):
+        """Test small numbers show as-is."""
+        assert format_tokens(0) == "0"
+        assert format_tokens(500) == "500"
+        assert format_tokens(999) == "999"
+
+    def test_thousands(self):
+        """Test K suffix for thousands."""
+        assert format_tokens(1000) == "1.0K"
+        assert format_tokens(1500) == "1.5K"
+        assert format_tokens(25000) == "25.0K"
+        assert format_tokens(999999) == "1000.0K"
+
+    def test_millions(self):
+        """Test M suffix for millions."""
+        assert format_tokens(1000000) == "1.0M"
+        assert format_tokens(2500000) == "2.5M"
+        assert format_tokens(10000000) == "10.0M"
+
+
+class TestLoadSessionMetrics:
+    """Test load_session_metrics utility."""
+
+    def test_load_existing_metrics(self, tmp_path, monkeypatch):
+        """Test loading existing metrics.json."""
+        # Mock SDQCTL_DIR to use tmp_path
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        session_id = "test-session"
+        session_dir = tmp_path / "sessions" / session_id
+        session_dir.mkdir(parents=True)
+
+        metrics = {
+            "schema_version": "1.0",
+            "session_id": session_id,
+            "token_efficiency": {
+                "input_tokens": 5000,
+                "output_tokens": 2000,
+            },
+        }
+        (session_dir / "metrics.json").write_text(json.dumps(metrics))
+
+        result = load_session_metrics(session_id)
+        assert result is not None
+        assert result["session_id"] == session_id
+        assert result["token_efficiency"]["input_tokens"] == 5000
+
+    def test_load_missing_metrics(self, tmp_path, monkeypatch):
+        """Test loading when metrics.json doesn't exist."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        result = load_session_metrics("nonexistent-session")
+        assert result is None
+
+    def test_load_invalid_json(self, tmp_path, monkeypatch):
+        """Test loading invalid JSON returns None."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        session_id = "bad-json"
+        session_dir = tmp_path / "sessions" / session_id
+        session_dir.mkdir(parents=True)
+        (session_dir / "metrics.json").write_text("not valid json{")
+
+        result = load_session_metrics(session_id)
+        assert result is None
+
+
 class TestSessionsListCommand:
     """Test sessions list command."""
     
@@ -218,6 +294,141 @@ class TestSessionsListCommand:
         assert result.exit_code == 0
         # Should show tip about old sessions
         assert "older than 30 days" in result.output or "cleanup" in result.output
+
+    def test_list_verbose_shows_tokens(self, cli_runner, mock_adapter, sample_sessions, tmp_path, monkeypatch):
+        """Test --verbose shows token usage from metrics."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        mock_adapter.list_sessions = AsyncMock(return_value=sample_sessions)
+
+        # Create metrics for one session
+        session_dir = tmp_path / "sessions" / "audit-2026-01"
+        session_dir.mkdir(parents=True)
+        metrics = {
+            "token_efficiency": {"input_tokens": 15000, "output_tokens": 5000},
+            "duration": {"cycles": 3},
+        }
+        (session_dir / "metrics.json").write_text(json.dumps(metrics))
+
+        with patch("sdqctl.commands.sessions.get_adapter", return_value=mock_adapter):
+            result = cli_runner.invoke(cli, ["sessions", "list", "--verbose"])
+
+        assert result.exit_code == 0
+        assert "Tokens" in result.output
+        assert "Cycles" in result.output
+        # Should show token count for audit session
+        assert "20.0K" in result.output or "15" in result.output
+
+    def test_list_verbose_json_includes_metrics(self, cli_runner, mock_adapter, sample_sessions, tmp_path, monkeypatch):
+        """Test --verbose --format json includes metrics."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        mock_adapter.list_sessions = AsyncMock(return_value=sample_sessions)
+
+        # Create metrics for one session
+        session_dir = tmp_path / "sessions" / "audit-2026-01"
+        session_dir.mkdir(parents=True)
+        metrics = {
+            "token_efficiency": {"input_tokens": 15000, "output_tokens": 5000},
+        }
+        (session_dir / "metrics.json").write_text(json.dumps(metrics))
+
+        with patch("sdqctl.commands.sessions.get_adapter", return_value=mock_adapter):
+            result = cli_runner.invoke(cli, ["sessions", "list", "--verbose", "--format", "json"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        # Find the audit session and check metrics
+        audit_session = next((s for s in data["sessions"] if s["id"] == "audit-2026-01"), None)
+        assert audit_session is not None
+        assert "metrics" in audit_session
+        assert audit_session["metrics"]["token_efficiency"]["input_tokens"] == 15000
+
+
+class TestSessionsStatsCommand:
+    """Test sessions stats command."""
+
+    def test_stats_help(self, cli_runner):
+        """Test sessions stats --help."""
+        result = cli_runner.invoke(cli, ["sessions", "stats", "--help"])
+        assert result.exit_code == 0
+        assert "Show detailed metrics" in result.output
+
+    def test_stats_missing_session(self, cli_runner, tmp_path, monkeypatch):
+        """Test stats for nonexistent session."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        result = cli_runner.invoke(cli, ["sessions", "stats", "nonexistent"])
+        assert result.exit_code == 0
+        assert "No metrics found" in result.output
+
+    def test_stats_table_format(self, cli_runner, tmp_path, monkeypatch):
+        """Test stats with table output."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        session_id = "test-stats-session"
+        session_dir = tmp_path / "sessions" / session_id
+        session_dir.mkdir(parents=True)
+        metrics = {
+            "schema_version": "1.0",
+            "session_id": session_id,
+            "started_at": "2026-02-05T10:00:00+00:00",
+            "ended_at": "2026-02-05T10:30:00+00:00",
+            "token_efficiency": {
+                "input_tokens": 50000,
+                "output_tokens": 15000,
+                "io_ratio": 0.3,
+            },
+            "duration": {
+                "total_seconds": 1800,
+                "cycles": 5,
+                "seconds_per_cycle": 360,
+            },
+            "work_output": {
+                "items_completed": 3,
+            },
+        }
+        (session_dir / "metrics.json").write_text(json.dumps(metrics))
+
+        result = cli_runner.invoke(cli, ["sessions", "stats", session_id])
+
+        assert result.exit_code == 0
+        assert session_id in result.output
+        assert "Timing" in result.output
+        assert "Token Usage" in result.output
+        assert "50.0K" in result.output or "50000" in result.output
+        assert "Work Output" in result.output
+
+    def test_stats_json_format(self, cli_runner, tmp_path, monkeypatch):
+        """Test stats with JSON output."""
+        import sdqctl.commands.sessions as sessions_module
+        monkeypatch.setattr(sessions_module, "SDQCTL_DIR", tmp_path)
+
+        session_id = "json-stats"
+        session_dir = tmp_path / "sessions" / session_id
+        session_dir.mkdir(parents=True)
+        metrics = {
+            "session_id": session_id,
+            "token_efficiency": {"input_tokens": 1000, "output_tokens": 500},
+        }
+        (session_dir / "metrics.json").write_text(json.dumps(metrics))
+
+        result = cli_runner.invoke(cli, ["sessions", "stats", session_id, "--format", "json"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["session_id"] == session_id
+        assert data["token_efficiency"]["input_tokens"] == 1000
+
+    def test_stats_requires_session_id(self, cli_runner):
+        """Test stats requires session_id argument."""
+        result = cli_runner.invoke(cli, ["sessions", "stats"])
+        assert result.exit_code != 0
+        assert "SESSION_ID" in result.output or "Missing argument" in result.output
 
 
 class TestSessionsDeleteCommand:
@@ -380,7 +591,19 @@ class TestAsyncImplementations:
         mock_adapter.list_sessions = AsyncMock(return_value=sample_sessions)
         
         with patch("sdqctl.commands.sessions.get_adapter", return_value=mock_adapter):
-            await _list_sessions_async("json", None, "mock")
+            await _list_sessions_async("json", None, False, "mock")
+        
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert "sessions" in data
+
+    @pytest.mark.asyncio
+    async def test_list_sessions_async_verbose(self, capsys, mock_adapter, sample_sessions):
+        """Test _list_sessions_async with verbose flag."""
+        mock_adapter.list_sessions = AsyncMock(return_value=sample_sessions)
+        
+        with patch("sdqctl.commands.sessions.get_adapter", return_value=mock_adapter):
+            await _list_sessions_async("json", None, True, "mock")
         
         captured = capsys.readouterr()
         data = json.loads(captured.out)
