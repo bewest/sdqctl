@@ -285,3 +285,118 @@ class TestRenderedCycleEquality:
         rc1 = RenderedCycle(number=1, context_files=[], context_content="")
         rc2 = RenderedCycle(number=2, context_files=[], context_content="")
         assert rc1 != rc2
+
+
+class TestElideInRenderer:
+    """Tests for ELIDE directive processing in renderer.
+    
+    Regression tests ensuring that ELIDE directives are properly processed
+    when rendering workflows, merging adjacent steps with RUN placeholders.
+    """
+
+    def test_render_elide_merges_prompt_and_run(self):
+        """ELIDE should merge PROMPT with following RUN into single prompt."""
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.renderer import render_workflow
+
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Check the status.
+ELIDE
+RUN git status
+ELIDE
+PROMPT Fix any issues.
+"""
+        conv = ConversationFile.parse(content)
+        rendered = render_workflow(conv, include_context=False)
+        
+        # Should have 1 merged prompt instead of 2 separate ones
+        assert len(rendered.cycles) == 1
+        cycle = rendered.cycles[0]
+        assert len(cycle.prompts) == 1
+        
+        # Merged prompt should contain both text and RUN placeholder
+        merged = cycle.prompts[0].resolved
+        assert "Check the status." in merged
+        assert "{{RUN:0:git status}}" in merged
+        assert "Fix any issues." in merged
+
+    def test_render_elide_multiple_runs(self):
+        """ELIDE should merge multiple RUN commands with placeholders."""
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.renderer import render_workflow
+
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Review build and tests.
+ELIDE
+RUN make build
+ELIDE
+RUN make test
+ELIDE
+PROMPT Summarize results.
+"""
+        conv = ConversationFile.parse(content)
+        rendered = render_workflow(conv, include_context=False)
+        
+        cycle = rendered.cycles[0]
+        assert len(cycle.prompts) == 1
+        
+        merged = cycle.prompts[0].resolved
+        assert "Review build and tests." in merged
+        assert "{{RUN:0:make build}}" in merged
+        assert "{{RUN:1:make test}}" in merged
+        assert "Summarize results." in merged
+
+    def test_render_no_elide_separate_prompts(self):
+        """Without ELIDE, prompts should remain separate."""
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.renderer import render_workflow
+
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT First prompt.
+RUN git status
+PROMPT Second prompt.
+"""
+        conv = ConversationFile.parse(content)
+        rendered = render_workflow(conv, include_context=False)
+        
+        cycle = rendered.cycles[0]
+        # RUN step is not a prompt type, so we should have 2 prompts
+        assert len(cycle.prompts) == 2
+        assert "First prompt." in cycle.prompts[0].resolved
+        assert "Second prompt." in cycle.prompts[1].resolved
+
+    def test_render_elide_preserves_multiline_prompt(self):
+        """ELIDE should work correctly with multi-line PROMPT content."""
+        from sdqctl.core.conversation import ConversationFile
+        from sdqctl.core.renderer import render_workflow
+
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT ## Phase 1
+Review the code below.
+Check for errors.
+ELIDE
+RUN cat src/main.py
+ELIDE
+PROMPT ## Phase 2
+Fix any issues found.
+"""
+        conv = ConversationFile.parse(content)
+        rendered = render_workflow(conv, include_context=False)
+        
+        cycle = rendered.cycles[0]
+        assert len(cycle.prompts) == 1
+        
+        merged = cycle.prompts[0].resolved
+        # Multi-line content preserved
+        assert "## Phase 1" in merged
+        assert "Review the code below." in merged
+        assert "Check for errors." in merged
+        # RUN placeholder included
+        assert "{{RUN:0:cat src/main.py}}" in merged
+        # Second multi-line prompt included
+        assert "## Phase 2" in merged
+        assert "Fix any issues found." in merged

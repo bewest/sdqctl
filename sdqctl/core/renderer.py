@@ -28,6 +28,9 @@ from .refcat import (
     parse_ref,
 )
 
+# Import ELIDE processing for step merging
+from ..commands.elide import process_elided_steps
+
 
 @dataclass
 class RenderedPrompt:
@@ -187,12 +190,30 @@ def render_cycle(
                 resolved_prologues.append(TOPICS[topic])
             # Unknown topics are ignored (validation should catch them)
 
+    # Process ELIDE directives to merge adjacent steps
+    # This converts conv.steps into merged prompts with placeholders
+    merged_steps = process_elided_steps(conv.steps)
+    
+    # Extract prompts from merged steps
+    prompts_to_render = []
+    for step in merged_steps:
+        step_type = step.type if hasattr(step, 'type') else step.get('type', '')
+        step_content = step.content if hasattr(step, 'content') else step.get('content', '')
+        
+        if step_type in ("prompt", "merged_prompt"):
+            prompts_to_render.append(step_content)
+    
+    # Fallback: if no prompts extracted from steps but conv.prompts has content,
+    # use conv.prompts directly (for backwards compatibility with direct assignment)
+    if not prompts_to_render and conv.prompts:
+        prompts_to_render = list(conv.prompts)
+    
     # Render all prompts
     base_path = conv.source_path.parent if conv.source_path else None
     rendered_prompts = []
-    total_prompts = len(conv.prompts)
+    total_prompts = len(prompts_to_render)
 
-    for i, prompt in enumerate(conv.prompts, 1):
+    for i, prompt in enumerate(prompts_to_render, 1):
         rendered = render_prompt(
             prompt=prompt,
             prologues=resolved_prologues,

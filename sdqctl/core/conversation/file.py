@@ -207,15 +207,23 @@ class ConversationFile:
         last_run_step: Optional[ConversationStep] = None
 
         for line_num, line in enumerate(content.split("\n"), 1):
-            # Handle multiline continuation
+            # Skip comments (but not empty lines - they may be part of multiline)
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+
+            # Handle multiline continuation for PROMPT, ON-CONTEXT-LIMIT-PROMPT, COMPACT-SUMMARY
+            # Continue until we hit another directive (not an empty line or plain text)
             if current_multiline is not None:
-                if line.startswith("  ") or line.startswith("\t"):
-                    # Continuation of multiline
-                    current_multiline[1].append(line.strip())
-                    continue
-                else:
-                    # End of multiline - process it
+                # Check if this line starts a new directive
+                potential_directive = parse_line(stripped, line_num) if stripped else None
+                
+                if potential_directive is not None:
+                    # New directive found - end multiline and process accumulated content
                     dtype, lines, start_line = current_multiline
+                    # Strip trailing empty lines from accumulated content
+                    while lines and not lines[-1]:
+                        lines.pop()
                     value = "\n".join(lines)
                     directive = Directive(
                         type=dtype, value=value, line_number=start_line, raw_line="<multiline>"
@@ -227,10 +235,15 @@ class ConversationFile:
                     else:
                         apply_directive(conv, directive)
                     current_multiline = None
+                    # Fall through to process the new directive below
+                else:
+                    # Not a directive - accumulate as multiline content
+                    # Preserve empty lines within multiline blocks
+                    current_multiline[1].append(stripped)
+                    continue
 
-            # Skip empty lines and comments
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
+            # Skip empty lines outside of multiline context
+            if not stripped:
                 continue
 
             # Parse directive
@@ -301,6 +314,9 @@ class ConversationFile:
         # Handle trailing multiline
         if current_multiline is not None:
             dtype, lines, start_line = current_multiline
+            # Strip trailing empty lines from accumulated content
+            while lines and not lines[-1]:
+                lines.pop()
             value = "\n".join(lines)
             directive = Directive(
                 type=dtype, value=value, line_number=start_line, raw_line="<multiline>"

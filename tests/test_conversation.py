@@ -2268,3 +2268,144 @@ PROMPT Test
         )
         output = conv.to_string()
         assert "COMPACTION-MAX 85" in output
+
+
+class TestMultilinePromptParsing:
+    """Tests for multi-line PROMPT directive parsing.
+    
+    Regression tests for the fix ensuring PROMPT content continues until
+    the next directive, not just the first line or until an empty line.
+    """
+
+    def test_multiline_prompt_continues_until_next_directive(self):
+        """Multi-line PROMPT should accumulate content until the next directive."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT First line of prompt.
+Second line of prompt.
+Third line of prompt.
+RUN echo "test"
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 1
+        # All three lines should be captured
+        assert "First line of prompt." in conv.prompts[0]
+        assert "Second line of prompt." in conv.prompts[0]
+        assert "Third line of prompt." in conv.prompts[0]
+
+    def test_multiline_prompt_with_empty_lines_preserved(self):
+        """Empty lines within a multi-line PROMPT should be preserved."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT First paragraph.
+
+Second paragraph after blank line.
+
+Third paragraph.
+PROMPT Next turn.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 2
+        # Empty lines should be preserved within the first prompt
+        assert "First paragraph." in conv.prompts[0]
+        assert "Second paragraph" in conv.prompts[0]
+        assert "Third paragraph" in conv.prompts[0]
+        assert "Next turn." in conv.prompts[1]
+
+    def test_multiline_prompt_ends_at_elide(self):
+        """Multi-line PROMPT should end when ELIDE directive is encountered."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Review the status below.
+Check for any errors.
+ELIDE
+RUN git status
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 1
+        assert "Review the status below." in conv.prompts[0]
+        assert "Check for any errors." in conv.prompts[0]
+
+    def test_multiline_prompt_ends_at_run(self):
+        """Multi-line PROMPT should end when RUN directive is encountered."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT Execute the following:
+- Build the project
+- Run tests
+RUN make test
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 1
+        assert "Execute the following:" in conv.prompts[0]
+        assert "Build the project" in conv.prompts[0]
+        assert "Run tests" in conv.prompts[0]
+
+    def test_multiple_multiline_prompts(self):
+        """Multiple multi-line PROMPTs should each be captured correctly."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT ## Phase 1
+Review the code.
+Look for bugs.
+PROMPT ## Phase 2
+Fix the issues found.
+Add tests.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 2
+        assert "Phase 1" in conv.prompts[0]
+        assert "Review the code" in conv.prompts[0]
+        assert "Look for bugs" in conv.prompts[0]
+        assert "Phase 2" in conv.prompts[1]
+        assert "Fix the issues" in conv.prompts[1]
+        assert "Add tests" in conv.prompts[1]
+
+    def test_multiline_prompt_with_markdown_formatting(self):
+        """Multi-line PROMPT with Markdown formatting should be preserved."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT ## Status Check
+
+Review the following:
+
+| Item | Status |
+|------|--------|
+| Build | ✓ |
+| Tests | ✓ |
+
+**Next steps:**
+- Fix any issues
+- Commit changes
+PROMPT Continue.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 2
+        # Markdown table should be preserved
+        assert "| Item | Status |" in conv.prompts[0]
+        assert "Build" in conv.prompts[0]
+        assert "**Next steps:**" in conv.prompts[0]
+        assert "Fix any issues" in conv.prompts[0]
+
+    def test_multiline_prompt_comments_stripped(self):
+        """Comments within multi-line PROMPT should be stripped."""
+        content = """MODEL gpt-4
+ADAPTER mock
+PROMPT First line.
+# This is a comment and should be ignored
+Second line.
+PROMPT Next.
+"""
+        conv = ConversationFile.parse(content)
+        
+        assert len(conv.prompts) == 2
+        assert "First line." in conv.prompts[0]
+        assert "Second line." in conv.prompts[0]
+        # Comment should not appear
+        assert "comment" not in conv.prompts[0]
