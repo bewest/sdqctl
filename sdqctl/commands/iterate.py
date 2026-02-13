@@ -784,6 +784,12 @@ async def _cycle_async(
                         in ("prompt", "merged_prompt")
                     )
 
+                    # Update workflow progress with accurate count (after ELIDE)
+                    # This fixes the display to show correct "Prompt X/Y"
+                    if cycle_num == 0:
+                        workflow_progress.total_prompts = total_prompts
+                        workflow_ctx.total_prompts = total_prompts
+
                     prompt_idx = 0
                     for step in steps_to_process:
                         step_type = (
