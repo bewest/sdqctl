@@ -777,7 +777,12 @@ async def _cycle_async(
                     # Process ELIDE directives - merge adjacent steps into single prompts
                     steps_to_process = process_elided_steps(steps_to_process)
 
-                    total_prompts = len(conv.prompts)
+                    # Count actual prompt turns after ELIDE merging (not raw conv.prompts)
+                    total_prompts = sum(
+                        1 for s in steps_to_process
+                        if (s.type if hasattr(s, 'type') else s.get('type', ''))
+                        in ("prompt", "merged_prompt")
+                    )
 
                     prompt_idx = 0
                     for step in steps_to_process:
@@ -793,6 +798,7 @@ async def _cycle_async(
                         if step_type == "prompt":
                             prompt = step_content
                             session.state.prompt_index = prompt_idx
+                            step_line = getattr(step, 'line_number', 0)
 
                             # Update workflow context for logging
                             workflow_ctx.prompt = prompt_idx + 1
@@ -809,6 +815,7 @@ async def _cycle_async(
                                 template_vars=cycle_vars,
                                 no_stop_file_prologue=no_stop_file_prologue,
                                 verbosity=verbosity,
+                                line_number=step_line,
                             )
                             build_result = build_full_prompt(
                                 prompt_ctx, conv, session, loop_detector
@@ -883,6 +890,7 @@ async def _cycle_async(
                         elif step_type == "merged_prompt":
                             # Handle ELIDE-merged steps: execute context-generating directives and inject output
                             prompt = step_content
+                            step_line = getattr(step, 'line_number', 0)
                             run_commands = getattr(step, 'run_commands', [])
                             verify_commands = getattr(step, 'verify_commands', [])
                             refcat_commands = getattr(step, 'refcat_commands', [])
@@ -892,10 +900,15 @@ async def _cycle_async(
                             custom_directives = getattr(step, 'custom_directives', [])
 
                             # Execute RUN commands and replace placeholders
+                            import time as _time
                             from .utils import run_subprocess, truncate_output
                             run_cwd = Path(conv.run_cwd or conv.cwd or ".").resolve()
+                            total_run_cmds = len(run_commands)
                             for cmd_idx, cmd in enumerate(run_commands):
                                 placeholder = f"{{{{RUN:{cmd_idx}:{cmd}}}}}"
+                                # Show RUN progress
+                                workflow_progress.run_executing(cmd, cmd_idx, total_run_cmds)
+                                run_start = _time.time()
                                 try:
                                     result = run_subprocess(
                                         cmd,
@@ -904,14 +917,19 @@ async def _cycle_async(
                                         cwd=run_cwd,
                                         env=conv.run_env or None,
                                     )
+                                    run_duration = _time.time() - run_start
                                     output = result.stdout or ""
+                                    success = result.returncode == 0
                                     if result.returncode != 0 and result.stderr:
                                         output = f"{output}\n[stderr]\n{result.stderr}"
                                     # Truncate output if needed
                                     output = truncate_output(output, limit=conv.run_output_limit or 50000)
                                     prompt = prompt.replace(placeholder, f"+ {cmd}\n{output}")
+                                    workflow_progress.run_complete(cmd_idx, total_run_cmds, success, run_duration)
                                 except Exception as e:
+                                    run_duration = _time.time() - run_start
                                     prompt = prompt.replace(placeholder, f"+ {cmd}\n[Error: {e}]")
+                                    workflow_progress.run_complete(cmd_idx, total_run_cmds, False, run_duration)
 
                             # Execute VERIFY commands and replace placeholders
                             # Load verifiers including plugins from the workflow's workspace
@@ -1074,6 +1092,7 @@ async def _cycle_async(
                                 template_vars=cycle_vars,
                                 no_stop_file_prologue=no_stop_file_prologue,
                                 verbosity=verbosity,
+                                line_number=step_line,
                             )
                             build_result = build_full_prompt(
                                 prompt_ctx, conv, session, loop_detector

@@ -249,12 +249,16 @@ class WorkflowProgress:
         cycle: int,
         prompt: int,
         context_pct: Optional[float] = None,
+        line_number: Optional[int] = None,
     ) -> str:
         """Format cycle/prompt position string."""
         if self.total_cycles > 1:
             pos = f"[Cycle {cycle}/{self.total_cycles}] Prompt {prompt}/{self.total_prompts}"
         else:
             pos = f"Prompt {prompt}/{self.total_prompts}"
+
+        if line_number is not None and line_number > 0:
+            pos += f" (line {line_number})"
 
         if context_pct is not None:
             pos += f" (ctx: {context_pct:.0f}%)"
@@ -289,6 +293,7 @@ class WorkflowProgress:
         prompt: int,
         context_pct: Optional[float] = None,
         preview: Optional[str] = None,
+        line_number: Optional[int] = None,
     ) -> None:
         """Report that a prompt is being sent.
 
@@ -297,9 +302,10 @@ class WorkflowProgress:
             prompt: Current prompt (1-indexed)
             context_pct: Context window usage percentage
             preview: Optional prompt preview (shown at -v)
+            line_number: Source line number from .conv file
         """
         self.prompt_start_time = time.time()
-        pos = self._format_position(cycle, prompt, context_pct)
+        pos = self._format_position(cycle, prompt, context_pct, line_number)
 
         if preview and self.verbosity >= 1:
             # Truncate preview
@@ -310,6 +316,46 @@ class WorkflowProgress:
         else:
             message = f"{pos}: Sending..."
 
+        self._overwrite_line(message)
+
+    def run_executing(
+        self,
+        cmd: str,
+        cmd_idx: int,
+        total_cmds: int,
+    ) -> None:
+        """Report that a RUN command is being executed.
+
+        Args:
+            cmd: The command being run
+            cmd_idx: Current command index (0-indexed)
+            total_cmds: Total number of commands in this merged step
+        """
+        # Truncate long commands
+        display_cmd = cmd if len(cmd) <= 60 else cmd[:57] + "..."
+        message = f"  ⚡ RUN {cmd_idx + 1}/{total_cmds}: {display_cmd}"
+        self._overwrite_line(message)
+
+    def run_complete(
+        self,
+        cmd_idx: int,
+        total_cmds: int,
+        success: bool = True,
+        duration: Optional[float] = None,
+    ) -> None:
+        """Report that a RUN command completed.
+
+        Args:
+            cmd_idx: Current command index (0-indexed)
+            total_cmds: Total number of commands
+            success: Whether the command succeeded
+            duration: Time taken in seconds
+        """
+        status = "✓" if success else "✗"
+        if duration is not None:
+            message = f"  {status} RUN {cmd_idx + 1}/{total_cmds} ({duration:.1f}s)"
+        else:
+            message = f"  {status} RUN {cmd_idx + 1}/{total_cmds}"
         self._overwrite_line(message)
 
     def prompt_complete(

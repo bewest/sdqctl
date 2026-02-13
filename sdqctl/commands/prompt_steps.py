@@ -37,6 +37,7 @@ class PromptContext:
     template_vars: dict[str, str]
     no_stop_file_prologue: bool = False
     verbosity: int = 0
+    line_number: int = 0  # Source line number from .conv file
 
 
 @dataclass
@@ -135,12 +136,13 @@ def emit_prompt_progress(
         prompt_writer: PromptWriter for --show-prompt output
         full_prompt: The complete prompt to display
     """
-    # Enhanced progress with context %
+    # Enhanced progress with context % and line number
     workflow_progress.prompt_sending(
         cycle=ctx.cycle_num + 1,
         prompt=ctx.prompt_idx + 1,
         context_pct=context_pct,
-        preview=ctx.prompt[:50] if ctx.verbosity >= 1 else None
+        preview=ctx.prompt[:50] if ctx.verbosity >= 1 else None,
+        line_number=ctx.line_number if ctx.line_number > 0 else None,
     )
 
     # Write prompt to stderr if --show-prompt / -P enabled

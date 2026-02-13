@@ -530,3 +530,162 @@ class TestAgentResponse:
         captured = capsys.readouterr()
         assert "[Agent Cycle 2]" in captured.out
         assert "Cycle response" in captured.out
+
+
+class TestWorkflowProgressLineNumber:
+    """Tests for line number tracking in WorkflowProgress."""
+
+    def test_format_position_with_line_number(self):
+        """Line number should be included in position string."""
+        from sdqctl.core.progress import WorkflowProgress
+
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=5)
+        pos = wp._format_position(cycle=1, prompt=2, line_number=42)
+        
+        assert "Prompt 2/5" in pos
+        assert "(line 42)" in pos
+
+    def test_format_position_with_line_and_context(self):
+        """Line number and context % should both be shown."""
+        from sdqctl.core.progress import WorkflowProgress
+
+        wp = WorkflowProgress("test", total_cycles=2, total_prompts=10)
+        pos = wp._format_position(cycle=1, prompt=3, context_pct=55.0, line_number=100)
+        
+        assert "[Cycle 1/2]" in pos
+        assert "Prompt 3/10" in pos
+        assert "(line 100)" in pos
+        assert "(ctx: 55%)" in pos
+
+    def test_format_position_no_line_number(self):
+        """When line_number is None, it should not appear."""
+        from sdqctl.core.progress import WorkflowProgress
+
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=3)
+        pos = wp._format_position(cycle=1, prompt=1, line_number=None)
+        
+        assert "Prompt 1/3" in pos
+        assert "line" not in pos
+
+    def test_format_position_zero_line_number(self):
+        """When line_number is 0, it should not appear."""
+        from sdqctl.core.progress import WorkflowProgress
+
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=3)
+        pos = wp._format_position(cycle=1, prompt=1, line_number=0)
+        
+        assert "Prompt 1/3" in pos
+        assert "line" not in pos
+
+
+class TestWorkflowProgressRunExecution:
+    """Tests for RUN execution progress in WorkflowProgress."""
+
+    def test_run_executing_shows_command(self, capsys):
+        """run_executing should show the command being run."""
+        from sdqctl.core.progress import WorkflowProgress, set_quiet
+
+        set_quiet(False)
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=5)
+        wp.run_executing("git status", cmd_idx=0, total_cmds=3)
+        
+        # Force output by ending TTY mode
+        wp._end_overwrite()
+        captured = capsys.readouterr()
+        assert "RUN 1/3" in captured.out
+        assert "git status" in captured.out
+
+    def test_run_executing_truncates_long_command(self, capsys):
+        """Long commands should be truncated in display."""
+        from sdqctl.core.progress import WorkflowProgress, set_quiet
+
+        set_quiet(False)
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=5)
+        long_cmd = "grep -E 'some very long pattern that goes on and on' /path/to/some/very/long/filename.txt"
+        wp.run_executing(long_cmd, cmd_idx=1, total_cmds=2)
+        
+        wp._end_overwrite()
+        captured = capsys.readouterr()
+        assert "RUN 2/2" in captured.out
+        assert "..." in captured.out  # Should be truncated
+
+    def test_run_complete_success(self, capsys):
+        """run_complete should show success status."""
+        from sdqctl.core.progress import WorkflowProgress, set_quiet
+
+        set_quiet(False)
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=5)
+        wp.run_complete(cmd_idx=0, total_cmds=2, success=True, duration=1.5)
+        
+        wp._end_overwrite()
+        captured = capsys.readouterr()
+        assert "✓" in captured.out
+        assert "RUN 1/2" in captured.out
+        assert "1.5s" in captured.out
+
+    def test_run_complete_failure(self, capsys):
+        """run_complete should show failure status."""
+        from sdqctl.core.progress import WorkflowProgress, set_quiet
+
+        set_quiet(False)
+        wp = WorkflowProgress("test", total_cycles=1, total_prompts=5)
+        wp.run_complete(cmd_idx=2, total_cmds=3, success=False, duration=0.3)
+        
+        wp._end_overwrite()
+        captured = capsys.readouterr()
+        assert "✗" in captured.out
+        assert "RUN 3/3" in captured.out
+
+
+class TestTotalPromptsAfterElide:
+    """Tests for correct prompt counting after ELIDE processing."""
+
+    def test_merged_prompts_counted_correctly(self):
+        """After ELIDE, total_prompts should reflect merged count."""
+        from sdqctl.core.conversation import ConversationFile, ConversationStep
+        from sdqctl.commands.elide import process_elided_steps
+
+        # Create steps that will be merged by ELIDE
+        steps = [
+            ConversationStep(type="prompt", content="First part"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="run", content="git status"),
+            ConversationStep(type="elide", content=""),
+            ConversationStep(type="prompt", content="Second part"),
+            ConversationStep(type="prompt", content="Separate prompt"),
+        ]
+        
+        merged = process_elided_steps(steps)
+        
+        # Count prompts the same way iterate.py does
+        total_prompts = sum(
+            1 for s in merged
+            if (s.type if hasattr(s, 'type') else s.get('type', ''))
+            in ("prompt", "merged_prompt")
+        )
+        
+        # Should be 2: one merged_prompt (from first 5 steps) and one prompt
+        assert total_prompts == 2
+
+    def test_no_elide_all_prompts_counted(self):
+        """Without ELIDE, all prompts should be counted."""
+        from sdqctl.core.conversation import ConversationStep
+        from sdqctl.commands.elide import process_elided_steps
+
+        steps = [
+            ConversationStep(type="prompt", content="First"),
+            ConversationStep(type="run", content="echo test"),
+            ConversationStep(type="prompt", content="Second"),
+            ConversationStep(type="prompt", content="Third"),
+        ]
+        
+        merged = process_elided_steps(steps)
+        
+        total_prompts = sum(
+            1 for s in merged
+            if (s.type if hasattr(s, 'type') else s.get('type', ''))
+            in ("prompt", "merged_prompt")
+        )
+        
+        # Should be 3: all prompts remain separate (RUN without ELIDE doesn't merge)
+        assert total_prompts == 3

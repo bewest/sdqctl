@@ -388,6 +388,7 @@ class TestEmitPromptProgress:
             prompt=1,
             context_pct=35.5,
             preview="Test prompt text"[:50],
+            line_number=None,
         )
 
         # Verify prompt writer was called
