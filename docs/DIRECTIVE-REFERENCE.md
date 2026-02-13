@@ -198,6 +198,92 @@ Potential additions based on usage patterns:
 
 ---
 
+## Detailed Behavior Notes
+
+### PROMPT: Multi-line Content
+
+The `PROMPT` directive supports multi-line content. All lines following `PROMPT` are
+accumulated until the next directive is encountered:
+
+```
+PROMPT ## Phase 1: Analysis
+
+Review the following items:
+- Code structure
+- Test coverage
+- Documentation
+
+| Metric | Value |
+|--------|-------|
+| Lines  | 1000  |
+
+The table above summarizes the codebase.
+RUN git status
+```
+
+All content from "## Phase 1" through "summarizes the codebase." becomes a single
+prompt. The `RUN` directive terminates the multi-line block.
+
+**Key behaviors:**
+- Empty lines within the block are preserved
+- Comments (`#`) are stripped from the content
+- The block ends when any directive keyword is encountered (PROMPT, RUN, ELIDE, etc.)
+
+### ELIDE: Merging Adjacent Steps
+
+`ELIDE` merges the step above with the step below into a single AI turn. This reduces
+the number of round-trips and allows RUN output to be included before the AI responds:
+
+```
+PROMPT Review the test output below.
+ELIDE
+RUN pytest tests/ -v
+ELIDE
+PROMPT Fix any failing tests.
+```
+
+This becomes **one AI turn** containing:
+1. "Review the test output below."
+2. The actual output from `pytest tests/ -v`
+3. "Fix any failing tests."
+
+**Without ELIDE**, each PROMPT would be a separate turn, and RUN output would only
+be visible after the AI had already responded to the first prompt.
+
+**What can be merged with ELIDE:**
+- `PROMPT` - Text content merged directly
+- `RUN` - Command executed, output injected as `+ command\noutput`
+- `VERIFY` - Verification results injected
+- `REFCAT` - File excerpts injected
+- `LSP` - Type/symbol definitions injected
+- `CONSULT` - Sub-conversation output injected
+- `HELP-INLINE` - Help topic content injected
+
+**What breaks ELIDE chains:**
+- `COMPACT` - Context management boundary
+- `CHECKPOINT` - State persistence boundary  
+- `NEW-CONVERSATION` - Session boundary
+- `PAUSE` - Human interaction required
+
+### Progress Display During Execution
+
+During `sdqctl iterate`, the progress display shows:
+
+```
+[Cycle 1/5] Prompt 2/11 (line 54) (ctx: 35%): Sending...
+  ⚡ RUN 1/3: git status
+  ✓ RUN 1/3 (0.2s)
+  ⚡ RUN 2/3: swift build
+  ✓ RUN 2/3 (5.1s)
+```
+
+- **Prompt X/Y** - Reflects merged prompt count after ELIDE processing
+- **(line N)** - Source line number in .conv file for debugging
+- **(ctx: N%)** - Current context window usage
+- **RUN progress** - Shows which shell commands are executing
+
+---
+
 ## See Also
 
 - [README.md](../README.md) - Quick reference directive table

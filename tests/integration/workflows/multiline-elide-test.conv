@@ -1,0 +1,49 @@
+# Test workflow for multi-line PROMPT and ELIDE merging
+# This workflow exercises:
+# - Multi-line PROMPT content (continues until next directive)
+# - ELIDE merging of adjacent steps
+# - RUN command injection into merged prompts
+# - Line number tracking
+
+MODEL mock
+ADAPTER mock
+MAX-CYCLES 1
+
+# === Phase 1: Multi-line prompt test ===
+PROMPT ## Phase 1: Status Check
+
+This is a multi-line prompt that should include:
+- All lines until the next directive
+- Markdown formatting preserved
+- Empty lines within the block
+
+| Column A | Column B |
+|----------|----------|
+| Value 1  | Value 2  |
+
+The table above should be included.
+ELIDE
+RUN echo "Phase 1 RUN output"
+ELIDE
+PROMPT Review the output above and confirm status.
+
+# === Phase 2: Multiple RUNs merged ===
+PROMPT ## Phase 2: Gather Information
+
+Collect data from multiple sources:
+ELIDE
+RUN echo "Source A data"
+ELIDE
+RUN echo "Source B data"
+ELIDE
+RUN echo "Source C data"
+ELIDE
+PROMPT Analyze the three data sources above.
+
+# === Phase 3: Standalone prompt (no ELIDE) ===
+PROMPT ## Phase 3: Summary
+
+This prompt stands alone without ELIDE.
+It should be a separate turn from Phase 2.
+
+Provide a brief summary.

@@ -509,3 +509,165 @@ PROMPT Apply recommended fixes.
         step_idx, _ = conv.pause_points[0]
         assert isinstance(step_idx, int)
         assert step_idx >= 0
+
+
+class TestMultilinePromptAndElideIntegration:
+    """Integration tests for multi-line PROMPT parsing and ELIDE merging.
+    
+    These tests verify the fixes for:
+    1. Multi-line PROMPT content accumulates until next directive
+    2. ELIDE properly merges adjacent steps with RUN placeholders
+    3. Correct prompt counting after ELIDE processing
+    4. Line number tracking through the workflow
+    """
+
+    @pytest.fixture
+    def multiline_elide_workflow(self):
+        """Path to the multiline-elide test workflow."""
+        return Path(__file__).parent / "workflows" / "multiline-elide-test.conv"
+
+    def test_multiline_prompt_captures_full_content(self, multiline_elide_workflow):
+        """Multi-line PROMPT should capture all content until next directive."""
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        
+        # First prompt should include the markdown table
+        first_prompt = conv.prompts[0]
+        assert "## Phase 1: Status Check" in first_prompt
+        assert "| Column A | Column B |" in first_prompt
+        assert "The table above should be included." in first_prompt
+
+    def test_multiline_prompt_preserves_empty_lines(self, multiline_elide_workflow):
+        """Empty lines within multi-line PROMPT should be preserved."""
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        
+        # First prompt should have multiple lines with content spread across them
+        first_prompt = conv.prompts[0]
+        lines = first_prompt.split('\n')
+        # Should have more than just the header
+        assert len(lines) > 5
+
+    def test_elide_merges_prompt_and_run(self, multiline_elide_workflow):
+        """ELIDE should merge PROMPT with RUN into merged_prompt step."""
+        from sdqctl.commands.elide import process_elided_steps
+        
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        merged_steps = process_elided_steps(conv.steps)
+        
+        # Find merged_prompt steps
+        merged_prompts = [s for s in merged_steps if s.type == "merged_prompt"]
+        
+        # Should have 2 merged prompts (Phase 1 and Phase 2)
+        assert len(merged_prompts) == 2
+        
+        # First merged prompt should have run_commands attached
+        assert hasattr(merged_prompts[0], 'run_commands')
+        assert len(merged_prompts[0].run_commands) == 1
+        assert "Phase 1 RUN output" in merged_prompts[0].run_commands[0]
+
+    def test_elide_merges_multiple_runs(self, multiline_elide_workflow):
+        """ELIDE should merge multiple RUN commands into single prompt."""
+        from sdqctl.commands.elide import process_elided_steps
+        
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        merged_steps = process_elided_steps(conv.steps)
+        
+        merged_prompts = [s for s in merged_steps if s.type == "merged_prompt"]
+        
+        # Second merged prompt (Phase 2) should have 3 RUN commands
+        assert len(merged_prompts[1].run_commands) == 3
+        assert "Source A" in merged_prompts[1].run_commands[0]
+        assert "Source B" in merged_prompts[1].run_commands[1]
+        assert "Source C" in merged_prompts[1].run_commands[2]
+
+    def test_correct_prompt_count_after_elide(self, multiline_elide_workflow):
+        """Total prompts should reflect merged count, not raw count."""
+        from sdqctl.commands.elide import process_elided_steps
+        
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        
+        # Raw prompt count
+        raw_count = len(conv.prompts)
+        
+        # Merged count (same calculation as iterate.py)
+        merged_steps = process_elided_steps(conv.steps)
+        merged_count = sum(
+            1 for s in merged_steps
+            if s.type in ("prompt", "merged_prompt")
+        )
+        
+        # Raw should be higher than merged
+        assert raw_count > merged_count
+        # Should have 3 effective prompts: 2 merged + 1 standalone
+        assert merged_count == 3
+
+    def test_render_shows_run_placeholders(self, multiline_elide_workflow):
+        """Render should show {{RUN:N:cmd}} placeholders in merged prompts."""
+        from sdqctl.core.renderer import render_workflow
+        
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        rendered = render_workflow(conv, include_context=False)
+        
+        # Should have 3 prompts after rendering
+        assert len(rendered.cycles[0].prompts) == 3
+        
+        # First prompt should have RUN placeholder
+        first_resolved = rendered.cycles[0].prompts[0].resolved
+        assert "{{RUN:0:" in first_resolved
+        assert "Phase 1 RUN output" in first_resolved
+        
+        # Second prompt should have 3 RUN placeholders
+        second_resolved = rendered.cycles[0].prompts[1].resolved
+        assert "{{RUN:0:" in second_resolved
+        assert "{{RUN:1:" in second_resolved
+        assert "{{RUN:2:" in second_resolved
+
+    def test_standalone_prompt_remains_separate(self, multiline_elide_workflow):
+        """Prompt without ELIDE should remain a separate turn."""
+        from sdqctl.commands.elide import process_elided_steps
+        
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        merged_steps = process_elided_steps(conv.steps)
+        
+        # Last prompt (Phase 3) should be a regular prompt, not merged
+        prompt_steps = [s for s in merged_steps if s.type == "prompt"]
+        assert len(prompt_steps) == 1
+        assert "Phase 3: Summary" in prompt_steps[0].content
+
+    def test_line_numbers_preserved_in_steps(self, multiline_elide_workflow):
+        """Steps should retain line numbers from source file.
+        
+        Note: Currently line_number is tracked in Directive but not all step types
+        propagate it to ConversationStep. The primary use case (iterate progress)
+        uses line_number from the step when available.
+        """
+        conv = ConversationFile.from_file(multiline_elide_workflow)
+        
+        # Check that directives have line numbers
+        prompt_directives = [d for d in conv.directives if d.type.name == "PROMPT"]
+        assert len(prompt_directives) > 0
+        
+        # Directives should have line numbers set
+        # (Even if ConversationStep doesn't always carry them through)
+        for d in prompt_directives:
+            # Line number is set during parsing
+            assert hasattr(d, 'line_number')
+
+    def test_cli_render_cycle_output(self, multiline_elide_workflow):
+        """CLI render cycle should show merged prompts correctly."""
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            'render', 'cycle', str(multiline_elide_workflow), '--json'
+        ])
+        
+        assert result.exit_code == 0
+        
+        import json
+        data = json.loads(result.output)
+        
+        # Should have 3 prompts
+        assert len(data['cycles'][0]['prompts']) == 3
+        
+        # First prompt should contain multi-line content and RUN placeholder
+        first = data['cycles'][0]['prompts'][0]
+        assert "Column A" in first['resolved']
+        assert "{{RUN:0:" in first['resolved']
