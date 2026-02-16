@@ -478,9 +478,9 @@ class TestMinResponseLengthEnvVar:
     """Test SDQCTL_MIN_RESPONSE_LENGTH environment variable."""
 
     def test_default_min_response_length(self):
-        """Default MIN_RESPONSE_LENGTH is 80 chars."""
+        """Default MIN_RESPONSE_LENGTH is 40 chars."""
         # Note: This test verifies the current default; env var may override at import time
-        assert MIN_RESPONSE_LENGTH == int(os.environ.get("SDQCTL_MIN_RESPONSE_LENGTH", "80"))
+        assert MIN_RESPONSE_LENGTH == int(os.environ.get("SDQCTL_MIN_RESPONSE_LENGTH", "40"))
 
     def test_detector_uses_module_constant(self):
         """LoopDetector uses MIN_RESPONSE_LENGTH constant by default."""

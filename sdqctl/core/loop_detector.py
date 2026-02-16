@@ -38,9 +38,9 @@ LOOP_REASONING_PATTERNS = [
 ]
 
 # Minimum response length after first cycle (chars)
-# Lowered to 80 to reduce false positives on valid short responses
+# Set to 40 to avoid false positives - valid responses often 50-70 chars
 # Configurable via SDQCTL_MIN_RESPONSE_LENGTH environment variable
-MIN_RESPONSE_LENGTH = int(os.environ.get("SDQCTL_MIN_RESPONSE_LENGTH", "80"))
+MIN_RESPONSE_LENGTH = int(os.environ.get("SDQCTL_MIN_RESPONSE_LENGTH", "40"))
 
 # Number of identical responses to trigger detection
 # Lowered to 2 for faster loop detection (Q-002 fix)
