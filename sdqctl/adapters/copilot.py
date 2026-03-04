@@ -8,6 +8,7 @@ Install with: pip install github-copilot-sdk
 import asyncio
 import json
 import logging
+import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -82,8 +83,20 @@ class CopilotAdapter(AdapterBase):
         """Start the Copilot CLI client."""
         _ensure_copilot_sdk()
 
+        # Resolve CLI path - SDK requires absolute path (os.path.exists check)
+        cli_path = self.cli_path
+        if not Path(cli_path).is_absolute():
+            resolved = shutil.which(cli_path)
+            if resolved:
+                cli_path = resolved
+            else:
+                raise RuntimeError(
+                    f"Copilot CLI '{self.cli_path}' not found in PATH. "
+                    "Install with: gh extension install github/gh-copilot"
+                )
+
         config = {
-            "cli_path": self.cli_path,
+            "cli_path": cli_path,
             "use_stdio": self.use_stdio,
         }
         if self.cli_url:
