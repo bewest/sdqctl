@@ -27,6 +27,13 @@ class MockEventType:
         self.value = value
 
 
+class MockPermissionHandler:
+    """Mock PermissionHandler from Copilot SDK."""
+    @staticmethod
+    def approve_all(request, invocation):
+        return {"kind": "approved"}
+
+
 # Test fixtures
 
 @pytest.fixture
@@ -37,6 +44,28 @@ def mock_copilot_client():
     client.stop = AsyncMock()
     client.create_session = AsyncMock()
     return client
+
+
+@pytest.fixture(autouse=True)
+def mock_permission_handler():
+    """Create a mocked PermissionHandler and set it in the module.
+    
+    Also mocks _ensure_copilot_sdk to prevent ImportError during tests.
+    """
+    import sdqctl.adapters.copilot as mod
+    
+    # Set up mocks
+    mod.PermissionHandler = MockPermissionHandler
+    
+    # Mock _ensure_copilot_sdk to be a no-op (PermissionHandler already set)
+    original_ensure = mod._ensure_copilot_sdk
+    mod._ensure_copilot_sdk = lambda: None
+    
+    yield MockPermissionHandler
+    
+    # Restore
+    mod._ensure_copilot_sdk = original_ensure
+    mod.PermissionHandler = None
 
 
 @pytest.fixture
@@ -1670,7 +1699,10 @@ class TestSessionPersistence:
         
         assert session is not None
         assert session.id == "session-"  # Truncated to 8 chars
-        mock_copilot_client.resume_session.assert_called_once_with("session-abc", None)
+        # Should pass config with permission handler (required by SDK v0.1.29+)
+        call_args = mock_copilot_client.resume_session.call_args
+        assert call_args[0][0] == "session-abc"
+        assert "on_permission_request" in call_args[0][1]
 
     @pytest.mark.asyncio
     async def test_resume_session_with_tools(self, mock_copilot_client, mock_copilot_session):

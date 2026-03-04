@@ -22,6 +22,7 @@ from .stats import SessionStats, TurnStats
 
 # Lazy import to avoid hard dependency
 CopilotClient = None
+PermissionHandler = None
 
 # Get logger for this module
 logger = logging.getLogger("sdqctl.adapters.copilot")
@@ -32,12 +33,14 @@ SDQCTL_DIR = Path.home() / ".sdqctl"
 
 def _ensure_copilot_sdk():
     """Ensure copilot SDK is available."""
-    global CopilotClient
+    global CopilotClient, PermissionHandler
     if CopilotClient is None:
         try:
             from copilot import CopilotClient as _CopilotClient
+            from copilot import PermissionHandler as _PermissionHandler
 
             CopilotClient = _CopilotClient
+            PermissionHandler = _PermissionHandler
         except ImportError:
             raise ImportError(
                 "GitHub Copilot SDK not installed. "
@@ -111,12 +114,15 @@ class CopilotAdapter(AdapterBase):
         When infinite_sessions is configured, the SDK handles background
         compaction automatically.
         """
+        _ensure_copilot_sdk()
         if not self.client:
             raise RuntimeError("Adapter not started. Call start() first.")
 
         session_config = {
             "model": config.model,
             "streaming": config.streaming,
+            # Required by SDK v0.1.29+ (commit 279f6c4): permission handler is mandatory
+            "on_permission_request": PermissionHandler.approve_all,
         }
 
         if config.tools:
@@ -748,13 +754,16 @@ class CopilotAdapter(AdapterBase):
         if not self.client:
             await self.start()
 
-        resume_config = {}
+        resume_config = {
+            # Required by SDK v0.1.29+ (commit 279f6c4): permission handler is mandatory
+            "on_permission_request": PermissionHandler.approve_all,
+        }
         if config.tools:
             resume_config["tools"] = config.tools
 
         copilot_session = await self.client.resume_session(
             session_id,
-            resume_config if resume_config else None
+            resume_config
         )
 
         # Use the original session_id (or a short version if very long)
