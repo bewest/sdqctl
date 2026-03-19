@@ -24,6 +24,8 @@ from .stats import SessionStats, TurnStats
 # Lazy import to avoid hard dependency
 CopilotClient = None
 PermissionHandler = None
+SubprocessConfig = None
+ExternalServerConfig = None
 
 # Get logger for this module
 logger = logging.getLogger("sdqctl.adapters.copilot")
@@ -34,14 +36,18 @@ SDQCTL_DIR = Path.home() / ".sdqctl"
 
 def _ensure_copilot_sdk():
     """Ensure copilot SDK is available."""
-    global CopilotClient, PermissionHandler
+    global CopilotClient, PermissionHandler, SubprocessConfig, ExternalServerConfig
     if CopilotClient is None:
         try:
             from copilot import CopilotClient as _CopilotClient
             from copilot import PermissionHandler as _PermissionHandler
+            from copilot.types import ExternalServerConfig as _ExternalServerConfig
+            from copilot.types import SubprocessConfig as _SubprocessConfig
 
             CopilotClient = _CopilotClient
             PermissionHandler = _PermissionHandler
+            SubprocessConfig = _SubprocessConfig
+            ExternalServerConfig = _ExternalServerConfig
         except ImportError:
             raise ImportError(
                 "GitHub Copilot SDK not installed. "
@@ -83,24 +89,26 @@ class CopilotAdapter(AdapterBase):
         """Start the Copilot CLI client."""
         _ensure_copilot_sdk()
 
-        # Resolve CLI path - SDK requires absolute path (os.path.exists check)
-        cli_path = self.cli_path
-        if not Path(cli_path).is_absolute():
-            resolved = shutil.which(cli_path)
-            if resolved:
-                cli_path = resolved
-            else:
-                raise RuntimeError(
-                    f"Copilot CLI '{self.cli_path}' not found in PATH. "
-                    "Install with: gh extension install github/gh-copilot"
-                )
-
-        config = {
-            "cli_path": cli_path,
-            "use_stdio": self.use_stdio,
-        }
+        # Use ExternalServerConfig if cli_url is provided
         if self.cli_url:
-            config["cli_url"] = self.cli_url
+            config = ExternalServerConfig(url=self.cli_url)
+        else:
+            # Resolve CLI path - SDK requires absolute path (os.path.exists check)
+            cli_path = self.cli_path
+            if not Path(cli_path).is_absolute():
+                resolved = shutil.which(cli_path)
+                if resolved:
+                    cli_path = resolved
+                else:
+                    raise RuntimeError(
+                        f"Copilot CLI '{self.cli_path}' not found in PATH. "
+                        "Install with: gh extension install github/gh-copilot"
+                    )
+
+            config = SubprocessConfig(
+                cli_path=cli_path,
+                use_stdio=self.use_stdio,
+            )
 
         self.client = CopilotClient(config)
         await self.client.start()
@@ -295,7 +303,7 @@ class CopilotAdapter(AdapterBase):
             stats.handler_registered = True
 
         # Send the prompt
-        await copilot_session.send({"prompt": prompt})
+        await copilot_session.send(prompt)
 
         # Wait for completion
         await stats._send_done.wait()
