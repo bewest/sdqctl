@@ -403,3 +403,34 @@ session = await client.createSession({
 - RPC Definitions: `copilot-sdk/python/copilot/generated/rpc.py`
 - Test Scenarios: `copilot-sdk/test/scenarios/tools/`
 - CLI Help: `/help` command
+
+---
+
+## Known Issues
+
+### CLI v1.0.9 SDK Session Error
+
+When using the Python SDK to create sessions programmatically, there's a bug where 
+`send_and_wait` or event-driven messaging fails with:
+
+```
+TypeError: t.asString is not a function
+at Object.asXML
+```
+
+**Status**: Affects CLI v1.0.9
+**Workaround**: Use CLI directly or wait for patch
+**Impact**: Tool filtering experiments (SDK-E01, SDK-E02) cannot be validated via SDK
+
+### RPC Tool Discovery Works
+
+`client.rpc.tools.list()` successfully enumerates available tools:
+- 14 core built-in tools
+- 19 available models
+- Model billing multipliers accessible
+
+### Session Creation Works
+
+`client.create_session()` completes successfully, but subsequent `send()` calls fail.
+
+---
