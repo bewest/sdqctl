@@ -1,35 +1,67 @@
 # GitHub Copilot CLI - Available Tools Inventory
 
 > **Generated**: 2026-03-19  
-> **Source**: SDK `client.rpc.tools.list()` + CLI documentation  
-> **Status**: SDK-E16 experiment results ✓ VERIFIED  
+> **Source**: SDK `client.rpc.tools.list()` + session observation  
+> **Status**: SDK-E16 ✓ VERIFIED  
 > **Test Script**: `tests/sdk-integration/test_tool_discovery.py`
 
 ---
 
-## SDK Tool Discovery Results
+## Complete Tool List (~39 tools)
 
-**14 core tools** returned by `client.rpc.tools.list()`:
+### Core Tools (14 from SDK RPC)
 
-| Tool | Category | Required Params |
-|------|----------|-----------------|
-| ask_user | Session | question |
-| bash | Shell | command, description |
-| fetch_copilot_cli_documentation | Meta | - |
-| glob | File System | pattern |
-| grep | File System | pattern |
-| list_bash | Shell | - |
-| read_bash | Shell | shellId, delay |
-| report_intent | Session | intent |
-| skill | Agents | skill |
-| stop_bash | Shell | shellId |
-| str_replace_editor | File System | command, path |
-| task | Agents | prompt, agent_type, name |
-| web_fetch | Network | url |
-| write_bash | Shell | shellId, delay |
+| Tool | Category | Required Params | Description |
+|------|----------|-----------------|-------------|
+| ask_user | Session | question | Prompt user for input |
+| bash | Shell | command, description | Execute bash commands |
+| fetch_copilot_cli_documentation | Meta | - | Get CLI help/README |
+| glob | File System | pattern | Find files by pattern |
+| grep | File System | pattern | Search file contents (ripgrep) |
+| list_bash | Shell | - | List active shell sessions |
+| read_bash | Shell | shellId, delay | Read async shell output |
+| report_intent | Session | intent | Update UI intent display |
+| skill | Agents | skill | Invoke registered skills |
+| stop_bash | Shell | shellId | Terminate shell session |
+| str_replace_editor | File System | command, path | View/edit/create files |
+| task | Agents | name, prompt, agent_type | Launch sub-agents |
+| web_fetch | Network | url | Fetch URL as markdown |
+| write_bash | Shell | shellId, delay | Send input to async shell |
 
-> **Note**: Additional tools like `sql`, `store_memory`, `view`, `edit`, `create`, 
-> and GitHub MCP tools may be added based on session configuration.
+### Session-Specific Tools (added at runtime)
+
+| Tool | Description |
+|------|-------------|
+| sql | Query session SQLite database (todos, todo_deps tables) |
+| store_memory | Persist facts for future sessions |
+| view | Read file contents (alias for str_replace_editor view) |
+| edit | Modify files (alias for str_replace_editor) |
+| create | Create new files (alias for str_replace_editor) |
+| read_agent | Check sub-agent status/results |
+| list_agents | List background agents |
+
+### GitHub MCP Tools (18 tools via MCP server)
+
+| Tool | Description |
+|------|-------------|
+| github-mcp-server-actions_get | Get workflow/run/job details |
+| github-mcp-server-actions_list | List workflows/runs/jobs |
+| github-mcp-server-get_commit | Get commit details with diff |
+| github-mcp-server-get_file_contents | Read repo files |
+| github-mcp-server-get_job_logs | Get CI job logs |
+| github-mcp-server-issue_read | Get issue details/comments |
+| github-mcp-server-list_branches | List branches |
+| github-mcp-server-list_commits | List commits |
+| github-mcp-server-list_copilot_spaces | List Copilot Spaces |
+| github-mcp-server-list_issues | List issues |
+| github-mcp-server-list_pull_requests | List PRs |
+| github-mcp-server-pull_request_read | Get PR details/diff/status |
+| github-mcp-server-search_code | Search code across GitHub |
+| github-mcp-server-search_issues | Search issues |
+| github-mcp-server-search_pull_requests | Search PRs |
+| github-mcp-server-search_repositories | Search repos |
+| github-mcp-server-search_users | Search users |
+| github-mcp-server-get_copilot_space | Access Copilot Space content |
 
 ---
 
