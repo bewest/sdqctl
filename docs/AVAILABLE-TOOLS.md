@@ -1,8 +1,61 @@
 # GitHub Copilot CLI - Available Tools Inventory
 
 > **Generated**: 2026-03-19  
-> **Source**: SDK analysis + CLI documentation + session observation  
-> **Status**: SDK-E16 experiment results
+> **Source**: SDK `client.rpc.tools.list()` + CLI documentation  
+> **Status**: SDK-E16 experiment results ✓ VERIFIED  
+> **Test Script**: `tests/sdk-integration/test_tool_discovery.py`
+
+---
+
+## SDK Tool Discovery Results
+
+**14 core tools** returned by `client.rpc.tools.list()`:
+
+| Tool | Category | Required Params |
+|------|----------|-----------------|
+| ask_user | Session | question |
+| bash | Shell | command, description |
+| fetch_copilot_cli_documentation | Meta | - |
+| glob | File System | pattern |
+| grep | File System | pattern |
+| list_bash | Shell | - |
+| read_bash | Shell | shellId, delay |
+| report_intent | Session | intent |
+| skill | Agents | skill |
+| stop_bash | Shell | shellId |
+| str_replace_editor | File System | command, path |
+| task | Agents | prompt, agent_type, name |
+| web_fetch | Network | url |
+| write_bash | Shell | shellId, delay |
+
+> **Note**: Additional tools like `sql`, `store_memory`, `view`, `edit`, `create`, 
+> and GitHub MCP tools may be added based on session configuration.
+
+---
+
+## Available Models (19)
+
+| Model ID | Display Name | Billing | Reasoning |
+|----------|--------------|---------|-----------|
+| claude-sonnet-4.6 | Claude Sonnet 4.6 | x1.0 | medium |
+| claude-sonnet-4.5 | Claude Sonnet 4.5 | x1.0 | - |
+| claude-haiku-4.5 | Claude Haiku 4.5 | x0.33 | - |
+| claude-opus-4.6 | Claude Opus 4.6 | x3.0 | high |
+| claude-opus-4.6-fast | Claude Opus 4.6 (fast) | x30.0 | high |
+| claude-opus-4.5 | Claude Opus 4.5 | x3.0 | - |
+| claude-sonnet-4 | Claude Sonnet 4 | x1.0 | - |
+| gemini-3-pro-preview | Gemini 3 Pro (Preview) | x1.0 | - |
+| gpt-5.4 | GPT-5.4 | x1.0 | medium |
+| gpt-5.3-codex | GPT-5.3-Codex | x1.0 | medium |
+| gpt-5.2-codex | GPT-5.2-Codex | x1.0 | high |
+| gpt-5.2 | GPT-5.2 | x1.0 | medium |
+| gpt-5.1-codex-max | GPT-5.1-Codex-Max | x1.0 | medium |
+| gpt-5.1-codex | GPT-5.1-Codex | x1.0 | medium |
+| gpt-5.1 | GPT-5.1 | x1.0 | medium |
+| gpt-5.4-mini | GPT-5.4 mini | x0.33 | medium |
+| gpt-5.1-codex-mini | GPT-5.1-Codex-Mini | x0.33 | medium |
+| gpt-5-mini | GPT-5 mini | x0.0 | medium |
+| gpt-4.1 | GPT-4.1 | x0.0 | - |
 
 ---
 
