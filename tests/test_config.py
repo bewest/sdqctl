@@ -16,7 +16,7 @@ class TestConfig:
         
         config = Config()
         assert config.defaults.adapter == "copilot"
-        assert config.defaults.model == "gpt-4"
+        assert config.defaults.model == "auto"
         assert config.context.limit == 0.8
         assert config.context.on_limit == "compact"
         assert config.checkpoints.enabled is True
@@ -27,7 +27,7 @@ class TestConfig:
         
         config = Config.from_dict({})
         assert config.defaults.adapter == "copilot"
-        assert config.defaults.model == "gpt-4"
+        assert config.defaults.model == "auto"
     
     def test_config_from_dict_with_defaults(self):
         """Config.from_dict parses defaults section."""
@@ -111,7 +111,7 @@ class TestLoadConfig:
         
         config = load_config(use_cache=False)
         assert config.defaults.adapter == "copilot"
-        assert config.defaults.model == "gpt-4"
+        assert config.defaults.model == "auto"
     
     def test_load_config_from_cwd(self, tmp_path, monkeypatch):
         """load_config finds config in current directory."""

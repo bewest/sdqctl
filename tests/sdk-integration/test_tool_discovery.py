@@ -4,19 +4,17 @@ SDK Integration Test: Full tool and model discovery
 """
 import asyncio
 import sys
-import json
 
 sys.path.insert(0, '/home/bewest/src/copilot-sdk/python')
 
-from copilot import CopilotClient
-from copilot.types import SubprocessConfig
-from copilot.generated.rpc import ToolsListParams
+from copilot import CopilotClient, StdioRuntimeConnection
+from copilot.generated.rpc import ToolsListRequest
 
 CLI_PATH = "/home/bewest/.local/bin/copilot"
 
 async def main():
-    config = SubprocessConfig(cli_path=CLI_PATH)
-    client = CopilotClient(config)
+    connection = StdioRuntimeConnection(path=CLI_PATH)
+    client = CopilotClient(connection=connection)
     
     try:
         await client.start()
@@ -31,7 +29,7 @@ async def main():
         print()
         
         # List tools
-        result = await client.rpc.tools.list(ToolsListParams())
+        result = await client.rpc.tools.list(ToolsListRequest())
         print(f"# Default Tools ({len(result.tools)})")
         for tool in sorted(result.tools, key=lambda t: t.name):
             print(f"  - {tool.name}")

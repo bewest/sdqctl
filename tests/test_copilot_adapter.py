@@ -206,8 +206,8 @@ class TestCopilotAdapterSessions:
         config = AdapterConfig(model="gpt-4", tools=tools)
         await adapter.create_session(config)
         
-        call_args = mock_copilot_client.create_session.call_args[0][0]
-        assert call_args["tools"] == tools
+        call_kwargs = mock_copilot_client.create_session.call_args.kwargs
+        assert call_kwargs["tools"] == tools
     
     @pytest.mark.asyncio
     async def test_destroy_session(self, mock_copilot_client, mock_copilot_session):
@@ -1538,8 +1538,12 @@ class TestCompactWithSessionReset:
         sent_prompts = []
         
         async def capture_send(prompt_dict, *args, **kwargs):
-            # prompt_dict is {"prompt": "actual prompt text"}
-            sent_prompts.append(prompt_dict.get("prompt", str(prompt_dict)))
+            # SDK may pass a raw prompt string or a dict payload.
+            sent_prompts.append(
+                prompt_dict.get("prompt", str(prompt_dict))
+                if isinstance(prompt_dict, dict)
+                else str(prompt_dict)
+            )
             handler = mock_copilot_session._event_handler
             
             event = MagicMock()
@@ -1589,7 +1593,11 @@ class TestCompactWithSessionReset:
         sent_prompts = []
         
         async def capture_send(prompt_dict, *args, **kwargs):
-            sent_prompts.append(prompt_dict.get("prompt", str(prompt_dict)))
+            sent_prompts.append(
+                prompt_dict.get("prompt", str(prompt_dict))
+                if isinstance(prompt_dict, dict)
+                else str(prompt_dict)
+            )
             handler = mock_copilot_session._event_handler
             
             event = MagicMock()
@@ -1701,8 +1709,8 @@ class TestSessionPersistence:
         assert session.id == "session-"  # Truncated to 8 chars
         # Should pass config with permission handler (required by SDK v0.1.29+)
         call_args = mock_copilot_client.resume_session.call_args
-        assert call_args[0][0] == "session-abc"
-        assert "on_permission_request" in call_args[0][1]
+        assert call_args.args[0] == "session-abc"
+        assert "on_permission_request" in call_args.kwargs
 
     @pytest.mark.asyncio
     async def test_resume_session_with_tools(self, mock_copilot_client, mock_copilot_session):
@@ -1718,9 +1726,8 @@ class TestSessionPersistence:
         
         # Should pass tools to resume_session
         call_args = mock_copilot_client.resume_session.call_args
-        assert call_args[0][0] == "test-session"
-        assert call_args[0][1] is not None
-        assert "tools" in call_args[0][1]
+        assert call_args.args[0] == "test-session"
+        assert "tools" in call_args.kwargs
 
     @pytest.mark.asyncio
     async def test_resume_session_creates_stats(self, mock_copilot_client, mock_copilot_session):

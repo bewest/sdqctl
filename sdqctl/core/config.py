@@ -16,7 +16,7 @@ import yaml
 class ConfigDefaults:
     """Default values from config file."""
     adapter: str = "copilot"
-    model: str = "gpt-4"
+    model: str = "auto"
 
 
 @dataclass

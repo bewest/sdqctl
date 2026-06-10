@@ -753,7 +753,7 @@ class TestConversationFileFromRenderedJson:
         conv = ConversationFile.from_rendered_json(json_data)
         
         assert conv.adapter == "copilot"
-        assert conv.model == "gpt-4"
+        assert conv.model == "auto"
         assert conv.max_cycles == 1
 
 
@@ -769,7 +769,7 @@ class TestConversationDefaults:
         
         conv = ConversationFile()
         
-        assert conv.model == "gpt-4"
+        assert conv.model == "auto"
         assert conv.adapter == "copilot"
         assert conv.mode == "full"
         assert conv.max_cycles == 1

@@ -93,7 +93,11 @@ class SessionStats:
         """Duration in seconds since session start."""
         if self.session_start_time is None:
             return None
-        return (datetime.now() - self.session_start_time).total_seconds()
+        start = self.session_start_time
+        if start.tzinfo is None:
+            # Treat naive timestamps as local time for backward compatibility
+            return (datetime.now() - start).total_seconds()
+        return (datetime.now(start.tzinfo) - start).total_seconds()
 
     @property
     def requests_per_minute(self) -> Optional[float]:

@@ -37,7 +37,7 @@ def _get_default_model() -> str:
         from ..config import get_default_model
         return get_default_model()
     except ImportError:
-        return "gpt-4"
+        return "auto"
 
 
 def _get_default_adapter() -> str:
@@ -423,7 +423,7 @@ class ConversationFile:
 
         conv = cls()
         conv.adapter = data.get("adapter", "copilot")
-        conv.model = data.get("model", "gpt-4")
+        conv.model = data.get("model", "auto")
         conv.max_cycles = data.get("max_cycles", 1)
 
         # Extract prompts from first cycle (for single-cycle execution)

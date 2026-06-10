@@ -486,10 +486,11 @@ async def _cycle_async(
         all_prompts = pre_prompts + post_prompts
         if not all_prompts:
             raise click.UsageError("No prompts provided")
+        from ..core.config import get_default_model
         conv = ConversationFile(
             prompts=all_prompts,
             adapter=adapter_name or "copilot",
-            model=model or "gpt-4",
+            model=model or get_default_model(),
         )
         progress_print(f"Running inline prompt(s) (cycle mode, session={session_mode})...")
 

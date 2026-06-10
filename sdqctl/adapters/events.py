@@ -7,7 +7,7 @@ Provides infrastructure to capture and export SDK events during execution.
 import json
 import logging
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -360,7 +360,7 @@ class CopilotEventHandler:
     def _handle_session_start(self, data: Any) -> None:
         """Handle session.start event."""
         stats = self.stats
-        stats.session_start_time = datetime.now()
+        stats.session_start_time = datetime.now(timezone.utc)
 
         context = _get_field(data, "context")
         if context:

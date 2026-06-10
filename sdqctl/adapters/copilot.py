@@ -24,8 +24,9 @@ from .stats import SessionStats, TurnStats
 # Lazy import to avoid hard dependency
 CopilotClient = None
 PermissionHandler = None
-SubprocessConfig = None
-ExternalServerConfig = None
+StdioRuntimeConnection = None
+TcpRuntimeConnection = None
+UriRuntimeConnection = None
 
 # Get logger for this module
 logger = logging.getLogger("sdqctl.adapters.copilot")
@@ -36,18 +37,21 @@ SDQCTL_DIR = Path.home() / ".sdqctl"
 
 def _ensure_copilot_sdk():
     """Ensure copilot SDK is available."""
-    global CopilotClient, PermissionHandler, SubprocessConfig, ExternalServerConfig
+    global CopilotClient, PermissionHandler
+    global StdioRuntimeConnection, TcpRuntimeConnection, UriRuntimeConnection
     if CopilotClient is None:
         try:
             from copilot import CopilotClient as _CopilotClient
             from copilot import PermissionHandler as _PermissionHandler
-            from copilot.types import ExternalServerConfig as _ExternalServerConfig
-            from copilot.types import SubprocessConfig as _SubprocessConfig
+            from copilot import StdioRuntimeConnection as _StdioRuntimeConnection
+            from copilot import TcpRuntimeConnection as _TcpRuntimeConnection
+            from copilot import UriRuntimeConnection as _UriRuntimeConnection
 
             CopilotClient = _CopilotClient
             PermissionHandler = _PermissionHandler
-            SubprocessConfig = _SubprocessConfig
-            ExternalServerConfig = _ExternalServerConfig
+            StdioRuntimeConnection = _StdioRuntimeConnection
+            TcpRuntimeConnection = _TcpRuntimeConnection
+            UriRuntimeConnection = _UriRuntimeConnection
         except ImportError:
             raise ImportError(
                 "GitHub Copilot SDK not installed. "
@@ -89,9 +93,9 @@ class CopilotAdapter(AdapterBase):
         """Start the Copilot CLI client."""
         _ensure_copilot_sdk()
 
-        # Use ExternalServerConfig if cli_url is provided
+        # Use UriRuntimeConnection if cli_url is provided (connect to running runtime)
         if self.cli_url:
-            config = ExternalServerConfig(url=self.cli_url)
+            connection = UriRuntimeConnection(url=self.cli_url)
         else:
             # Resolve CLI path - SDK requires absolute path (os.path.exists check)
             cli_path = self.cli_path
@@ -105,12 +109,12 @@ class CopilotAdapter(AdapterBase):
                         "Install with: gh extension install github/gh-copilot"
                     )
 
-            config = SubprocessConfig(
-                cli_path=cli_path,
-                use_stdio=self.use_stdio,
-            )
+            if self.use_stdio:
+                connection = StdioRuntimeConnection(path=cli_path)
+            else:
+                connection = TcpRuntimeConnection(path=cli_path)
 
-        self.client = CopilotClient(config)
+        self.client = CopilotClient(connection=connection)
         await self.client.start()
 
     async def stop(self) -> None:
@@ -168,7 +172,7 @@ class CopilotAdapter(AdapterBase):
                 session_config["infinite_sessions"] = {"enabled": False}
                 logger.debug("Infinite sessions disabled")
 
-        copilot_session = await self.client.create_session(session_config)
+        copilot_session = await self.client.create_session(**session_config)
 
         session_id = str(uuid.uuid4())[:8]
         # Capture SDK's session UUID for checkpoint resume (Q-018 fix)
@@ -248,7 +252,11 @@ class CopilotAdapter(AdapterBase):
                 "duration": {
                     "total_seconds": round(duration_secs, 2),
                     "cycles": stats.turns,
-                    "seconds_per_cycle": round(duration_secs / stats.turns, 2) if stats.turns > 0 else None,
+                    "seconds_per_cycle": (
+                        round(duration_secs / stats.turns, 2)
+                        if stats.turns > 0
+                        else None
+                    ),
                 },
                 "tools": {
                     "total_calls": stats.total_tool_calls,
@@ -694,7 +702,7 @@ class CopilotAdapter(AdapterBase):
             return self._cached_model_ids
 
         # Return default models if we can't query
-        return ["gpt-4", "gpt-4o", "gpt-4-turbo", "claude-sonnet-4"]
+        return ["auto", "claude-sonnet-4.6", "claude-haiku-4.5", "gpt-5.5", "gpt-5-mini"]
 
     def resolve_model_requirements(
         self,
@@ -784,7 +792,7 @@ class CopilotAdapter(AdapterBase):
 
         copilot_session = await self.client.resume_session(
             session_id,
-            resume_config
+            **resume_config,
         )
 
         # Use the original session_id (or a short version if very long)

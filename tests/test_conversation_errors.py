@@ -20,7 +20,7 @@ class TestMalformedConvInput:
         """Empty content produces a ConversationFile with defaults."""
         conv = ConversationFile.parse("")
         # Model/adapter have defaults from ConversationFile
-        assert conv.model == "gpt-4"  # Default model
+        assert conv.model == "auto"  # Default model
         assert conv.adapter == "copilot"  # Default adapter
         assert len(conv.steps) == 0
 
