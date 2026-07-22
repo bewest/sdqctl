@@ -10,6 +10,7 @@ import json
 import logging
 import shutil
 import uuid
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
@@ -33,6 +34,26 @@ logger = logging.getLogger("sdqctl.adapters.copilot")
 
 # Default session storage directory
 SDQCTL_DIR = Path.home() / ".sdqctl"
+
+
+def _sdk_value(value: Any, *names: str, default: Any = None) -> Any:
+    """Read a field from legacy SDK mappings or current typed SDK responses."""
+    if isinstance(value, Mapping):
+        for name in names:
+            if name in value:
+                return value[name]
+        return default
+
+    for name in names:
+        field = getattr(value, name, None)
+        if field is not None:
+            return field
+    return default
+
+
+def _sdk_timestamp(value: Any) -> Any:
+    """Serialize typed SDK session timestamps while preserving legacy strings."""
+    return value.isoformat() if isinstance(value, datetime) else value
 
 
 def _ensure_copilot_sdk():
@@ -634,8 +655,10 @@ class CopilotAdapter(AdapterBase):
         try:
             status = await self.client.get_status()
             return {
-                "version": status.get("version", "unknown"),
-                "protocol_version": status.get("protocolVersion", 1),
+                "version": _sdk_value(status, "version", default="unknown"),
+                "protocol_version": _sdk_value(
+                    status, "protocol_version", "protocolVersion", default=1
+                ),
             }
         except Exception as e:
             logger.warning(f"get_status failed: {e}")
@@ -650,11 +673,11 @@ class CopilotAdapter(AdapterBase):
         try:
             auth = await self.client.get_auth_status()
             return {
-                "authenticated": auth.get("isAuthenticated", False),
-                "auth_type": auth.get("authType"),
-                "host": auth.get("host"),
-                "login": auth.get("login"),
-                "message": auth.get("statusMessage"),
+                "authenticated": _sdk_value(auth, "isAuthenticated", default=False),
+                "auth_type": _sdk_value(auth, "authType"),
+                "host": _sdk_value(auth, "host"),
+                "login": _sdk_value(auth, "login"),
+                "message": _sdk_value(auth, "statusMessage"),
             }
         except Exception as e:
             logger.warning(f"get_auth_status failed: {e}")
@@ -670,19 +693,24 @@ class CopilotAdapter(AdapterBase):
             models = await self.client.list_models()
             result = []
             for m in models:
-                caps = m.get("capabilities", {})
-                limits = caps.get("limits", {})
-                supports = caps.get("supports", {})
+                caps = _sdk_value(m, "capabilities", default={})
+                limits = _sdk_value(caps, "limits", default={})
+                supports = _sdk_value(caps, "supports", default={})
+                policy = _sdk_value(m, "policy", default={})
+                billing = _sdk_value(m, "billing", default={})
 
                 result.append({
-                    "id": m.get("id", "unknown"),
-                    "name": m.get("name", m.get("id", "unknown")),
-                    "context_window": limits.get("max_context_window_tokens"),
-                    "max_prompt": limits.get("max_prompt_tokens"),
-                    "vision": supports.get("vision", False),
-                    "policy_state": m.get("policy", {}).get("state"),
-                    "billing_multiplier": m.get("billing", {}).get("multiplier"),
+                    "id": _sdk_value(m, "id", default="unknown"),
+                    "name": _sdk_value(
+                        m, "name", default=_sdk_value(m, "id", default="unknown")
+                    ),
+                    "context_window": _sdk_value(limits, "max_context_window_tokens"),
+                    "max_prompt": _sdk_value(limits, "max_prompt_tokens"),
+                    "vision": _sdk_value(supports, "vision", default=False),
+                    "policy_state": _sdk_value(policy, "state"),
+                    "billing_multiplier": _sdk_value(billing, "multiplier"),
                 })
+            self._cached_model_ids = [model["id"] for model in result]
             return result
         except Exception as e:
             logger.warning(f"list_models failed: {e}")
@@ -748,11 +776,15 @@ class CopilotAdapter(AdapterBase):
             sessions = await self.client.list_sessions()
             return [
                 {
-                    "id": s.get("sessionId", ""),
-                    "start_time": s.get("startTime", ""),
-                    "modified_time": s.get("modifiedTime", ""),
-                    "summary": s.get("summary"),
-                    "is_remote": s.get("isRemote", False),
+                    "id": _sdk_value(s, "session_id", "sessionId", default=""),
+                    "start_time": _sdk_timestamp(
+                        _sdk_value(s, "start_time", "startTime", default="")
+                    ),
+                    "modified_time": _sdk_timestamp(
+                        _sdk_value(s, "modified_time", "modifiedTime", default="")
+                    ),
+                    "summary": _sdk_value(s, "summary"),
+                    "is_remote": _sdk_value(s, "is_remote", "isRemote", default=False),
                 }
                 for s in sessions
             ]

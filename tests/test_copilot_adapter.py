@@ -2,6 +2,8 @@
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import Any, Callable, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -247,6 +249,80 @@ class TestCopilotAdapterSessions:
         await adapter.destroy_session(session)
         
         # Stats should be logged (check via logging capture if needed)
+
+
+class TestCopilotAdapterTypedSdkResponses:
+    """Test compatibility with typed responses returned by current SDK versions."""
+
+    @pytest.mark.asyncio
+    async def test_get_cli_status_from_typed_response(self, mock_copilot_client):
+        mock_copilot_client.get_status = AsyncMock(
+            return_value=SimpleNamespace(version="1.0.73", protocol_version=3)
+        )
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        assert await adapter.get_cli_status() == {
+            "version": "1.0.73",
+            "protocol_version": 3,
+        }
+
+    @pytest.mark.asyncio
+    async def test_get_auth_status_from_typed_response(self, mock_copilot_client):
+        mock_copilot_client.get_auth_status = AsyncMock(
+            return_value=SimpleNamespace(
+                isAuthenticated=True,
+                authType="user",
+                host="https://github.com",
+                login="octocat",
+                statusMessage="octocat",
+            )
+        )
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        assert await adapter.get_auth_status() == {
+            "authenticated": True,
+            "auth_type": "user",
+            "host": "https://github.com",
+            "login": "octocat",
+            "message": "octocat",
+        }
+
+    @pytest.mark.asyncio
+    async def test_list_models_from_typed_response(self, mock_copilot_client):
+        mock_copilot_client.list_models = AsyncMock(
+            return_value=[
+                SimpleNamespace(
+                    id="model-id",
+                    name="Model Name",
+                    capabilities=SimpleNamespace(
+                        limits=SimpleNamespace(
+                            max_context_window_tokens=128000,
+                            max_prompt_tokens=120000,
+                        ),
+                        supports=SimpleNamespace(vision=True),
+                    ),
+                    policy=SimpleNamespace(state="enabled"),
+                    billing=SimpleNamespace(multiplier=1.5),
+                )
+            ]
+        )
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        assert await adapter.list_models() == [
+            {
+                "id": "model-id",
+                "name": "Model Name",
+                "context_window": 128000,
+                "max_prompt": 120000,
+                "vision": True,
+                "policy_state": "enabled",
+                "billing_multiplier": 1.5,
+            }
+        ]
+        assert adapter.get_available_models() == ["model-id"]
 
 
 class TestCopilotAdapterSend:
@@ -1669,6 +1745,34 @@ class TestSessionPersistence:
         assert sessions[1]["id"] == "session-xyz"
         assert sessions[1]["summary"] is None
         assert sessions[1]["is_remote"] is True
+
+    @pytest.mark.asyncio
+    async def test_list_typed_sessions(self, mock_copilot_client):
+        start_time = datetime(2026, 1, 24, 10, tzinfo=timezone.utc)
+        modified_time = datetime(2026, 1, 24, 12, tzinfo=timezone.utc)
+        mock_copilot_client.list_sessions = AsyncMock(
+            return_value=[
+                SimpleNamespace(
+                    session_id="session-abc",
+                    start_time=start_time,
+                    modified_time=modified_time,
+                    summary="Test session",
+                    is_remote=False,
+                )
+            ]
+        )
+        adapter = CopilotAdapter()
+        adapter.client = mock_copilot_client
+
+        assert await adapter.list_sessions() == [
+            {
+                "id": "session-abc",
+                "start_time": "2026-01-24T10:00:00+00:00",
+                "modified_time": "2026-01-24T12:00:00+00:00",
+                "summary": "Test session",
+                "is_remote": False,
+            }
+        ]
 
     @pytest.mark.asyncio
     async def test_list_sessions_empty(self, mock_copilot_client):
